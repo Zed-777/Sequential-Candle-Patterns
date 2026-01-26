@@ -1,0 +1,10 @@
+pytest
+pytest-cov
+black
+ruff
+mypy
+bandit
+pre-commit
+ipykernel
+nbformat
+isort

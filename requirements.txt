@@ -1,0 +1,24 @@
+# Pinned core dependencies for Python 3.10 compatibility
+pandas==1.5.3
+numpy==1.24.4
+scipy==1.10.1
+scikit-learn==1.2.2
+xgboost
+plotly==5.16.0
+dash==2.9.3
+matplotlib
+mplfinance
+ta
+tslearn
+fastdtw
+joblib
+pydantic
+typer
+click
+uvicorn
+fastapi
+python-dotenv
+pyyaml
+ipython
+jupyter
+ipykernel

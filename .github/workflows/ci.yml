@@ -1,0 +1,26 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install conda (miniforge)
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: false
+      - name: Create env
+        run: |
+          conda create -p ./.conda python=3.10 -y
+          conda run -p ./.conda pip install -r requirements.txt -r dev-requirements.txt
+      - name: Lint (ruff)
+        run: conda run -p ./.conda ruff check .
+      - name: Format check (black)
+        run: conda run -p ./.conda black --check .
+      - name: Run tests
+        run: conda run -p ./.conda pytest -q --maxfail=1
