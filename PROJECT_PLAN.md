@@ -96,6 +96,7 @@ This document is the canonical, living SSoT for the Sequential Pattern Analysis 
 - Minimal Dash dashboard prototype implemented to upload CSV and annotate detected patterns. ✅
 - CI workflow added (`.github/workflows/ci.yml`) to run lint/format/tests. ✅
 - Updated `progress_tracker.csv` with current statuses. ✅
+- Repository created at https://github.com/Zed-777/candle-patterns and draft PR opened: https://github.com/Zed-777/candle-patterns/pull/1 ✅
 
 ---
 

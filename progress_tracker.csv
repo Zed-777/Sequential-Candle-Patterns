@@ -8,3 +8,5 @@ id,title,milestone,priority,owner,estimate_days,start,due,status,pct_complete,RA
 7,Backtesting module,P1,@frank,8,2026-02-20,2026-03-05,To Do,0,Green,#7,Sharpe,drawdown
 8,Session management & export,P2,@gina,4,2026-02-25,2026-03-01,To Do,0,Green,#8,Save/load, export zip
 9,CLI/GUI integration,MVP,P1,@carol,3,2026-02-13,2026-02-16,In Progress,20,Amber,#9,Wire CLI with minimal Dash upload
+10,Document pattern catalog,MVP,P0,@doc,2,2026-01-26,2026-01-28,In Progress,10,Amber,#10,Create PATTERN_CATALOG.md and update PROJECT_PLAN.md
+10,Create repo & open draft PR,DevOps,P0,@Zed-777,1,2026-01-26,2026-01-26,Done,100,Green,https://github.com/Zed-777/candle-patterns/pull/1,Repo created & draft PR opened
