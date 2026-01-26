@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "candle-patterns"
+version = "0.1.0"
+description = "Sequential pattern analysis system for candlestick/OHLCV data"
+authors = [ { name = "Your Team" } ]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+
+[tool.black]
+line-length = 88
+
+[tool.ruff]
+# Exclude virtual environments, build artifacts and hidden folders
+exclude = [".conda", ".venv", "env", "venv", "ENV", "build", "dist", ".git", "__pycache__", "node_modules"]
+# Optional: adjust select/ignore rules if needed
+# select = ["E","F","W","C" ]
+# ignore = ["E203","W503"]
