@@ -10,20 +10,16 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Install conda (miniforge)
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          auto-update-conda: false
-      - name: Create env
+      - name: Install dependencies (pip)
         run: |
-          conda create -p ./.conda python=3.10 -y
-          conda run -p ./.conda pip install -r requirements.txt -r dev-requirements.txt
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r dev-requirements.txt
       - name: Lint (ruff)
-        run: conda run -p ./.conda ruff check .
+        run: ruff check .
       - name: Format check (black)
-        run: conda run -p ./.conda black --check .
+        run: black --check .
       - name: Run tests with coverage
-        run: conda run -p ./.conda pytest --cov=src --cov-report=xml --cov-report=term -q --maxfail=1
+        run: pytest --cov=src --cov-report=xml --cov-report=term -q --maxfail=1
       - name: Build Docker image
         run: docker build -t candle-patterns:ci .
       - name: Upload coverage.xml
