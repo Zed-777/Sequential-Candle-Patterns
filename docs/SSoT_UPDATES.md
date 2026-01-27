@@ -10,4 +10,19 @@ Notes:
 - The expanded detectors use conservative heuristics for synthetic validation; parameters will be refined with more data and calibration.
 - Branch `feature/mvp-next-clean` contains the clean PR candidate with these changes.
 
-Actions done automatically: ran unit tests locally and fixed failing cases; updated tracker and PATTERN_CATALOG.
+Actions done automatically: ran unit tests locally and fixed failing cases; updated tracker and PATTERN_CATALOG.  
+
+- Added a lightweight `Dockerfile` and an integration test (`tests/integration/test_end_to_end.py`) with sample data (`tests/data/synthetic.csv`).  
+- Adopted non-destructive repo-cleanup strategy: create PR from `feature/mvp-next-clean` and retain backup branch `backup/feature/mvp-next-bloat` until the PR is merged and validated.  
+- CI: added integration test and coverage upload; **add** the `CODECOV_TOKEN` repo secret to enable uploads and show the Codecov badge.  
+
+Completed & validated (automated):
+
+- Local dev standardization completed: `scripts/setup_venv.*` added and dev deps installed into `.venv`; tests pass in standardized environment.  ✅
+- Integration tests added and passing.  ✅
+- Packaging & Docker: `Dockerfile` added; CI validates Docker image build (see CI Docker build step).  ✅
+
+Next Actions:
+
+- Add `CODECOV_TOKEN` to repository secrets to enable Codecov uploads and badge updates.  ⚠️
+- Open PR from `feature/mvp-next-clean` and request review; merge after validation.  ✅
