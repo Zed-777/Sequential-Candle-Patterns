@@ -1,5 +1,8 @@
 # Candlestick Patterns — Sequential Pattern Analysis System
 
+[![tests](https://github.com/Zed-777/candle-patterns/actions/workflows/ci.yml/badge.svg)](https://github.com/Zed-777/candle-patterns/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/Zed-777/candle-patterns/branch/feature/mvp-next-clean/graph/badge.svg?token=)](https://codecov.io/gh/Zed-777/candle-patterns)
+
 This repository contains the Sequential Pattern Analysis System (CSV → patterns → dashboard/CLI/notebook).
 
 Quickstart
