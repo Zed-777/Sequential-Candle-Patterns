@@ -144,6 +144,7 @@ This document is the canonical, living SSoT for the Sequential Pattern Analysis 
 - CI workflow added (`.github/workflows/ci.yml`) to run lint/format/tests. 뿯½뿯½뿯½਍ഀ
 - Updated `progress_tracker.csv` with current statuses. 뿯½뿯½뿯½਍ഀ
 - Repository cleanup: normalized `PROJECT_PLAN.md`, `PATTERN_CATALOG.md`, and `progress_tracker.csv` to UTF-8; **permanently deleted corrupt backup files** (no archive retained). 뿯½뿯½뿯½਍ഀ
+- Release: created tag `v0.1.0`, added `docs/RELEASE_NOTES.md`, and created a **draft GitHub Release** (v0.1.0); CI publish workflow added to push Docker images to GHCR on release. 뿯½뿯½뿯½਍ഀ
 - Repository created at <https://github.com/Zed-777/candle-patterns> and draft PR opened: <https://github.com/Zed-777/candle-patterns/pull/1> 뿯½뿯½뿯½਍ഀ
 ਍ഀ
 ---਍ഀ
