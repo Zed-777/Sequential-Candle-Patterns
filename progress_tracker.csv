@@ -20,4 +20,4 @@ id,title,milestone,priority,owner,estimate_days,start,due,status,pct_complete,RA
 20,Add Codecov token,DevOps,P1,@Zed-777,0.5,2026-02-28,2026-02-28,Done,100,Green,#20,**Cancelled** - User opted out of Codecov; CI enforces coverage minimum instead
 18,Open clean PR & review,DevOps,P0,@Zed-777,1,2026-02-27,2026-02-27,Done,100,Green,#18,Opened PR from feature/mvp-next-clean to feature/mvp-setup: https://github.com/Zed-777/candle-patterns/pull/2
 17,Progress report automation,Ops,P2,@qa,1,2026-02-24,2026-02-24,Done,100,Green,#17,Added scripts/generate_progress_report.py to produce weekly summary from progress_tracker.csv
-21,Repo cleanup & encoding normalization,DevOps,P0,@Zed-777,0.5,2026-01-28,2026-01-28,Done,100,Green,#21,Backed up and converted PATTERN_CATALOG.md, progress_tracker.csv, PROJECT_PLAN.md to UTF-8; removed corrupt encodings
+21,Repo cleanup & encoding normalization,DevOps,P0,@Zed-777,0.5,2026-01-28,2026-01-28,Done,100,Green,#21,Backed up and converted PATTERN_CATALOG.md, progress_tracker.csv, PROJECT_PLAN.md to UTF-8; removed corrupt encodings; **corrupt backup files permanently deleted**

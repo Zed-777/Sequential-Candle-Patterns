@@ -14,3 +14,5 @@ Where updated:
 Notes:
 
 - If you later decide to re-enable Codecov, add `CODECOV_TOKEN` to repository secrets and I can re-enable the upload step and the badge.
+
+- Update: Corrupt backup files (previously archived) were **permanently deleted** from the repository on 2026-01-28 to keep the repo clean and free of non-production artifacts.
