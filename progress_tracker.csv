@@ -23,6 +23,6 @@ id,title,milestone,priority,owner,estimate_days,start,due,status,pct_complete,RA
 21,Repo cleanup & encoding normalization,DevOps,P0,@Zed-777,0.5,2026-01-28,2026-01-28,Done,100,Green,#21,Backed up and converted PATTERN_CATALOG.md, progress_tracker.csv, PROJECT_PLAN.md to UTF-8; removed corrupt encodings; **corrupt backup files permanently deleted**
 22,Release v0.1.0,Release,P0,@Zed-777,0.5,2026-01-28,2026-01-28,Done,100,Green,#22,Annotated tag v0.1.0 created and pushed; release notes added to `docs/RELEASE_NOTES.md`
 23,Publish Docker image,Packaging,P1,@devops,1,2026-01-29,2026-01-29,To Do,0,Amber,#23,Publish `candle-patterns:0.1.0` to container registry (requires registry credentials)
-24,Create GitHub Release,Release,P1,@Zed-777,0.5,2026-01-29,2026-01-29,To Do,0,Amber,#24,Create draft GitHub Release for `v0.1.0` and attach release notes and changelog
+24,Create GitHub Release,Release,P1,@Zed-777,0.5,2026-01-29,2026-01-29,Done,100,Green,#24,Draft GitHub Release created (v0.1.0) and release notes attached: https://github.com/Zed-777/candle-patterns/releases/tag/v0.1.0
 25,ML POC & dataset,ML,P1,@ml,10,2026-01-30,2026-02-12,To Do,0,Amber,#25,Begin ML proof-of-concept for pattern discovery (notebook + tests + evaluation plan)
 26,Add sample datasets & tests,Data,P1,@data,5,2026-01-30,2026-02-04,To Do,0,Amber,#26,Add curated sample datasets, expand integration tests and detector calibration
