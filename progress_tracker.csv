@@ -1,7 +1,7 @@
 id,title,milestone,priority,owner,estimate_days,start,due,status,pct_complete,RAG,github_issue,notes
 1,CSV ingestion + validator,MVP,P0,@alice,4,2026-02-01,2026-02-05,Done,100,Green,#1,Schema validation, timezone handling
 2,Rule-based pattern engine (expand to 10+ patterns),MVP,P0,@bob,10,2026-02-03,2026-02-20,In Progress,90,Amber,#2,Added detectors: Engulfing, Three Soldiers/Crows, Morning/Evening Star, Doji variants, SpinningTop, ShootingStar, HangingMan, PiercingLine; added unit tests
-3,Minimal Dash prototype (upload + chart),MVP,P0,@carol,5,2026-02-06,2026-02-12,In Progress,70,Amber,#3,Upload + annotate patterns; added aggregated summary & OPP widgets
+3,Minimal Dash prototype (upload + chart),MVP,P0,@carol,5,2026-02-06,2026-02-12,In Progress,90,Green,#3,Upload + annotate patterns; added aggregated summary & OPP widgets; demo notebook added: `notebooks/dashboard_and_ml_demo.ipynb`
 4,CLI analyzer run,MVP,P1,@dave,2,2026-02-10,2026-02-12,Done,100,Green,#4,CLI implemented (Typer) and writes pattern CSV report
 5,Unit tests + CI,All,P0,@qa,5,2026-02-03,2026-02-10,Done,100,Green,#5,Unit tests and integration tests passing locally; CI updated and enforces minimum coverage (`--cov-fail-under=80`); Codecov upload removed per user decision
 6,OPP Miner,P1,@erin,10,2026-02-15,2026-03-01,In Progress,50,Amber,#6,Ordinal encoding + miner (variable length, top-k summarization)
