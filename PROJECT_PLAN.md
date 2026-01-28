@@ -143,6 +143,7 @@ This document is the canonical, living SSoT for the Sequential Pattern Analysis 
 - OPP miner: implemented variable-length mining and top-K summarization with unit tests. 뿯½뿯½뿯½਍ഀ
 - CI workflow added (`.github/workflows/ci.yml`) to run lint/format/tests. 뿯½뿯½뿯½਍ഀ
 - Updated `progress_tracker.csv` with current statuses. 뿯½뿯½뿯½਍ഀ
+- Repository cleanup: normalized `PROJECT_PLAN.md`, `PATTERN_CATALOG.md`, and `progress_tracker.csv` to UTF-8; archived corrupt backups to `docs/archive_corrupt/`. 뿯½뿯½뿯½਍ഀ
 - Repository created at <https://github.com/Zed-777/candle-patterns> and draft PR opened: <https://github.com/Zed-777/candle-patterns/pull/1> 뿯½뿯½뿯½਍ഀ
 ਍ഀ
 ---਍ഀ
