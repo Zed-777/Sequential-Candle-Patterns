@@ -1,77 +1,107 @@
-from __future__ import annotations
-
-import dash
-from dash import html, dcc, Input, Output, State
-import plotly.graph_objects as go
-import pandas as pd
-from candle_patterns.ingestion import load_csv
-from candle_patterns.detection import detect_patterns
-
-app = dash.Dash(__name__)
-server = app.server
-
-app.layout = html.Div(
-    [
-        html.H3("Candle Patterns — Demo Dashboard"),
-        dcc.Upload(id="upload-data", children=html.Button("Upload CSV")),
-        html.Div(id="upload-status"),
-        dcc.Graph(id="candle-chart"),
-        html.Div(id="pattern-table"),
-    ]
-)
-
-
-@app.callback(
-    Output("upload-status", "children"),
-    Output("candle-chart", "figure"),
-    Output("pattern-table", "children"),
-    Input("upload-data", "contents"),
-    State("upload-data", "filename"),
-)
-def on_upload(contents, filename):
-    if contents is None:
-        return "", go.Figure(), ""
-    content_type, content_string = contents.split(",", 1)
-    import base64
-
-    decoded = base64.b64decode(content_string)
-    import io
-
-    df = pd.read_csv(io.BytesIO(decoded))
-    try:
-        df = load_csv(filename)
-    except Exception:
-        # fallback: parse from uploaded bytes
-        df = pd.read_csv(io.BytesIO(decoded))
-        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
-        df = df.sort_values("timestamp").reset_index(drop=True)
-    fig = go.Figure(
-        data=[
-            go.Candlestick(
-                x=df["timestamp"],
-                open=df["open"],
-                high=df["high"],
-                low=df["low"],
-                close=df["close"],
-            )
-        ]
-    )
-    patterns = detect_patterns(df)
-    # overlay markers
-    for p in patterns:
-        fig.add_trace(
-            go.Scatter(
-                x=[p["timestamp"]],
-                y=[df.iloc[p["index"]]["high"]],
-                mode="markers+text",
-                marker=dict(size=10),
-                text=[p["pattern"]],
-                textposition="top center",
-            )
-        )
-    table = html.Ul([html.Li(f"{p['timestamp']}: {p['pattern']}") for p in patterns])
-    return f"Uploaded: {filename}", fig, table
-
-
-if __name__ == "__main__":
-    app.run_server(debug=True, port=8050)
+from __future__ import annotations
+
+import dash
+from dash import html, dcc, Input, Output, State
+import plotly.graph_objects as go
+import pandas as pd
+from candle_patterns.ingestion import load_csv
+from candle_patterns.detection import detect_patterns
+from candle_patterns.reporting import summarize_detections
+from candle_patterns.opp_miner import top_patterns_across_lengths
+
+app = dash.Dash(__name__)
+server = app.server
+
+app.layout = html.Div(
+    [
+        html.H3("Candle Patterns ÔÇö Demo Dashboard"),
+        dcc.Upload(id="upload-data", children=html.Button("Upload CSV")),
+        html.Div(id="upload-status"),
+        dcc.Graph(id="candle-chart"),
+        html.Div(id="pattern-table"),
+    ]
+)
+
+
+@app.callback(
+    Output("upload-status", "children"),
+    Output("candle-chart", "figure"),
+    Output("pattern-table", "children"),
+    Input("upload-data", "contents"),
+    State("upload-data", "filename"),
+)
+def on_upload(contents, filename):
+    if contents is None:
+        return "", go.Figure(), ""
+    content_type, content_string = contents.split(",", 1)
+    import base64
+
+    decoded = base64.b64decode(content_string)
+    import io
+
+    df = pd.read_csv(io.BytesIO(decoded))
+    try:
+        df = load_csv(filename)
+    except Exception:
+        df = pd.read_csv(io.BytesIO(decoded))
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+        df = df.sort_values("timestamp").reset_index(drop=True)
+    fig = go.Figure(
+        data=[
+            go.Candlestick(
+                x=df["timestamp"],
+                open=df["open"],
+                high=df["high"],
+                low=df["low"],
+                close=df["close"],
+            )
+        ]
+    )
+    patterns = detect_patterns(df)
+    for p in patterns:
+        fig.add_trace(
+            go.Scatter(
+                x=[p["timestamp"]],
+                y=[df.iloc[p["index"]]["high"]],
+                mode="markers+text",
+                marker=dict(size=10),
+                text=[p["pattern"]],
+                textposition="top center",
+            )
+        )
+    # basic per-occurrence list
+    list_section = html.Div([html.H5("Detections (per occurrence)"), html.Ul([html.Li(f"{p['timestamp']}: {p['pattern']}") for p in patterns])])
+
+    # aggregated summary per pattern
+    summary = summarize_detections(df, patterns)
+    if summary:
+        summary_table = html.Table(
+            [html.Tr([html.Th(c) for c in ["pattern", "count", "support", "avg_return", "win_rate"]])] +
+            [html.Tr([html.Td(r["pattern"]), html.Td(r["count"]), html.Td(f"{r["support"]:.3f}"), html.Td(f"{r["avg_return"]:.4f}"), html.Td(f"{r["win_rate"]:.2%}")]) for r in summary]
+        )
+    else:
+        summary_table = html.Div("No detections found")
+
+    # OPP top patterns (small sample)
+    top_opp = top_patterns_across_lengths(df, min_len=3, max_len=6, min_support=0.02, top_k=5)
+    if top_opp:
+        opp_table = html.Table(
+            [html.Tr([html.Th(c) for c in ["length", "pattern", "count", "support"]])] +
+            [html.Tr([html.Td(t["length"]), html.Td(str(t["pattern"])), html.Td(t["count"]), html.Td(f"{t["support"]:.3f}")]) for t in top_opp]
+        )
+    else:
+        opp_table = html.Div("No frequent OPP patterns found")
+
+    container = html.Div([
+        html.H4(f"Uploaded: {filename}"),
+        list_section,
+        html.H5("Aggregated pattern summary"),
+        summary_table,
+        html.H5("Top OPP patterns"),
+        opp_table,
+    ])
+    return f"Uploaded: {filename}", fig, container
+
+
+if __name__ == "__main__":
+    app.run_server(debug=True, port=8050)

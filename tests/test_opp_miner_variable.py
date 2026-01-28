@@ -1,0 +1,28 @@
+import pandas as pd
+import numpy as np
+from candle_patterns.opp_miner import opp_miner_variable_lengths, top_patterns_across_lengths
+
+
+def make_dummy_series(n=30):
+    # create a repeating ordinal pattern sequence 0,1,2,0,1,2,... converted to price-like values
+    vals = np.tile([1.0, 2.0, 3.0], int(np.ceil(n / 3)))[:n]
+    df = pd.DataFrame({"open": vals, "high": vals + 0.1, "low": vals - 0.1, "close": vals})
+    return df
+
+
+def test_opp_miner_variable_lengths_basic():
+    df = make_dummy_series(30)
+    res = opp_miner_variable_lengths(df, min_len=3, max_len=4, min_support=0.05)
+    assert isinstance(res, dict)
+    # since sequence repeats 0,1,2 we expect some 3-length patterns to appear
+    assert 3 in res
+    assert any(len(p) == 3 for p in res[3].keys())
+
+
+def test_top_patterns_returns_list():
+    df = make_dummy_series(30)
+    top = top_patterns_across_lengths(df, min_len=3, max_len=5, min_support=0.01, top_k=5)
+    assert isinstance(top, list)
+    assert len(top) <= 5
+    if len(top) > 0:
+        assert "length" in top[0] and "pattern" in top[0] and "count" in top[0] and "support" in top[0]
