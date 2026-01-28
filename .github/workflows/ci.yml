@@ -18,8 +18,8 @@ jobs:
         run: ruff check .
       - name: Format check (black)
         run: black --check .
-      - name: Run tests with coverage
-        run: pytest --cov=src --cov-report=xml --cov-report=term -q --maxfail=1
+      - name: Run tests with coverage (enforce 80% min)
+        run: pytest --cov=src --cov-report=xml --cov-report=term --cov-fail-under=80 -q --maxfail=1
       - name: Build Docker image
         run: docker build -t candle-patterns:ci .
       - name: Upload coverage.xml
@@ -27,9 +27,3 @@ jobs:
         with:
           name: coverage-report
           path: coverage.xml
-      - name: Upload to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: coverage.xml
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}

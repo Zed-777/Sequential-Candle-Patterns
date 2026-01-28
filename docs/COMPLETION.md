@@ -11,6 +11,6 @@ Completed:
 
 Next steps (manual/repo-owner action required):
 
-- Add repository secret `CODECOV_TOKEN` (name: `CODECOV_TOKEN`) to enable Codecov uploads and make the badge reflect real coverage data.
+- No action required: Codecov uploads were removed per project preference; CI enforces minimum coverage (`--cov-fail-under=80`). If you later re-enable Codecov, add repository secret `CODECOV_TOKEN`.
 - Open a PR from `feature/mvp-next-clean` (already pushed) and request review; once merged, consider deleting the archived bloat branch `backup/feature-mvp-next-bloat`.
 - After merge, consider creating a release and adding a CI job to build/publish Docker images to a registry if desired.

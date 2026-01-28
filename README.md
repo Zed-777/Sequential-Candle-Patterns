@@ -1,7 +1,6 @@
 # Candlestick Patterns — Sequential Pattern Analysis System
 
 [![tests](https://github.com/Zed-777/candle-patterns/actions/workflows/ci.yml/badge.svg)](https://github.com/Zed-777/candle-patterns/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/Zed-777/candle-patterns/branch/feature/mvp-next-clean/graph/badge.svg?token=)](https://codecov.io/gh/Zed-777/candle-patterns)
 
 This repository contains the Sequential Pattern Analysis System (CSV → patterns → dashboard/CLI/notebook).
 
@@ -24,7 +23,7 @@ docker run --rm candle-patterns:latest --help
 docker run --rm -v $(pwd):/data candle-patterns:latest run /data/tests/data/synthetic.csv --out /data/report.csv
 ```
 
-Note: CI uploads coverage to Codecov using the `codecov` action — add the repository secret `CODECOV_TOKEN` to enable uploads and make the badge work.  
+Note: CI collects coverage and **enforces a minimum threshold** (`--cov-fail-under=80`). Codecov upload step and badge were removed per project preference (no external token required).
 
 Current status: unit tests and integration test pass locally in `.venv`; branch `feature/mvp-next-clean` is ready for PR and review.
 
