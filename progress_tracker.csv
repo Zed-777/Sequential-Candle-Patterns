@@ -24,7 +24,7 @@ id,title,milestone,priority,owner,estimate_days,start,due,status,pct_complete,RA
 22,Release v0.1.0,Release,P0,@Zed-777,0.5,2026-01-28,2026-01-28,Done,100,Green,#22,Annotated tag v0.1.0 created and pushed; release notes added to `docs/RELEASE_NOTES.md`
 23,Publish Docker image,Packaging,P1,@devops,1,2026-01-29,2026-01-29,To Do,0,Amber,#23,Publish `candle-patterns:0.1.0` to container registry (requires registry credentials)
 24,Create GitHub Release,Release,P1,@Zed-777,0.5,2026-01-29,2026-01-29,Done,100,Green,#24,Draft GitHub Release created (v0.1.0) and release notes attached: https://github.com/Zed-777/candle-patterns/releases/tag/v0.1.0
-25,ML POC & dataset,ML,P1,@ml,10,2026-01-30,2026-02-12,To Do,0,Amber,#25,Begin ML proof-of-concept for pattern discovery (notebook + tests + evaluation plan)
+25,ML POC & dataset,ML,P1,@ml,10,2026-01-30,2026-02-12,In Progress,30,Amber,#25,Begin ML proof-of-concept for pattern discovery (notebook + tests + evaluation plan); PR: https://github.com/Zed-777/candle-patterns/pull/3
 26,Add sample datasets & tests,Data,P1,@data,5,2026-01-30,2026-02-04,To Do,0,Amber,#26,Add curated sample datasets, expand integration tests and detector calibration
 27,Automate Docker publish in CI,DevOps,P1,@devops,1,2026-01-29,2026-01-29,Done,100,Green,#27,Added `.github/workflows/publish.yml` to build & push to GHCR on release publish (uses `GITHUB_TOKEN`)
 28,Security review (bandit findings),Security,P2,@security,1,2026-01-29,2026-01-29,To Do,0,Amber,#28,Review low-severity bandit findings and add #nosec where appropriate or refactor try/except blocks
