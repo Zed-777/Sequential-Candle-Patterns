@@ -9,3 +9,5 @@ ipykernel
 nbformat
 isort
 typer
+pytest-playwright
+playwright

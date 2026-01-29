@@ -1,0 +1,18 @@
+/* Custom dashboard styles */
+.sidebar-card { max-width: 320px; }
+html, body { height: 100%; }
+
+/* Cards spacing */
+.card { margin-bottom: 8px; }
+
+/* Make upload button full width on small screens */
+@media (max-width: 768px) {
+  .sidebar-card .btn { width: 100%; }
+}
+
+/* Subtle header spacing */
+.navbar { margin-bottom: 8px; }
+
+/* Improve table readability */
+table { width: 100%; border-collapse: collapse; }
+table th, table td { padding: 6px 8px; border-bottom: 1px solid #eee; }
