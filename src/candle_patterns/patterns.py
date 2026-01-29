@@ -1,85 +1,1 @@
-from __future__ import annotations
-
-import re
-import pandas as pd
-from typing import List, Tuple
-# Import detection helpers lazily inside functions to avoid circular imports
-
-PatternToken = Tuple[int, str]  # (count, token) token e.g. 'R','G','Doji'
-
-
-def parse_sequence(seq: str) -> List[PatternToken]:
-    """Parse a sequence string like '3R -> 2G' or '5G ÔåÆ Doji ÔåÆ 4R' into tokens."""
-    # split on arrow-like separators (ÔåÆ, ->, -, >)
-    parts = re.split(r"\s*(?:ÔåÆ|->|>|-)\s*", seq)
-    tokens: List[PatternToken] = []
-    for p in parts:
-        p = p.strip()
-        m = re.match(r"^(\d+)([RG])$", p, re.IGNORECASE)
-        if m:
-            cnt = int(m.group(1))
-            sym = m.group(2).upper()
-            tokens.append((cnt, sym))
-        else:
-            # named token like Doji or Hammer; treat as count=1
-            tokens.append((1, p))
-    return tokens
-
-
-def symbol_sequence(df: pd.DataFrame) -> List[str]:
-    """Return simple symbol per candle: 'G' or 'R' or 'Doji' if detected."""
-    syms: List[str] = []
-    # import helpers here to avoid circular imports
-    from .detection import is_doji, candle_color
-    for i in range(len(df)):
-        row = df.iloc[i]
-        if is_doji(df.iloc[i : i + 1]):
-            syms.append("Doji")
-            continue
-        c = candle_color(row)
-        syms.append("G" if c == "green" else "R")
-    return syms
-
-
-def match_named_token(df: pd.DataFrame, idx: int, token: str) -> bool:
-    """Check if token matches candle at idx. Token may be 'Doji','Hammer', etc."""
-    # import helpers here to avoid circular imports
-    from .detection import is_doji, is_hammer
-    token_low = token.lower()
-    if token_low == "doji":
-        return bool(is_doji(df.iloc[idx : idx + 1]))
-    if token_low == "hammer":
-        return bool(is_hammer(df.iloc[idx : idx + 1]))
-    # fallback to direction tokens handled elsewhere
-    return False
-
-
-def find_sequence_occurrences(df: pd.DataFrame, seq_str: str) -> List[int]:
-    """Find all ending indices where the given sequence occurs. Returns list of end indices."""
-    tokens = parse_sequence(seq_str)
-    syms = symbol_sequence(df)
-    results: List[int] = []
-    n = len(df)
-    for start in range(0, n):
-        i = start
-        ok = True
-        for cnt, tok in tokens:
-            # if token is direction 'R'/'G'
-            if tok in ("R", "G"):
-                # need cnt consecutive tokens of tok starting at i
-                for k in range(cnt):
-                    if i + k >= n or syms[i + k] != tok:
-                        ok = False
-                        break
-                if not ok:
-                    break
-                i += cnt
-            else:
-                # named tokens: must match single candle
-                if i >= n or not match_named_token(df, i, tok):
-                    ok = False
-                    break
-                i += 1
-        if ok:
-            results.append(i - 1)  # end index
-    return results
+from __future__ import annotationsimport reimport pandas as pdfrom typing import List, Tuple# Import detection helpers lazily inside functions to avoid circular importsPatternToken = Tuple[int, str]  # (count, token) token e.g. 'R','G','Doji'def parse_sequence(seq: str) -> List[PatternToken]:    """Parse a sequence string like '3R -> 2G' or '5G ÔåÆ Doji ÔåÆ 4R' into tokens."""    # split on arrow-like separators (ÔåÆ, ->, -, >)    parts = re.split(r"\s*(?:ÔåÆ|->|>|-)\s*", seq)    tokens: List[PatternToken] = []    for p in parts:        p = p.strip()        m = re.match(r"^(\d+)([RG])$", p, re.IGNORECASE)        if m:            cnt = int(m.group(1))            sym = m.group(2).upper()            tokens.append((cnt, sym))        else:            # named token like Doji or Hammer; treat as count=1            tokens.append((1, p))    return tokensdef symbol_sequence(df: pd.DataFrame) -> List[str]:    """Return simple symbol per candle: 'G' or 'R' or 'Doji' if detected."""    syms: List[str] = []    # import helpers here to avoid circular imports    from .detection import is_doji, candle_color    for i in range(len(df)):        row = df.iloc[i]        if is_doji(df.iloc[i : i + 1]):            syms.append("Doji")            continue        c = candle_color(row)        syms.append("G" if c == "green" else "R")    return symsdef match_named_token(df: pd.DataFrame, idx: int, token: str) -> bool:    """Check if token matches candle at idx. Token may be 'Doji','Hammer', etc."""    # import helpers here to avoid circular imports    from .detection import is_doji, is_hammer    token_low = token.lower()    if token_low == "doji":        return bool(is_doji(df.iloc[idx : idx + 1]))    if token_low == "hammer":        return bool(is_hammer(df.iloc[idx : idx + 1]))    # fallback to direction tokens handled elsewhere    return Falsedef find_sequence_occurrences(df: pd.DataFrame, seq_str: str) -> List[int]:    """Find all ending indices where the given sequence occurs. Returns list of end indices."""    tokens = parse_sequence(seq_str)    syms = symbol_sequence(df)    results: List[int] = []    n = len(df)    for start in range(0, n):        i = start        ok = True        for cnt, tok in tokens:            # if token is direction 'R'/'G'            if tok in ("R", "G"):                # need cnt consecutive tokens of tok starting at i                for k in range(cnt):                    if i + k >= n or syms[i + k] != tok:                        ok = False                        break                if not ok:                    break                i += cnt            else:                # named tokens: must match single candle                if i >= n or not match_named_token(df, i, tok):                    ok = False                    break                i += 1        if ok:            results.append(i - 1)  # end index    return results

@@ -5,7 +5,9 @@ import numpy as np
 from typing import List, Dict, Any
 
 
-def simple_pattern_backtest(df: pd.DataFrame, detections: List[Dict[str, Any]], hold: int = 1) -> Dict[str, float]:
+def simple_pattern_backtest(
+    df: pd.DataFrame, detections: List[Dict[str, Any]], hold: int = 1
+) -> Dict[str, float]:
     """Backtest a naive strategy: on detection at index i, buy at next open and hold `hold` periods.
     Returns simple metrics: returns_total, avg_return, win_rate
     """

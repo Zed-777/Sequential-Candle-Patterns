@@ -19,7 +19,7 @@ line-length = 88
 
 [tool.ruff]
 # Exclude virtual environments, build artifacts and hidden folders
-exclude = [".conda", ".venv", "env", "venv", "ENV", "build", "dist", ".git", "__pycache__", "node_modules"]
+exclude = [".conda", ".venv", "env", "venv", "ENV", "build", "dist", ".git", "__pycache__", "node_modules", "notebooks", "**/*.ipynb"]
 # Optional: adjust select/ignore rules if needed
 # select = ["E","F","W","C" ]
 # ignore = ["E203","W503"]
