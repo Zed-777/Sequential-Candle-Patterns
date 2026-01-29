@@ -27,3 +27,9 @@ jobs:
       - name: Run Playwright tests
         run: |
           pytest tests/e2e -q -k e2e --maxfail=1
+      - name: Upload UI snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-snapshot
+          path: artifacts/ui_snapshot.png
+

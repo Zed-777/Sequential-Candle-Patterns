@@ -21,6 +21,13 @@ async def test_basic_ui(page):
     # expect a short message in cleanup-result area indicating run completed or occurrences found
     cr = await page.locator('#cleanup-result').inner_text()
     assert 'Found' in cr or 'No sequence' in cr
+    # switch to aggregated tab and assert sparklines present
+    await page.click('text=Aggregated')
+    await page.wait_for_selector('.js-plotly-plot')
+    assert await page.locator('.js-plotly-plot').count() >= 1
+    # take a screenshot for visual review/regression baseline
+    await page.screenshot(path='artifacts/ui_snapshot.png', full_page=True)
+    assert True
 
 # simple non-async fallback for pytest-playwright older versions
 def test_ui_smoke_sync(playwright):
