@@ -57,7 +57,8 @@ def on_upload(contents, filename):
 
     try:
         df = load_csv(filename)
-    except Exception:
+    except (FileNotFoundError, ValueError, pd.errors.ParserError) as e:
+        logger.debug("load_csv fallback parsing for %s: %s", filename, e)
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
         df = df.sort_values("timestamp").reset_index(drop=True)
 
@@ -90,7 +91,8 @@ def on_upload(contents, filename):
     # persist upload and detections
     try:
         upload_id = save_upload(filename, df, patterns)
-    except Exception:
+    except Exception as e:
+        logger.exception("save_upload failed: %s", e)
         upload_id = None
 
     # update history dropdown options (handled by separate callback)
@@ -212,7 +214,8 @@ def load_history(upload_id):
     for p in patterns:
         try:
             fig.add_trace(go.Scatter(x=[p['timestamp']], y=[df.loc[df['timestamp']==p['timestamp'],'high'].iat[0]], mode='markers+text', text=[p['pattern']], textposition='top center', marker=dict(size=10)))
-        except Exception:
+        except (IndexError, KeyError) as e:
+            logger.debug("skipping pattern %s when rendering: %s", p.get('pattern'), e)
             continue
     list_section = html.Div([html.H5("Detections (per occurrence)"), html.Ul([html.Li(f"{p['timestamp']}: {p['pattern']}") for p in patterns])])
     return fig, list_section

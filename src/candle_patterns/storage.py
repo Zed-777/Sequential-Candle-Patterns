@@ -28,10 +28,11 @@ def init_db(db_path: Optional[Path] = None):
     conn.close()
 
 
-def save_upload(filename: str, df: pd.DataFrame, detections: List[Dict]) -> int:
+def save_upload(filename: str, df: pd.DataFrame, detections: List[Dict], stored_at: Optional[str] = None) -> int:
     """Save uploaded CSV and detections; record entry in DB and return upload id."""
     init_db()
-    ts = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    # Use timezone-aware UTC timestamp to avoid deprecation warnings
+    ts = stored_at if stored_at is not None else datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     uploads_dir = Path("artifacts/uploads")
     detections_dir = Path("artifacts/detections")
     uploads_dir.mkdir(parents=True, exist_ok=True)
@@ -55,6 +56,44 @@ def save_upload(filename: str, df: pd.DataFrame, detections: List[Dict]) -> int:
     upload_id = c.lastrowid
     conn.close()
     return upload_id
+
+
+def cleanup_old_uploads(retention_days: int = 30) -> int:
+    """Remove uploads and detection files older than `retention_days` (by file mtime) and delete DB rows.
+
+    Returns the number of uploads removed from the DB.
+    """
+    import time
+
+    init_db()
+    now = time.time()
+    cutoff = now - int(retention_days) * 24 * 60 * 60
+
+    conn = sqlite3.connect(str(DB_PATH))
+    c = conn.cursor()
+    c.execute("SELECT id, filepath, detections_path FROM uploads")
+    rows = c.fetchall()
+
+    removed = 0
+    for uid, fpath, dpath in rows:
+        deleted_any = False
+        for p in (fpath, dpath):
+            try:
+                if p and Path(p).exists():
+                    if Path(p).stat().st_mtime < cutoff:
+                        Path(p).unlink()
+                        deleted_any = True
+            except OSError:
+                # best-effort removal; skip offending files
+                continue
+        # If both artifacts missing now (or any were deleted), remove DB row
+        if deleted_any or (not Path(fpath).exists() and not Path(dpath).exists()):
+            c.execute("DELETE FROM uploads WHERE id=?", (uid,))
+            removed += 1
+
+    conn.commit()
+    conn.close()
+    return removed
 
 
 def list_uploads(limit: int = 100) -> List[Dict]:

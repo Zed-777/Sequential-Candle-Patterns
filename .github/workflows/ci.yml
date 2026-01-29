@@ -18,6 +18,19 @@ jobs:
         run: ruff check .
       - name: Format check (black)
         run: black --check .
+      - name: Security scan (bandit)
+        run: |
+          # Run bandit and write JSON. We allow the step to complete and then fail only if medium/high issues are present.
+          bandit -r src -f json -o bandit.json || true
+          python - <<'PY'
+import json
+j = json.load(open('bandit.json'))
+for r in j.get('results', []):
+    if r.get('issue_severity') in ('MEDIUM', 'HIGH'):
+        print('Found medium/high bandit issue: ', r.get('filename'), r.get('issue_text'))
+        raise SystemExit(1)
+print('Bandit: no medium/high findings')
+PY
       - name: Run tests with coverage (enforce 80% min)
         run: pytest --cov=src --cov-report=xml --cov-report=term --cov-fail-under=80 -q --maxfail=1
       - name: Build Docker image

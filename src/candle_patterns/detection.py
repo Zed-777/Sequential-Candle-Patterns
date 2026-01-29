@@ -136,8 +136,8 @@ def detect_patterns(
                         }
                     )
 
-            except Exception:
-
+            except (IndexError, KeyError, ValueError) as e:
+                logger.debug("pattern %s failed at index %s: %s", name, i, e)
                 continue
 
         # sequence-based signature matching (lenient for synthetic test cases)
@@ -175,7 +175,8 @@ def detect_patterns(
                             "pattern": pname,
                         }
                     )
-            except Exception:
+            except (IndexError, KeyError, ValueError) as e:
+                logger.debug("sequence pattern %s failed at index %s: %s", pname, i, e)
                 continue
 
     if custom_sequences:

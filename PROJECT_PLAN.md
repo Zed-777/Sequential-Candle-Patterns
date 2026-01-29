@@ -140,12 +140,16 @@ This document is the canonical, living SSoT for the Sequential Pattern Analysis 
 - Pattern reporting and per-pattern backtest summary implemented (`reporting.summarize_detections`). 뿯½뿯½뿯½਍ഀ
 - Minimal Dash dashboard prototype implemented to upload CSV and annotate detected patterns. Demo notebook created (`notebooks/dashboard_and_ml_demo.ipynb`) to preview charts and run quick JupyterDash demo. **History persistence (SQLite) and History UI added to dashboard**. 뿯½뿯½뿯½਍ഀ
 - Dashboard: added aggregated pattern summary and OPP top-pattern widgets. 뿯½뿯½뿯½਍ഀ
+
+**Viewing the dashboard locally:** Run `python -m candle_patterns.dashboard` or build and run the Docker image and map port `8050` (e.g. `docker run -p 8050:8050 candle-patterns:0.1.0`). The Dash server listens on `http://localhost:8050`.
+
+**Automated retention policy:** A default retention of 30 days is enforced by a scheduled cleanup job (`.github/workflows/cleanup.yml`). Use the CLI: `python -m candle_patterns.cli cleanup --days <n>` to run ad-hoc cleanup.਍ഀ
 - OPP miner: implemented variable-length mining and top-K summarization with unit tests. 뿯½뿯½뿯½਍ഀ
 - CI workflow added (`.github/workflows/ci.yml`) to run lint/format/tests. 뿯½뿯½뿯½਍ഀ
 - Updated `progress_tracker.csv` with current statuses. 뿯½뿯½뿯½਍ഀ
 - Repository cleanup: normalized `PROJECT_PLAN.md`, `PATTERN_CATALOG.md`, and `progress_tracker.csv` to UTF-8; **permanently deleted corrupt backup files** (no archive retained). 뿯½뿯½뿯½਍ഀ
 - Release: created tag `v0.1.0`, added `docs/RELEASE_NOTES.md`, and created a **draft GitHub Release** (v0.1.0); CI publish workflow added to push Docker images to GHCR on release. 뿯½뿯½뿯½਍ഀ
-- Next actions recorded in tracker: Publish Docker image, Create GitHub Release (draft created), ML POC, Add sample datasets, Security review (bandit). 뿯½뿯½뿯½਍ഀ
+- Next actions recorded in tracker: Publish Docker image (user or CI on release), ML POC, Add sample datasets. Security review and automated retention/cleanup were completed (bandit low-severity findings addressed, daily cleanup scheduled). 뿯½뿯½뿯½਍ഀ
 - Repository created at <https://github.com/Zed-777/candle-patterns> and draft PR opened: <https://github.com/Zed-777/candle-patterns/pull/1> 뿯½뿯½뿯½਍ഀ
 ਍ഀ
 ---਍ഀ

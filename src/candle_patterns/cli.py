@@ -20,5 +20,14 @@ def run(file: str, out: str = "report.csv") -> None:
         typer.echo("No patterns detected")
 
 
+@app.command()
+def cleanup(days: int = 30) -> None:
+    """Remove stored artifacts older than `days` and delete DB references."""
+    from candle_patterns.storage import cleanup_old_uploads
+
+    removed = cleanup_old_uploads(retention_days=days)
+    typer.echo(f"Removed {removed} old uploads/detections")
+
+
 if __name__ == "__main__":
     app()

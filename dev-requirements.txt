@@ -8,3 +8,4 @@ pre-commit
 ipykernel
 nbformat
 isort
+typer
