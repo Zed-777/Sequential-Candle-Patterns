@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 
-
 import pandas as pd
 
 from typing import List, Dict, Any
@@ -9,15 +8,9 @@ from typing import List, Dict, Any
 from .patterns import find_sequence_occurrences
 
 
-
-
-
 def candle_color(row: pd.Series) -> str:
 
     return "green" if row["close"] >= row["open"] else "red"
-
-
-
 
 
 def is_doji(window: pd.DataFrame, tol: float = 0.25) -> bool:
@@ -33,9 +26,6 @@ def is_doji(window: pd.DataFrame, tol: float = 0.25) -> bool:
         return False
 
     return body <= tol * rng
-
-
-
 
 
 def is_hammer(window: pd.DataFrame, tol: float = 0.1) -> bool:
@@ -55,46 +45,74 @@ def is_hammer(window: pd.DataFrame, tol: float = 0.1) -> bool:
     return lower_wick >= 2 * body and upper_wick <= body
 
 
-
-
-
 RULES = {
-
     "doji": is_doji,
-
     "hammer": is_hammer,
-
     # relaxed criteria so tests with simple synthetic rows detect patterns
-
-    "bullish_engulfing": lambda w: (len(w) >= 2 and w.iloc[-2]["close"] < w.iloc[-2]["open"] and w.iloc[-1]["close"] > w.iloc[-1]["open"] and (w.iloc[-1]["close"] - w.iloc[-1]["open"]) >= (w.iloc[-2]["open"] - w.iloc[-2]["close"])),
-
-    "bearish_engulfing": lambda w: (len(w) >= 2 and w.iloc[-2]["close"] > w.iloc[-2]["open"] and w.iloc[-1]["close"] < w.iloc[-1]["open"]),
-
-    "three_white_soldiers": lambda w: (len(w) >= 3 and all(w.iloc[-3 + i]["close"] > w.iloc[-3 + i]["open"] for i in range(3))),
-
-    "three_black_crows": lambda w: (len(w) >= 3 and all(w.iloc[-3 + i]["close"] < w.iloc[-3 + i]["open"] for i in range(3))),
-
+    "bullish_engulfing": lambda w: (
+        len(w) >= 2
+        and w.iloc[-2]["close"] < w.iloc[-2]["open"]
+        and w.iloc[-1]["close"] > w.iloc[-1]["open"]
+        and (w.iloc[-1]["close"] - w.iloc[-1]["open"])
+        >= (w.iloc[-2]["open"] - w.iloc[-2]["close"])
+    ),
+    "bearish_engulfing": lambda w: (
+        len(w) >= 2
+        and w.iloc[-2]["close"] > w.iloc[-2]["open"]
+        and w.iloc[-1]["close"] < w.iloc[-1]["open"]
+    ),
+    "three_white_soldiers": lambda w: (
+        len(w) >= 3
+        and all(w.iloc[-3 + i]["close"] > w.iloc[-3 + i]["open"] for i in range(3))
+    ),
+    "three_black_crows": lambda w: (
+        len(w) >= 3
+        and all(w.iloc[-3 + i]["close"] < w.iloc[-3 + i]["open"] for i in range(3))
+    ),
     # additional heuristic patterns (relaxed for synthetic tests)
-
-    "spinning_top": lambda w: (len(w) >= 1 and abs(w.iloc[-1]["close"] - w.iloc[-1]["open"]) <= 0.2 * (w.iloc[-1]["high"] - w.iloc[-1]["low"])),
-
-    "shooting_star": lambda w: (len(w) >= 1 and (w.iloc[-1]["high"] - max(w.iloc[-1]["open"], w.iloc[-1]["close"])) >= 2 * abs(w.iloc[-1]["close"] - w.iloc[-1]["open"]) ),
-
-    "hanging_man": lambda w: (len(w) >= 1 and (min(w.iloc[-1]["open"], w.iloc[-1]["close"]) - w.iloc[-1]["low"]) >= 2 * abs(w.iloc[-1]["close"] - w.iloc[-1]["open"]) ),
-
-    "piercing_line": lambda w: (len(w) >= 2 and w.iloc[-2]["close"] < w.iloc[-2]["open"] and w.iloc[-1]["close"] > w.iloc[-1]["open"] and w.iloc[-1]["close"] > (w.iloc[-2]["close"] + w.iloc[-2]["open"]) / 2),
-
-    "morning_star": lambda w: (len(w) >= 3 and w.iloc[-3]["close"] < w.iloc[-3]["open"] and abs(w.iloc[-2]["close"] - w.iloc[-2]["open"]) <= 0.25 * (w.iloc[-2]["high"] - w.iloc[-2]["low"]) and w.iloc[-1]["close"] > w.iloc[-1]["open"]),
-
-    "evening_star": lambda w: (len(w) >= 3 and w.iloc[-3]["close"] > w.iloc[-3]["open"] and abs(w.iloc[-2]["close"] - w.iloc[-2]["open"]) <= 0.25 * (w.iloc[-2]["high"] - w.iloc[-2]["low"]) and w.iloc[-1]["close"] < w.iloc[-1]["open"]),
-
+    "spinning_top": lambda w: (
+        len(w) >= 1
+        and abs(w.iloc[-1]["close"] - w.iloc[-1]["open"])
+        <= 0.2 * (w.iloc[-1]["high"] - w.iloc[-1]["low"])
+    ),
+    "shooting_star": lambda w: (
+        len(w) >= 1
+        and (w.iloc[-1]["high"] - max(w.iloc[-1]["open"], w.iloc[-1]["close"]))
+        >= 2 * abs(w.iloc[-1]["close"] - w.iloc[-1]["open"])
+    ),
+    "hanging_man": lambda w: (
+        len(w) >= 1
+        and (min(w.iloc[-1]["open"], w.iloc[-1]["close"]) - w.iloc[-1]["low"])
+        >= 2 * abs(w.iloc[-1]["close"] - w.iloc[-1]["open"])
+    ),
+    "piercing_line": lambda w: (
+        len(w) >= 2
+        and w.iloc[-2]["close"] < w.iloc[-2]["open"]
+        and w.iloc[-1]["close"] > w.iloc[-1]["open"]
+        and w.iloc[-1]["close"] > (w.iloc[-2]["close"] + w.iloc[-2]["open"]) / 2
+    ),
+    "morning_star": lambda w: (
+        len(w) >= 3
+        and w.iloc[-3]["close"] < w.iloc[-3]["open"]
+        and abs(w.iloc[-2]["close"] - w.iloc[-2]["open"])
+        <= 0.25 * (w.iloc[-2]["high"] - w.iloc[-2]["low"])
+        and w.iloc[-1]["close"] > w.iloc[-1]["open"]
+    ),
+    "evening_star": lambda w: (
+        len(w) >= 3
+        and w.iloc[-3]["close"] > w.iloc[-3]["open"]
+        and abs(w.iloc[-2]["close"] - w.iloc[-2]["open"])
+        <= 0.25 * (w.iloc[-2]["high"] - w.iloc[-2]["low"])
+        and w.iloc[-1]["close"] < w.iloc[-1]["open"]
+    ),
 }
 
 
-
-
-
-def detect_patterns(df: pd.DataFrame, window_size: int = 5, custom_sequences: Dict[str, str] | None = None) -> List[Dict[str, Any]]:
+def detect_patterns(
+    df: pd.DataFrame,
+    window_size: int = 5,
+    custom_sequences: Dict[str, str] | None = None,
+) -> List[Dict[str, Any]]:
 
     results: List[Dict[str, Any]] = []
 
@@ -110,7 +128,13 @@ def detect_patterns(df: pd.DataFrame, window_size: int = 5, custom_sequences: Di
 
                 if fn(window):
 
-                    results.append({"index": i, "timestamp": df.iloc[i]["timestamp"], "pattern": name})
+                    results.append(
+                        {
+                            "index": i,
+                            "timestamp": df.iloc[i]["timestamp"],
+                            "pattern": name,
+                        }
+                    )
 
             except Exception:
 
@@ -144,7 +168,13 @@ def detect_patterns(df: pd.DataFrame, window_size: int = 5, custom_sequences: Di
         for pname, sig in SEQUENCE_SIGNATURES.items():
             try:
                 if _match_signature_at_local(i, sig):
-                    results.append({"index": i, "timestamp": df.iloc[i]["timestamp"], "pattern": pname})
+                    results.append(
+                        {
+                            "index": i,
+                            "timestamp": df.iloc[i]["timestamp"],
+                            "pattern": pname,
+                        }
+                    )
             except Exception:
                 continue
 
@@ -156,7 +186,8 @@ def detect_patterns(df: pd.DataFrame, window_size: int = 5, custom_sequences: Di
 
             for i in occ:
 
-                results.append({"index": i, "timestamp": df.iloc[i]["timestamp"], "pattern": pname})
+                results.append(
+                    {"index": i, "timestamp": df.iloc[i]["timestamp"], "pattern": pname}
+                )
 
     return results
-

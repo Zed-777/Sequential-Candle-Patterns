@@ -1,31 +1,1 @@
-"""OPP Demo
-
-Run: python -m demos.opp_demo or `python demos/opp_demo.py`
-"""
-import pandas as pd
-import numpy as np
-from candle_patterns.opp_miner import opp_miner_variable_lengths, top_patterns_across_lengths
-
-
-def make_sample_df(n=60):
-    vals = np.tile([1.0, 2.0, 3.0, 2.5], int(np.ceil(n / 4)))[:n]
-    df = pd.DataFrame({"open": vals, "high": vals + 0.2, "low": vals - 0.2, "close": vals})
-    df["timestamp"] = pd.date_range("2023-01-01", periods=len(df), freq="D")
-    return df
-
-
-def main():
-    df = make_sample_df()
-    print("Data sample:\n", df.head())
-    results = opp_miner_variable_lengths(df, min_len=3, max_len=6, min_support=0.02)
-    print("\nOPP results by length:")
-    for L, d in results.items():
-        print(f"Length={L}: {len(d)} patterns (sample 5): {list(d.items())[:5]}")
-    top = top_patterns_across_lengths(df, min_len=3, max_len=6, min_support=0.02, top_k=10)
-    print("\nTop patterns across lengths:")
-    for t in top:
-        print(t)
-
-
-if __name__ == "__main__":
-    main()
+"""OPP DemoRun: python -m demos.opp_demo or `python demos/opp_demo.py`"""import pandas as pdimport numpy as npfrom candle_patterns.opp_miner import (    opp_miner_variable_lengths,    top_patterns_across_lengths,)def make_sample_df(n=60):    vals = np.tile([1.0, 2.0, 3.0, 2.5], int(np.ceil(n / 4)))[:n]    df = pd.DataFrame(        {"open": vals, "high": vals + 0.2, "low": vals - 0.2, "close": vals}    )    df["timestamp"] = pd.date_range("2023-01-01", periods=len(df), freq="D")    return dfdef main():    df = make_sample_df()    print("Data sample:\n", df.head())    results = opp_miner_variable_lengths(df, min_len=3, max_len=6, min_support=0.02)    print("\nOPP results by length:")    for L, d in results.items():        print(f"Length={L}: {len(d)} patterns (sample 5): {list(d.items())[:5]}")    top = top_patterns_across_lengths(        df, min_len=3, max_len=6, min_support=0.02, top_k=10    )    print("\nTop patterns across lengths:")    for t in top:        print(t)if __name__ == "__main__":    main()
