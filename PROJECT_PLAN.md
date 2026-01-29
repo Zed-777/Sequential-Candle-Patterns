@@ -138,7 +138,7 @@ This document is the canonical, living SSoT for the Sequential Pattern Analysis 
 - Rule-based detection skeleton (Doji, Hammer, Bullish Engulfing, Morning Star) implemented with unit tests. 뿯½뿯½뿯½਍ഀ
 - CLI `analyzer run` implemented (Typer) and writes pattern CSV report and summary KPIs (support, avg*return, win_rate). 뿯½뿯½뿯½਍ഀ
 - Pattern reporting and per-pattern backtest summary implemented (`reporting.summarize_detections`). 뿯½뿯½뿯½਍ഀ
-- Minimal Dash dashboard prototype implemented to upload CSV and annotate detected patterns. Demo notebook created (`notebooks/dashboard_and_ml_demo.ipynb`) to preview charts and run quick JupyterDash demo. 뿯½뿯½뿯½਍ഀ
+- Minimal Dash dashboard prototype implemented to upload CSV and annotate detected patterns. Demo notebook created (`notebooks/dashboard_and_ml_demo.ipynb`) to preview charts and run quick JupyterDash demo. **History persistence (SQLite) and History UI added to dashboard**. 뿯½뿯½뿯½਍ഀ
 - Dashboard: added aggregated pattern summary and OPP top-pattern widgets. 뿯½뿯½뿯½਍ഀ
 - OPP miner: implemented variable-length mining and top-K summarization with unit tests. 뿯½뿯½뿯½਍ഀ
 - CI workflow added (`.github/workflows/ci.yml`) to run lint/format/tests. 뿯½뿯½뿯½਍ഀ
