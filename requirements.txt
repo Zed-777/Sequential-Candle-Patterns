@@ -6,6 +6,8 @@ scikit-learn==1.2.2
 xgboost
 plotly==5.16.0
 dash==2.9.3
+dash-bootstrap-components==1.4.1
+kaleido
 matplotlib
 mplfinance
 ta

@@ -78,7 +78,12 @@ pattern_modal = dbc.Modal(
     [
         dbc.ModalHeader(dbc.ModalTitle("Pattern Detail")),
         dbc.ModalBody(id="pattern-modal-body"),
-        dbc.ModalFooter(dbc.Button("Close", id="modal-close", className="ms-auto")),
+        dbc.ModalFooter(
+            [
+                dbc.Button("Export Chart PNG", id="export-chart-btn", color="secondary", size="sm"),
+                dbc.Button("Close", id="modal-close", className="ms-auto"),
+            ]
+        ),
     ],
     id="pattern-modal",
     is_open=False,
@@ -289,7 +294,45 @@ def show_pattern_detail(clickData, nclose, is_open):
         pt = clickData["points"][0]
         txt = pt.get("text") or pt.get("data", {}).get("name") or ""
         x = pt.get("x")
-        body = html.Div([html.P(f"Pattern: {txt}"), html.P(f"Timestamp: {x}"), html.P("Click Export to download detections CSV for details.")])
+        # Build context mini-chart +/- 5 candles around clicked timestamp
+        try:
+            from datetime import timedelta
+            df_all = None
+            # get current-data from server-side via storage (best-effort)
+            # we will parse out a small window
+            cid = dash.ctx.triggered[0]['value'] if dash.callback_context and dash.callback_context.triggered else None
+        except Exception:
+            df_all = None
+        body_items = [html.P(f"Pattern: {txt}"), html.P(f"Timestamp: {x}"), html.P("Click Export to download detections CSV for details.")]
+        try:
+            # Attempt to create a mini-chart using the global data if accessible via server memory
+            data = dash.callback_context.states.get('current-data.data') if dash.callback_context and getattr(dash.callback_context, 'states', None) else None
+            if not data:
+                # fallback: try loading last upload from storage
+                from candle_patterns.storage import list_uploads, get_upload
+                rows = list_uploads(limit=1)
+                if rows:
+                    rec = get_upload(rows[0]['id'])
+                    import pandas as _pd
+                    df_all = _pd.read_csv(rec['filepath'])
+            if data and not df_all:
+                import pandas as _pd
+                df_all = _pd.DataFrame(data.get('df', []))
+
+            if df_all is not None and len(df_all):
+                df_all['timestamp'] = pd.to_datetime(df_all['timestamp'], utc=True)
+                # find nearest index by timestamp
+                ts = pd.to_datetime(x)
+                idx = df_all.index[(df_all['timestamp'] - ts).abs().argsort()[:1]][0]
+                start = max(0, idx - 5)
+                end = min(len(df_all)-1, idx + 5)
+                window = df_all.iloc[start:end+1]
+                mini_fig = go.Figure(data=[go.Candlestick(x=window['timestamp'], open=window['open'], high=window['high'], low=window['low'], close=window['close'])])
+                mini_fig.update_layout(margin=dict(l=0, r=0, t=10, b=0), height=220)
+                body_items.append(dcc.Graph(figure=mini_fig, config={'displayModeBar': False}))
+        except Exception as e:
+            logger.debug('mini-chart build error: %s', e)
+        body = html.Div(body_items)
         return True, body
     return False, ""
 
@@ -342,6 +385,29 @@ def export_aggregated(n, data):
     summary = summarize_detections(pd.DataFrame(data["df"]), data.get("patterns", []))
     df = pd.DataFrame(summary)
     return dcc.send_data_frame(df.to_csv, f"aggregated_{data.get('filename','upload')}.csv", index=False)
+
+
+@app.callback(
+    Output("download-asset", "data"),
+    Input("export-chart-btn", "n_clicks"),
+    State("current-data", "data"),
+    prevent_initial_call=True,
+)
+def export_chart(n, data):
+    """Generate a PNG of the current chart and return as download."""
+    if not data:
+        return dash.no_update
+    import plotly.io as pio
+    df = pd.DataFrame(data['df'])
+    df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
+    fig = go.Figure(data=[go.Candlestick(x=df['timestamp'], open=df['open'], high=df['high'], low=df['low'], close=df['close'])])
+    # server-side image export using kaleido
+    try:
+        img_bytes = fig.to_image(format='png', width=1200, height=600, scale=2)
+        return dcc.send_bytes(lambda: img_bytes, f"chart_{data.get('filename','upload')}.png")
+    except Exception as e:
+        logger.exception('export chart failed: %s', e)
+        return dash.no_update
 
 
 @app.callback(
