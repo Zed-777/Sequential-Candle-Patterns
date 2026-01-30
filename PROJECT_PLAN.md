@@ -141,7 +141,7 @@ This document is the canonical, living SSoT for the Sequential Pattern Analysis 
 - Minimal Dash dashboard prototype implemented to upload CSV and annotate detected patterns. Demo notebook created (`notebooks/dashboard_and_ml_demo.ipynb`) to preview charts and run quick JupyterDash demo. **History persistence (SQLite) and History UI added to dashboard**. 뿯½뿯½뿯½਍ഀ
 - Dashboard: added aggregated pattern summary and OPP top-pattern widgets. 뿯½뿯½뿯½਍ഀ
 
-**UI/UX roadmap:** Add pattern toggles, date filters, pattern detail modal, export buttons, a custom sequence input, and Playwright E2E tests. These make the dashboard easier to navigate and allow users to focus on selected patterns or ad-hoc sequences. (Work in progress; see tracker row #26)
+**UI/UX roadmap:** Add pattern toggles, date filters, pattern detail modal, export buttons, a custom sequence input, Playwright E2E tests, and per-pattern sparklines/tooltips. These make the dashboard easier to navigate and allow users to focus on selected patterns or ad-hoc sequences. (See tracker row #26 — sparkline & modal upgrades implemented; demo button 'Load sample' added for quick inspection.)
 
 
 **Viewing the dashboard locally:** Run `python -m candle_patterns.dashboard` or build and run the Docker image and map port `8050` (e.g. `docker run -p 8050:8050 candle-patterns:0.1.0`). The Dash server listens on `http://localhost:8050`.

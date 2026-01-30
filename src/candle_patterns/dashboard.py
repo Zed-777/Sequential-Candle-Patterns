@@ -39,6 +39,8 @@ sidebar = dbc.Card(
             [
                 html.H5("Controls", className="card-title"),
                 dcc.Upload(id="upload-data", children=dbc.Button("Select CSV", color="secondary", className="mb-2")),
+                dbc.Button("Load sample data", id="load-sample-btn", color="primary", className="ms-2 mb-2"),
+                html.Div(html.Small("Tip: click 'Load sample data' to populate the dashboard with a curated BTC-like sample for demo."), style={"marginTop": "6px", "color": "#555"}),
                 html.Div(id="upload-status", style={"marginTop": "8px"}),
                 html.Hr(),
                 html.H6("Filters"),
@@ -208,7 +210,41 @@ def apply_filters(data, selected_patterns, start_date, end_date):
     # aggregated
     summary = summarize_detections(pd.DataFrame(data["df"]), patterns)
     if summary:
-        agg_table = html.Div([html.H5("Aggregated pattern summary"), html.Table([html.Tr([html.Th(c) for c in ["pattern","count","support","avg_return","win_rate"]])] + [html.Tr([html.Td(r['pattern']), html.Td(r['count']), html.Td(f"{r['support']:.3f}"), html.Td(f"{r['avg_return']:.4f}"), html.Td(f"{r['win_rate']:.2%}" ) ]) for r in summary])])
+        # compute sparkline series per pattern
+        from candle_patterns.reporting import pattern_sparkline_series
+
+        spark_map = pattern_sparkline_series(pd.DataFrame(data["df"]), patterns, horizon=6)
+
+        rows = [html.Tr([html.Th(c) for c in ["pattern", "count", "support", "avg_return", "win_rate", "trend"]])]
+        for r in summary:
+            pname = r["pattern"]
+            series = spark_map.get(pname, [])
+            # build mini sparkline
+            mini_fig = go.Figure(data=[go.Scatter(x=list(range(len(series))), y=series, mode="lines", line=dict(width=2), hoverinfo='y')])
+            mini_fig.update_layout(margin=dict(l=0, r=0, t=2, b=0), height=60, xaxis=dict(visible=False), yaxis=dict(visible=False))
+
+            # info icon with native tooltip (title)
+            PATTERN_EXPLANATIONS = {
+                "doji": "Small body; open and close are near. Indicates indecision.",
+                "hammer": "Small body with long lower wick; potential bullish reversal.",
+                "bullish_engulfing": "A bullish candle that fully engulfs the prior bearish candle.",
+                "morning_star": "Three-candle bullish reversal pattern.",
+            }
+            expl = PATTERN_EXPLANATIONS.get(pname, "")
+            info_icon = html.Span(" ℹ️", title=expl, style={"cursor": "help"})
+
+            rows.append(
+                html.Tr([
+                    html.Td([html.Span(pname), info_icon]),
+                    html.Td(r["count"]),
+                    html.Td(f"{r['support']:.3f}"),
+                    html.Td(f"{r['avg_return']:.4f}"),
+                    html.Td(f"{r['win_rate']:.2%}"),
+                    html.Td(dcc.Graph(figure=mini_fig, config={"displayModeBar": False}, style={"height": "60px"})),
+                ])
+            )
+
+        agg_table = html.Div([html.H5("Aggregated pattern summary"), html.Table(rows)])
     else:
         agg_table = html.Div("No detections found")
 
@@ -412,25 +448,62 @@ def export_chart(n, data):
 
 @app.callback(
     Output("current-data", "data"),
+    Output("upload-status", "children"),
     Input("history-select", "value"),
+    Input("load-sample-btn", "n_clicks"),
+    prevent_initial_call=True,
 )
-def load_history(upload_id):
-    if not upload_id:
-        return None
-    from candle_patterns.storage import get_upload
-
-    rec = get_upload(upload_id)
-    if not rec:
-        return None
-    df = pd.read_csv(rec["filepath"]) if rec.get("filepath") else pd.DataFrame()
-    patterns = []
+def load_history_or_sample(upload_id, sample_clicks):
+    """Load from history (when selected) or load a curated sample when the button is clicked."""
     from pathlib import Path
+    from candle_patterns.storage import get_upload, save_upload
 
-    if rec.get("detections_path") and Path(rec.get("detections_path")).exists():
-        patterns = pd.read_csv(rec.get("detections_path")).to_dict("records")
+    # load from history if dropdown used
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return None, ""
+    trig = ctx.triggered[0]["prop_id"].split(".")[0]
+    if trig == "history-select":
+        if not upload_id:
+            return None, ""
+        rec = get_upload(upload_id)
+        if not rec:
+            return None, ""
+        df = pd.read_csv(rec["filepath"]) if rec.get("filepath") else pd.DataFrame()
+        patterns = []
+        if rec.get("detections_path") and Path(rec.get("detections_path")).exists():
+            patterns = pd.read_csv(rec.get("detections_path")).to_dict("records")
+        data = {"filename": rec.get("filename"), "upload_id": rec.get("id"), "df": df.to_dict("records"), "patterns": patterns}
+        return data, f"Loaded: {rec.get('filename')}"
 
-    data = {"filename": rec.get("filename"), "upload_id": rec.get("id"), "df": df.to_dict("records"), "patterns": patterns}
-    return data
+    # else: load sample
+    sample_path = Path("data/samples/sample_synthetic.csv")
+    if not sample_path.exists():
+        # create a small synthetic BTC-like dataset if missing
+        import numpy as np
+        import pandas as _pd
+        import datetime
+
+        dates = pd.date_range(end=pd.Timestamp.utcnow(), periods=200, freq="H")
+        price = 20000 + np.cumsum(np.random.randn(len(dates)) * 50)
+        open_p = price + np.random.randn(len(dates)) * 5
+        close_p = price + np.random.randn(len(dates)) * 5
+        high_p = np.maximum(open_p, close_p) + np.abs(np.random.randn(len(dates)) * 10)
+        low_p = np.minimum(open_p, close_p) - np.abs(np.random.randn(len(dates)) * 10)
+        sdf = _pd.DataFrame({"timestamp": dates.astype(str), "open": open_p, "high": high_p, "low": low_p, "close": close_p})
+        sample_path.parent.mkdir(parents=True, exist_ok=True)
+        sdf.to_csv(sample_path, index=False)
+
+    df = pd.read_csv(sample_path)
+    df["timestamp"] = pd.to_datetime(df["timestamp"]).dt.tz_localize("UTC") if not pd.api.types.is_datetime64_any_dtype(df["timestamp"]) else df["timestamp"]
+    patterns = detect_patterns(df)
+    try:
+        upload_id = save_upload(sample_path.name, df, patterns)
+    except Exception:
+        upload_id = None
+
+    data = {"filename": sample_path.name, "upload_id": upload_id, "df": df.to_dict("records"), "patterns": patterns}
+    return data, f"Loaded sample: {sample_path.name}"
 
 
 if __name__ == "__main__":
