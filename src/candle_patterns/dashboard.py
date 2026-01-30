@@ -171,8 +171,23 @@ def on_upload(contents, filename):
     Input("date-range", "end_date"),
 )
 def apply_filters(data, selected_patterns, start_date, end_date):
+    # If no data is present, display empty-state placeholders so the UI structure is visible
     if not data:
-        return go.Figure(), "", "", "", [], []
+        # placeholder figure with message
+        fig = go.Figure()
+        fig.add_annotation(text="No data loaded — upload CSV or click 'Load sample data' to begin", showarrow=False, xref='paper', yref='paper', x=0.5, y=0.5, font=dict(size=16, color='gray'))
+        fig.update_layout(xaxis=dict(visible=False), yaxis=dict(visible=False), template='simple_white')
+
+        placeholder_instructions = html.Div([
+            html.H5("No data loaded"),
+            html.P("Upload a CSV or click 'Load sample data' on the left to populate the dashboard for inspection."),
+            html.Ul([html.Li("Upload CSV: Provide timestamp/open/high/low/close columns"), html.Li("Load sample: Use curated BTC-like sample"), html.Li("Custom sequence: Enter sequence tokens like '3R -> Doji -> G'")])
+        ], style={"padding": "10px"})
+
+        agg_placeholder = html.Div([html.H5("Aggregated pattern summary"), html.P("No data available")])
+        opp_placeholder = html.Div([html.H5("Top OPP patterns"), html.P("No data available")])
+
+        return fig, placeholder_instructions, agg_placeholder, opp_placeholder, [], []
 
     df = pd.DataFrame(data["df"])
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)

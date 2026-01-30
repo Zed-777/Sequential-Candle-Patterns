@@ -14,6 +14,8 @@ async def test_basic_ui(page):
     assert await page.locator('#tabs').count() == 1
     # check export buttons
     assert await page.locator('#export-detections-btn').count() == 1
+    # check that empty-state instructions are visible before upload
+    assert await page.locator("text=No data loaded").count() >= 1
     # run a quick custom sequence to validate it works
     await page.fill('#custom-seq-input', '1R -> 1G')
     await page.click('#run-custom-seq-btn')
