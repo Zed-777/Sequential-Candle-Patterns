@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 
+import logging
 import dash
 import dash_bootstrap_components as dbc
 
@@ -9,6 +10,8 @@ from dash import html, dcc, Input, Output, State
 import plotly.graph_objects as go
 
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 from candle_patterns.ingestion import load_csv
 
@@ -524,4 +527,14 @@ def load_history_or_sample(upload_id, sample_clicks):
 if __name__ == "__main__":
 
     # Bind to all interfaces so the server is reachable from host and container scenarios
-    app.run(host="0.0.0.0", port=8050, debug=False)
+    import sys
+    try:
+        app.run(host="0.0.0.0", port=8050, debug=False, use_reloader=False, threaded=True)
+    except KeyboardInterrupt:
+        print("\nShutdown requested.")
+        sys.exit(0)
+    except Exception as e:
+        print(f"Server error: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
