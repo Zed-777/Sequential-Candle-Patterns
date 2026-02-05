@@ -467,40 +467,24 @@ def export_chart(n, data):
 @app.callback(
     Output("current-data", "data"),
     Output("upload-status", "children"),
-    Input("history-select", "value"),
     Input("load-sample-btn", "n_clicks"),
     prevent_initial_call=True,
 )
-def load_history_or_sample(upload_id, sample_clicks):
-    """Load from history (when selected) or load a curated sample when the button is clicked."""
-    from pathlib import Path
-    from candle_patterns.storage import get_upload, save_upload
-
-    # load from history if dropdown used
-    ctx = dash.callback_context
-    if not ctx.triggered:
+def load_sample_data(n_clicks):
+    """Load sample data when button is clicked."""
+    if n_clicks is None or n_clicks == 0:
         return None, ""
-    trig = ctx.triggered[0]["prop_id"].split(".")[0]
-    if trig == "history-select":
-        if not upload_id:
-            return None, ""
-        rec = get_upload(upload_id)
-        if not rec:
-            return None, ""
-        df = pd.read_csv(rec["filepath"]) if rec.get("filepath") else pd.DataFrame()
-        patterns = []
-        if rec.get("detections_path") and Path(rec.get("detections_path")).exists():
-            patterns = pd.read_csv(rec.get("detections_path")).to_dict("records")
-        data = {"filename": rec.get("filename"), "upload_id": rec.get("id"), "df": df.to_dict("records"), "patterns": patterns}
-        return data, f"Loaded: {rec.get('filename')}"
+    
+    logger.info(f"Load sample button clicked (n_clicks={n_clicks})")
+    from pathlib import Path
+    from candle_patterns.storage import save_upload
 
-    # else: load sample
     sample_path = Path("data/samples/sample_synthetic.csv")
+    
     if not sample_path.exists():
-        # create a small synthetic BTC-like dataset if missing
+        logger.info("Generating synthetic sample data...")
         import numpy as np
         import pandas as _pd
-        import datetime
 
         dates = pd.date_range(end=pd.Timestamp.utcnow(), periods=200, freq="H")
         price = 20000 + np.cumsum(np.random.randn(len(dates)) * 50)
@@ -508,20 +492,78 @@ def load_history_or_sample(upload_id, sample_clicks):
         close_p = price + np.random.randn(len(dates)) * 5
         high_p = np.maximum(open_p, close_p) + np.abs(np.random.randn(len(dates)) * 10)
         low_p = np.minimum(open_p, close_p) - np.abs(np.random.randn(len(dates)) * 10)
-        sdf = _pd.DataFrame({"timestamp": dates.astype(str), "open": open_p, "high": high_p, "low": low_p, "close": close_p})
+        sdf = _pd.DataFrame({
+            "timestamp": dates.astype(str),
+            "open": open_p,
+            "high": high_p,
+            "low": low_p,
+            "close": close_p
+        })
         sample_path.parent.mkdir(parents=True, exist_ok=True)
         sdf.to_csv(sample_path, index=False)
+        logger.info(f"Generated synthetic sample to {sample_path}")
 
     df = pd.read_csv(sample_path)
-    df["timestamp"] = pd.to_datetime(df["timestamp"]).dt.tz_localize("UTC") if not pd.api.types.is_datetime64_any_dtype(df["timestamp"]) else df["timestamp"]
+    if not pd.api.types.is_datetime64_any_dtype(df["timestamp"]):
+        df["timestamp"] = pd.to_datetime(df["timestamp"]).dt.tz_localize("UTC")
+    
+    logger.info(f"Detecting patterns in sample data...")
     patterns = detect_patterns(df)
+    logger.info(f"Detected {len(patterns)} patterns")
+    
     try:
-        upload_id = save_upload(sample_path.name, df, patterns)
-    except Exception:
-        upload_id = None
+        uid = save_upload(sample_path.name, df, patterns)
+        logger.info(f"Saved sample to DB with upload_id: {uid}")
+    except Exception as e:
+        logger.exception(f"Failed to save sample: {e}")
+        uid = None
 
-    data = {"filename": sample_path.name, "upload_id": upload_id, "df": df.to_dict("records"), "patterns": patterns}
-    return data, f"Loaded sample: {sample_path.name}"
+    data = {
+        "filename": sample_path.name,
+        "upload_id": uid,
+        "df": df.to_dict("records"),
+        "patterns": patterns
+    }
+    msg = f"✓ Loaded sample: {len(patterns)} patterns detected"
+    logger.info(msg)
+    return data, msg
+
+
+@app.callback(
+    Output("current-data", "data"),
+    Output("upload-status", "children"),
+    Input("history-select", "value"),
+    prevent_initial_call=True,
+)
+def load_from_history(upload_id):
+    """Load data from history when a past upload is selected."""
+    if not upload_id:
+        logger.debug("No upload_id selected")
+        return None, ""
+    
+    logger.info(f"Loading from history: upload_id={upload_id}")
+    from pathlib import Path
+    from candle_patterns.storage import get_upload
+
+    rec = get_upload(upload_id)
+    if not rec:
+        logger.warning(f"No record found for upload_id: {upload_id}")
+        return None, ""
+    
+    df = pd.read_csv(rec["filepath"]) if rec.get("filepath") else pd.DataFrame()
+    patterns = []
+    if rec.get("detections_path") and Path(rec.get("detections_path")).exists():
+        patterns = pd.read_csv(rec.get("detections_path")).to_dict("records")
+    
+    data = {
+        "filename": rec.get("filename"),
+        "upload_id": rec.get("id"),
+        "df": df.to_dict("records"),
+        "patterns": patterns
+    }
+    msg = f"Loaded: {rec.get('filename')}"
+    logger.info(msg)
+    return data, msg
 
 
 if __name__ == "__main__":
