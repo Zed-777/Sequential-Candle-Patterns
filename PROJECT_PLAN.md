@@ -57,31 +57,31 @@ The Candle Patterns Sequential Pattern Analysis System is **production-ready** w
 
 ## MVP Features - All Complete
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| CSV Ingestion | ✅ DONE | OHLCV validation, multiple format support |
-| Pattern Detection (10+) | ✅ DONE | All patterns tested and working |
-| Dashboard | ✅ DONE | Upload, filters, history, exports, OPP miner |
-| SQLite Persistence | ✅ DONE | 30-day auto-cleanup |
-| CLI Tools | ✅ DONE | run, list, export, cleanup commands |
-| ML Baseline | ✅ DONE | RandomForest with feature engineering |
-| Backtesting | ✅ DONE | Sharpe ratio, drawdown, win rate, profit factor |
-| Unit Tests | ✅ DONE | 38 tests, 100% pass rate |
-| Docker | ✅ DONE | Multi-stage build, CI automation |
-| Release v0.1.0 | ✅ DONE | Published and tagged |
+| Feature             | Status | Notes                                             |
+|---|---|---|
+| CSV Ingestion       | DONE   | OHLCV validation, multiple format support         |
+| Pattern Detection   | DONE   | 10+ patterns tested and working                   |
+| Dashboard           | DONE   | Upload, filters, history, exports, OPP miner     |
+| SQLite Persistence  | DONE   | 30-day auto-cleanup                               |
+| CLI Tools           | DONE   | run, list, export, cleanup commands               |
+| ML Baseline         | DONE   | RandomForest with feature engineering             |
+| Backtesting         | DONE   | Sharpe ratio, drawdown, win rate, profit factor  |
+| Unit Tests          | DONE   | 38 tests, 100% pass rate                          |
+| Docker              | DONE   | Multi-stage build, CI automation                  |
+| Release v0.1.0      | DONE   | Published and tagged                              |
 
 ---
 
 ## Remaining Tasks (Phase 2)
 
-| ID | Task | Priority | Status | Owner | Duration |
-|----|------|----------|--------|-------|----------|
-| 33 | Expand Pattern Catalog to 15+ | P1 | TO DO | @bob | 2-4 hours |
-| 34 | ML-CLI Integration | P1 | TO DO | @alice | 1-2 hours |
-| 35 | E2E Playwright Tests | P2 | TO DO | @qa | 3-4 hours |
-| 36 | GDPR/Security Documentation | P2 | TO DO | @security | 2-3 hours |
-| 37 | Publish Docker to GHCR | P1 | TO DO | @devops | 30 min |
-| 38 | Final Documentation Updates | P0 | TO DO | @doc | 1 hour |
+| ID | Task                                  | Priority | Status | Owner     | Duration   |
+|---|---|---|---|---|---|
+| 33 | Expand Pattern Catalog to 15+         | P1       | TO DO  | @bob      | 2-4 hours  |
+| 34 | ML-CLI Integration                    | P1       | TO DO  | @alice    | 1-2 hours  |
+| 35 | E2E Playwright Tests                  | P2       | TO DO  | @qa       | 3-4 hours  |
+| 36 | GDPR/Security Documentation           | P2       | TO DO  | @security | 2-3 hours  |
+| 37 | Publish Docker to GHCR                | P1       | TO DO  | @devops   | 30 min      |
+| 38 | Final Documentation Updates           | P0       | TO DO  | @doc      | 1 hour      |
 
 **Total Phase 2 Estimate**: 10-14 hours
 
@@ -114,7 +114,7 @@ candle-patterns/
 
 ## Test Coverage Report
 
-```
+```text
 Unit Tests: 38/38 PASSING ✅
 
 ├── Detection Tests ................. 1 test ✅
@@ -165,15 +165,15 @@ Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 
 ## Success Criteria (MVP)
 
-| Criterion | Target | Actual | Status |
-|-----------|--------|--------|--------|
-| MVP Features Complete | All | All | ✅ PASS |
-| Unit Tests Passing | 100% | 38/38 | ✅ PASS |
-| Code Coverage | 80%+ | 80%+ | ✅ PASS |
-| Docker Build | Success | Success | ✅ PASS |
-| Dashboard Functional | Yes | Yes | ✅ PASS |
-| CLI Working | Yes | Yes | ✅ PASS |
-| Release Published | Yes | v0.1.0 | ✅ PASS |
+| Criterion              | Target  | Actual | Status |
+|---|---|---|---|
+| MVP Features Complete  | All     | All    | PASS   |
+| Unit Tests Passing     | 100%    | 38/38  | PASS   |
+| Code Coverage          | 80%+    | 80%+   | PASS   |
+| Docker Build           | Success | Success| PASS   |
+| Dashboard Functional   | Yes     | Yes    | PASS   |
+| CLI Working            | Yes     | Yes    | PASS   |
+| Release Published      | Yes     | v0.1.0 | PASS   |
 
 ---
 
@@ -181,7 +181,7 @@ Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 
 ### Non-Critical
 
-- **Markdown Linting**: 141 violations (UTF-8 encoding issue, cosmetic only)
+- **Markdown Linting**: UTF-8 encoding issue (cosmetic only)
 - **E2E Tests**: Playwright fixtures not configured (unit tests sufficient)
 
 ### Deferred to Phase 2
@@ -195,13 +195,13 @@ Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 
 ## Performance Metrics
 
-| Metric | Value | Context |
-|--------|-------|---------|
-| Test Suite Time | 26.13s | All 38 tests on Windows |
-| Pattern Detection | ~100/sec | Data dependent |
-| Dashboard Load | <2s | Plotly rendering included |
-| ML Training | ~5.2s | RandomForest, 100 est |
-| Backtesting | ~1.1s | 200 candlesticks, all patterns |
+| Metric              | Value    | Context                           |
+| ------------------- | -------- | --------------------------------- |
+| Test Suite Time     | 26.13s   | All 38 tests on Windows           |
+| Pattern Detection   | ~100/sec | Data dependent                    |
+| Dashboard Load      | <2s      | Plotly rendering included         |
+| ML Training         | ~5.2s    | RandomForest, 100 estimators      |
+| Backtesting         | ~1.1s    | 200 candlesticks, all patterns    |
 
 ---
 
@@ -263,9 +263,9 @@ Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 
 ## Resources
 
-- **Repository**: https://github.com/Zed-777/candle-patterns
+- **Repository**: <https://github.com/Zed-777/candle-patterns>
 - **Documentation**: [README.md](README.md), [PATTERN_CATALOG.md](PATTERN_CATALOG.md)
-- **Dashboard**: http://localhost:8050 (via `python dashboard_launcher.py`)
+- **Dashboard**: <http://localhost:8050> (via `python dashboard_launcher.py`)
 - **Quick Start**: See [DASHBOARD_README.md](DASHBOARD_README.md)
 
 ---

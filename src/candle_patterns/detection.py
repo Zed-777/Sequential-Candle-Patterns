@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 
+import logging
 import pandas as pd
 
 from typing import List, Dict, Any
 
 from .patterns import find_sequence_occurrences
+
+logger = logging.getLogger(__name__)
 
 
 def candle_color(row: pd.Series) -> str:

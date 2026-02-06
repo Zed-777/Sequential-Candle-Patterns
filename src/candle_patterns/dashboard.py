@@ -5,7 +5,8 @@ import logging
 import dash
 import dash_bootstrap_components as dbc
 
-from dash import html, dcc, Input, Output, State
+from dash import html, dcc, Input, Output, State, callback_context
+from dash.dcc.express import send_data_frame, send_bytes
 
 import plotly.graph_objects as go
 
@@ -218,7 +219,10 @@ def apply_filters(data, selected_patterns, start_date, end_date):
 
     for p in filtered_patterns:
         try:
-            fig.add_trace(go.Scatter(x=[p["timestamp"]], y=[df.loc[df["timestamp"]==p["timestamp"], "high"].iat[0]], mode='markers+text', text=[p["pattern"]], name=p["pattern"], marker=dict(size=10)))
+            high_series = df.loc[df["timestamp"]==p["timestamp"], "high"]
+            if isinstance(high_series, pd.Series) and len(high_series) > 0:
+                high_value = float(high_series.iloc[0])
+                fig.add_trace(go.Scatter(x=[p["timestamp"]], y=[high_value], mode='markers+text', text=[p["pattern"]], name=p["pattern"], marker=dict(size=10)))
         except Exception:
             continue
 
@@ -338,7 +342,7 @@ def run_custom_sequence(n, seq_str, data):
 )
 def show_pattern_detail(clickData, nclose, is_open):
     """Open modal and show details when a pattern marker is clicked."""
-    ctx = dash.callback_context
+    ctx = callback_context
     if not ctx.triggered:
         return False, ""
     trig = ctx.triggered[0]["prop_id"].split(".")[0]
@@ -354,22 +358,23 @@ def show_pattern_detail(clickData, nclose, is_open):
             df_all = None
             # get current-data from server-side via storage (best-effort)
             # we will parse out a small window
-            cid = dash.ctx.triggered[0]['value'] if dash.callback_context and dash.callback_context.triggered else None
+            cid = callback_context.triggered[0]['value'] if callback_context and callback_context.triggered else None
         except Exception:
             df_all = None
-        body_items = [html.P(f"Pattern: {txt}"), html.P(f"Timestamp: {x}"), html.P("Click Export to download detections CSV for details.")]
+        body_items: list = [html.P(f"Pattern: {txt}"), html.P(f"Timestamp: {x}"), html.P("Click Export to download detections CSV for details.")]
         try:
             # Attempt to create a mini-chart using the global data if accessible via server memory
-            data = dash.callback_context.states.get('current-data.data') if dash.callback_context and getattr(dash.callback_context, 'states', None) else None
+            data = callback_context.states.get('current-data.data') if callback_context and getattr(callback_context, 'states', None) else None
             if not data:
                 # fallback: try loading last upload from storage
                 from candle_patterns.storage import list_uploads, get_upload
                 rows = list_uploads(limit=1)
                 if rows:
                     rec = get_upload(rows[0]['id'])
-                    import pandas as _pd
-                    df_all = _pd.read_csv(rec['filepath'])
-            if data and not df_all:
+                    if rec and 'filepath' in rec:
+                        import pandas as _pd
+                        df_all = _pd.read_csv(rec['filepath'])
+            if data and df_all is None:
                 import pandas as _pd
                 df_all = _pd.DataFrame(data.get('df', []))
 
@@ -424,7 +429,7 @@ def export_detections(n, data):
     if not data:
         return dash.no_update
     df = pd.DataFrame(data.get("patterns", []))
-    return dcc.send_data_frame(df.to_csv, f"detections_{data.get('filename','upload')}.csv", index=False)
+    return send_data_frame(df.to_csv, f"detections_{data.get('filename','upload')}.csv", index=False)
 
 
 @app.callback(
@@ -438,7 +443,7 @@ def export_aggregated(n, data):
         return dash.no_update
     summary = summarize_detections(pd.DataFrame(data["df"]), data.get("patterns", []))
     df = pd.DataFrame(summary)
-    return dcc.send_data_frame(df.to_csv, f"aggregated_{data.get('filename','upload')}.csv", index=False)
+    return send_data_frame(df.to_csv, f"aggregated_{data.get('filename','upload')}.csv", index=False)
 
 
 @app.callback(
@@ -458,7 +463,7 @@ def export_chart(n, data):
     # server-side image export using kaleido
     try:
         img_bytes = fig.to_image(format='png', width=1200, height=600, scale=2)
-        return dcc.send_bytes(lambda: img_bytes, f"chart_{data.get('filename','upload')}.png")
+        return send_bytes(lambda: img_bytes, f"chart_{data.get('filename','upload')}.png")
     except Exception as e:
         logger.exception('export chart failed: %s', e)
         return dash.no_update
@@ -552,8 +557,9 @@ def load_from_history(upload_id):
     
     df = pd.read_csv(rec["filepath"]) if rec.get("filepath") else pd.DataFrame()
     patterns = []
-    if rec.get("detections_path") and Path(rec.get("detections_path")).exists():
-        patterns = pd.read_csv(rec.get("detections_path")).to_dict("records")
+    detections_path = rec.get("detections_path")
+    if detections_path and isinstance(detections_path, str) and Path(detections_path).exists():
+        patterns = pd.read_csv(detections_path).to_dict("records")
     
     data = {
         "filename": rec.get("filename"),
