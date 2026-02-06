@@ -10,23 +10,24 @@
 
 The Candle Patterns Sequential Pattern Analysis System is **production-ready** with all MVP features complete:
 
-✅ CSV ingestion with validation  
-✅ 10+ rule-based pattern detectors  
-✅ Dash web dashboard with interactive charts  
-✅ ML baseline model (RandomForest classifier)  
-✅ Backtesting engine with Sharpe ratio & drawdown  
-✅ SQLite persistence with 30-day cleanup  
-✅ CLI tools (analyzer run, list, export, cleanup)  
-✅ Docker containerization  
-✅ GitHub Actions CI/CD pipeline  
-✅ Release v0.1.0 published  
-✅ 38/38 unit tests passing (100% pass rate)
+- ✅ CSV ingestion with validation
+- ✅ 10+ rule-based pattern detectors
+- ✅ Dash web dashboard with interactive charts
+- ✅ ML baseline model (RandomForest classifier)
+- ✅ Backtesting engine with Sharpe ratio & drawdown
+- ✅ SQLite persistence with 30-day cleanup
+- ✅ CLI tools (analyzer run, list, export, cleanup)
+- ✅ Docker containerization
+- ✅ GitHub Actions CI/CD pipeline
+- ✅ Release v0.1.0 published
+- ✅ 38/38 unit tests passing (100% pass rate)
 
 ---
 
 ## Recent Progress (This Sprint)
 
 ### Completed Tasks
+
 1. **Fixed Load Sample Data Button** (Priority 0)
    - Split callback into separate functions
    - Generates 200 candlesticks + 21 patterns
@@ -73,8 +74,8 @@ The Candle Patterns Sequential Pattern Analysis System is **production-ready** w
 
 ## Remaining Tasks (Phase 2)
 
-| ID | Task | Priority | Status | Owner | Est. Duration |
-|----|------|----------|--------|-------|---|
+| ID | Task | Priority | Status | Owner | Duration |
+|----|------|----------|--------|-------|----------|
 | 33 | Expand Pattern Catalog to 15+ | P1 | TO DO | @bob | 2-4 hours |
 | 34 | ML-CLI Integration | P1 | TO DO | @alice | 1-2 hours |
 | 35 | E2E Playwright Tests | P2 | TO DO | @qa | 3-4 hours |
@@ -88,7 +89,7 @@ The Candle Patterns Sequential Pattern Analysis System is **production-ready** w
 
 ## Architecture Overview
 
-```
+```bash
 candle-patterns/
 ├── src/candle_patterns/
 │   ├── __main__.py ..................... CLI entry point
@@ -114,7 +115,8 @@ candle-patterns/
 ## Test Coverage Report
 
 ```
-Unit Tests: 38/38 PASSING (100%)
+Unit Tests: 38/38 PASSING ✅
+
 ├── Detection Tests ................. 1 test ✅
 ├── Ingestion Tests ................. 2 tests ✅
 ├── Storage Tests ................... 4 tests ✅
@@ -136,21 +138,25 @@ Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 ## Decision Log
 
 ### Decision 1: Test Framework
+
 **Status**: ✅ IMPLEMENTED  
 **Choice**: pytest with 80% coverage enforcement  
 **Rationale**: Industry standard, CI integration, good plugin ecosystem
 
 ### Decision 2: ML Framework
+
 **Status**: ✅ IMPLEMENTED  
 **Choice**: scikit-learn RandomForest (expandable to XGBoost/LightGBM)  
 **Rationale**: Mature, interpretable, good for baseline
 
 ### Decision 3: Docker Strategy
+
 **Status**: ✅ BUILDING  
 **Choice**: Multi-stage build, GitHub Container Registry  
 **Rationale**: Smaller images, native GitHub integration
 
 ### Decision 4: Documentation Approach
+
 **Status**: ✅ IN PLACE  
 **Choice**: Markdown in repo, SSoT pattern  
 **Rationale**: Version controlled, searchable, collaborative
@@ -174,10 +180,12 @@ Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 ## Known Issues & Limitations
 
 ### Non-Critical
+
 - **Markdown Linting**: 141 violations (UTF-8 encoding issue, cosmetic only)
 - **E2E Tests**: Playwright fixtures not configured (unit tests sufficient)
 
 ### Deferred to Phase 2
+
 - Pattern catalog expansion (10→15+ patterns)
 - Advanced ML models (XGBoost, neural networks)
 - GDPR/security documentation
@@ -190,9 +198,9 @@ Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 | Metric | Value | Context |
 |--------|-------|---------|
 | Test Suite Time | 26.13s | All 38 tests on Windows |
-| Pattern Detection | ~100 patterns/sec | Depends on data size |
+| Pattern Detection | ~100/sec | Data dependent |
 | Dashboard Load | <2s | Plotly rendering included |
-| ML Training | ~5.2s | RandomForest, 100 estimators |
+| ML Training | ~5.2s | RandomForest, 100 est |
 | Backtesting | ~1.1s | 200 candlesticks, all patterns |
 
 ---
@@ -200,24 +208,28 @@ Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 ## Next Steps (Immediate)
 
 ### Week 1: Feature Expansion
+
 - [ ] Add 7-8 new pattern detectors (Hanging Man, Shooting Star, etc.)
 - [ ] Write unit tests for each new pattern
 - [ ] Update PATTERN_CATALOG.md
 - Est: 2-4 hours
 
 ### Week 2: ML Integration
+
 - [ ] Add `analyzer train` command
 - [ ] Add `analyzer predict` command
 - [ ] Add `analyzer backtest` command
 - Est: 2-3 hours
 
 ### Week 3: Testing & Polish
+
 - [ ] E2E Playwright tests
 - [ ] Visual regression testing
 - [ ] Performance optimization
 - Est: 3-4 hours
 
 ### Week 4: Production Hardening
+
 - [ ] GDPR documentation
 - [ ] Security audit
 - [ ] Docker publish to GHCR

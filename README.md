@@ -4,7 +4,8 @@
 
 This repository contains the Sequential Pattern Analysis System (CSV → patterns → dashboard/CLI/notebook).
 
-Quickstart
+## Quickstart
+
 1. Local env (recommended): run the venv setup script to create `.venv` and install dev deps:
    - Windows (PowerShell): `scripts\setup_venv.ps1`
    - macOS / Linux: `scripts/setup_venv.sh`
@@ -12,7 +13,9 @@ Quickstart
 2. (Optional) Conda: CI uses Miniforge/Conda; if you prefer conda locally see `scripts/setup_conda_sample.sh` (not required).
 3. Activate the `.venv` and start the Dash app: `python -m dash` (or follow the dashboard README).
 
-Build & run via Docker (lightweight example):
+## Build & Run via Docker
+
+Lightweight example:
 
 ```bash
 # build
@@ -27,7 +30,8 @@ Note: CI collects coverage and **enforces a minimum threshold** (`--cov-fail-und
 
 Current status: unit tests and integration test pass locally in `.venv`; branch `feature/mvp-next-clean` is ready for PR and review.
 
-Files of interest:
+## Files of Interest
+
 - `PROJECT_PLAN.md` — canonical Single Source of Truth (SSoT)
 - `progress_tracker.csv` — project tracker
 - `requirements.txt` / `dev-requirements.txt` — dependencies
