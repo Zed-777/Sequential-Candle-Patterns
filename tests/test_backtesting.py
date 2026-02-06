@@ -4,7 +4,7 @@ Tests for the backtesting module.
 import pytest
 import pandas as pd
 import numpy as np
-from candle_patterns.backtesting import BacktestEngine, evaluate_pattern_profitability
+from candle_patterns.backtesting import BacktestEngine, evaluate_pattern_profitability  # type: ignore
 
 
 @pytest.fixture

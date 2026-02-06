@@ -269,10 +269,10 @@ class BacktestEngine:
         if len(trades) == 0:
             return pd.Series([initial_capital])
         
-        profits = trades['profit'].values
-        equity = initial_capital + np.cumsum(profits)
+        profits = trades['profit'].astype(float)
+        equity = initial_capital + profits.cumsum()
         
-        return pd.Series(equity)
+        return pd.Series(equity.values)
 
 
 def evaluate_pattern_profitability(

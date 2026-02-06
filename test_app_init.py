@@ -8,7 +8,7 @@ sys.path.insert(0, 'src')
 
 print("Step 1: Importing dashboard module...")
 try:
-    from candle_patterns.dashboard import app, server
+    from candle_patterns.dashboard import app, server  # type: ignore
     print("✓ Dashboard imported successfully")
     print(f"✓ App object: {app}")
     print(f"✓ Server object: {server}")

@@ -2,9 +2,9 @@ import os
 import time
 import pandas as pd
 from typer.testing import CliRunner
-from candle_patterns.cli import app as cli_app
+from candle_patterns.cli import app as cli_app  # type: ignore
 
-from candle_patterns import storage
+from candle_patterns import storage  # type: ignore
 
 
 def test_cleanup_old_uploads(tmp_path, monkeypatch):

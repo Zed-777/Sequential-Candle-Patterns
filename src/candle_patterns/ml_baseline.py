@@ -12,7 +12,7 @@ Includes:
 import logging
 import pickle
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Union
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
@@ -41,7 +41,7 @@ class PatternMLModel:
         self, 
         df: pd.DataFrame, 
         patterns: List[Dict]
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    ) -> Tuple[pd.DataFrame, pd.Series]:
         """
         Engineer features from OHLC data and detected patterns.
         
@@ -72,10 +72,11 @@ class PatternMLModel:
         df['volume_ma'] = df['volume'].rolling(5).mean() if 'volume' in df.columns else 1.0
         
         # Pattern features
-        df['pattern_count'] = 0
+        pattern_counts = []
         for idx, row in df.iterrows():
             pattern_names = [p['pattern'] for p in patterns if p['timestamp'] == row['timestamp']]
-            df.at[idx, 'pattern_count'] = len(pattern_names)
+            pattern_counts.append(len(pattern_names))
+        df['pattern_count'] = pattern_counts
         
         # Select features for modeling
         feature_cols = [
@@ -95,7 +96,7 @@ class PatternMLModel:
     def train(
         self, 
         X: pd.DataFrame, 
-        y: pd.Series,
+        y: Union[pd.Series, pd.DataFrame],
         test_size: float = 0.2,
         random_state: int = 42
     ) -> Dict:
@@ -151,7 +152,7 @@ class PatternMLModel:
         
         return self.metrics
 
-    def cross_validate(self, X: pd.DataFrame, y: pd.Series, n_splits: int = 5) -> Dict:
+    def cross_validate(self, X: pd.DataFrame, y: Union[pd.Series, pd.DataFrame], n_splits: int = 5) -> Dict:
         """
         Perform time series cross-validation.
         
@@ -221,6 +222,8 @@ class PatternMLModel:
         """
         if self.model is None:
             raise ValueError("Model not trained yet")
+        if self.scaler is None:
+            raise ValueError("Scaler not initialized")
         
         X_scaled = self.scaler.transform(X)
         predictions = self.model.predict(X_scaled)
@@ -280,9 +283,10 @@ def train_baseline_model(df: pd.DataFrame, patterns: List[Dict]) -> Dict:
         'cv_results': cv_results,
         'feature_importance': importance_df.to_dict('records'),
         'n_samples': len(X),
-        'n_features': len(model.feature_names),
+        'n_features': len(model.feature_names) if model.feature_names else 0,
     }
     
-    logger.info(f"Model training complete: {len(X)} samples, {len(model.feature_names)} features")
+    n_features = len(model.feature_names) if model.feature_names else 0
+    logger.info(f"Model training complete: {len(X)} samples, {n_features} features")
     
     return results

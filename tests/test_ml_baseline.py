@@ -5,7 +5,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from candle_patterns.ml_baseline import PatternMLModel, train_baseline_model
+from candle_patterns.ml_baseline import PatternMLModel, train_baseline_model  # type: ignore
 
 
 @pytest.fixture
