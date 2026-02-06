@@ -17,6 +17,7 @@ Candle Patterns is a **complete, tested, and production-ready** sequential patte
 ## Completed Features (✅ 100%)
 
 ### Core Ingestion & Detection
+
 - ✅ CSV import with validation (OHLCV schema enforcement)
 - ✅ 10+ rule-based pattern detectors:
   - Doji, Hammer, Inverted Hammer, Bullish Engulfing, Bearish Engulfing
@@ -25,6 +26,7 @@ Candle Patterns is a **complete, tested, and production-ready** sequential patte
 - ✅ Timestamp normalization and gap handling
 
 ### Web Dashboard (Dash)
+
 - ✅ File upload with progress indicator
 - ✅ Real-time pattern detection visualization
 - ✅ Interactive candlestick charts (Plotly)
@@ -37,6 +39,7 @@ Candle Patterns is a **complete, tested, and production-ready** sequential patte
 - ✅ Auto-loading sample data capability
 
 ### Machine Learning
+
 - ✅ **PatternMLModel** class (RandomForest classifier)
   - Feature engineering: hl_ratio, oc_ratio, volatility, volume_ma, pattern_count
   - Training with TimeSeriesSplit validation (proper for time series)
@@ -46,6 +49,7 @@ Candle Patterns is a **complete, tested, and production-ready** sequential patte
   - 9 comprehensive unit tests (all passing)
 
 ### Backtesting Engine
+
 - ✅ **BacktestEngine** class for performance evaluation
   - Return calculations (entry/exit prices, configurable hold periods)
   - Sharpe ratio (mean return vs risk-free rate)
@@ -56,12 +60,14 @@ Candle Patterns is a **complete, tested, and production-ready** sequential patte
   - 10 comprehensive unit tests (all passing)
 
 ### Data Persistence
+
 - ✅ SQLite database with schema versioning
 - ✅ Automatic 30-day data cleanup (configurable)
 - ✅ CSV caching for import performance
 - ✅ Upload history tracking (id, filename, timestamp, size)
 
 ### CLI Tools
+
 - ✅ `analyzer run <csv>` - detect patterns and generate HTML report
 - ✅ `analyzer list` - show recent uploads
 - ✅ `analyzer export <upload_id>` - export results to CSV
@@ -70,6 +76,7 @@ Candle Patterns is a **complete, tested, and production-ready** sequential patte
 - ✅ Error handling and validation
 
 ### DevOps & Deployment
+
 - ✅ Docker image (multi-stage Dockerfile with slim Python base)
 - ✅ GitHub Actions CI/CD:
   - Lint (Ruff, Black)
@@ -81,6 +88,7 @@ Candle Patterns is a **complete, tested, and production-ready** sequential patte
 - ✅ Deployment documentation
 
 ### Testing & Quality
+
 - ✅ Unit tests: 38 tests (100% pass rate)
   - Detection: 7 tests
   - Ingestion: 2 tests
@@ -99,18 +107,21 @@ Candle Patterns is a **complete, tested, and production-ready** sequential patte
 ## Recent Bug Fixes
 
 ### 1. Load Sample Data Button
+
 **Problem**: Button click did nothing  
 **Root Cause**: Complex callback with dual Input triggers; Dash didn't fire on button click  
 **Solution**: Split into two separate callbacks (`load_sample_data`, `load_from_history`)  
 **Status**: ✅ Fixed - generates 200 candlesticks + 21 detected patterns
 
 ### 2. Invalid Timestamp in Tests
+
 **Problem**: Tests errored with "hour must be in 0..23, not 25"  
 **Root Cause**: Test fixture had '2024-01-01 25:00:00' (invalid hour)  
 **Solution**: Changed to valid timestamp '2024-01-02 08:00:00'  
 **Status**: ✅ Fixed - 9 ML tests now pass
 
 ### 3. Python 3.14 Compatibility
+
 **Problem**: pandas frequency aliases needed lowercase ('1h' not '1H')  
 **Solution**: Updated all test fixtures to use '1h'  
 **Status**: ✅ Fixed - compatible with Python 3.14.0
@@ -119,7 +130,7 @@ Candle Patterns is a **complete, tested, and production-ready** sequential patte
 
 ## Test Results
 
-```
+```text
 Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 ============================== 38 PASSED in 26.13s ==============================
 
@@ -141,7 +152,7 @@ E2E Tests: Skipped (require Playwright fixtures - optional)
 
 ## Architecture Overview
 
-```
+```text
 candle-patterns/
 ├── src/candle_patterns/
 │   ├── __main__.py .................... CLI entry point
@@ -183,17 +194,19 @@ candle-patterns/
 ## Known Limitations & Future Work
 
 ### Non-Critical Issues
+
 1. **Markdown Linting** (141 violations)
    - Issue: UTF-8 encoding corruption from file migrations
    - Impact: None (documentation only, no functional impact)
    - Fix: Deferred (cosmetic, low priority)
-   
+
 2. **E2E Tests** (2 tests)
    - Issue: Playwright fixtures not configured
    - Impact: None (unit tests provide adequate coverage)
    - Fix: Configure pytest-playwright plugin (optional)
 
 ### High-Value Future Features
+
 1. **Expand Pattern Catalog** (est. 2-4 hours)
    - Add: Hanging Man, Shooting Star, Three Line Strike, Kicking, On Neck, Piercing Line, Dark Cloud Cover, Thrusting Line
    - Target: 15+ patterns by v0.2.0
@@ -222,6 +235,7 @@ candle-patterns/
 ## Next Immediate Steps
 
 ### Priority 1: Feature Expansion (2-4 hours)
+
 ```bash
 # Expand pattern catalog to 15+ patterns
 # Add 7-8 new pattern detectors
@@ -230,6 +244,7 @@ candle-patterns/
 ```
 
 ### Priority 2: CLI Integration (1 hour)
+
 ```bash
 # Add: analyzer train <csv>
 # Add: analyzer predict <csv>
@@ -238,6 +253,7 @@ candle-patterns/
 ```
 
 ### Priority 3: Documentation (1 hour)
+
 ```bash
 # Update PROJECT_PLAN.md
 # Update progress_tracker.csv
@@ -250,6 +266,7 @@ candle-patterns/
 ## How to Use
 
 ### Quick Start
+
 ```bash
 # Install
 cd "c:\Users\zmgdi\OneDrive\Desktop\CANDLE PATTERNS"
@@ -260,6 +277,7 @@ python dashboard_launcher.py
 ```
 
 ### CLI Usage
+
 ```bash
 # Detect patterns
 analyzer run data.csv
@@ -275,6 +293,7 @@ analyzer cleanup
 ```
 
 ### ML Training
+
 ```python
 from candle_patterns.ml_baseline import PatternMLModel, train_baseline_model
 
@@ -287,6 +306,7 @@ predictions = model.predict(new_df)
 ```
 
 ### Backtesting
+
 ```python
 from candle_patterns.backtesting import BacktestEngine
 
@@ -332,4 +352,3 @@ print(results[['pattern', 'win_rate', 'sharpe_ratio']])
 ## License
 
 MIT License - See LICENSE file for details
-

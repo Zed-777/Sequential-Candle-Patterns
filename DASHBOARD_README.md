@@ -12,6 +12,7 @@ cd "c:\Users\zmgdi\OneDrive\Desktop\CANDLE PATTERNS"
 ```
 
 The dashboard will:
+
 - Start the server on `http://localhost:8050`
 - Automatically open in your default browser
 - Be ready for use immediately
@@ -21,22 +22,26 @@ The dashboard will:
 Once the browser opens:
 
 #### Load Sample Data
+
 - Click **"Load sample data"** button in the left sidebar
 - The candlestick chart will populate with synthetic BTC data
 - Pattern detections will appear in the tabs
 
 #### Upload Your Own CSV
+
 - Click **"Select CSV"** to upload your own market data
 - Supported format: CSV with columns `timestamp`, `open`, `high`, `low`, `close`, `volume`
 - Data will be automatically validated and stored
 
 #### Explore Patterns
+
 - **Chart tab**: Interactive candlestick chart with detected patterns marked
 - **Patterns tab**: List of all detected candle patterns with timestamps
 - **Aggregated tab**: Summary of pattern frequencies
 - **OPP tab**: Most common sequential patterns
 
 #### Filter & Export
+
 - Use the date range picker to filter data
 - Toggle individual pattern types on/off
 - Export results as CSV
@@ -51,17 +56,21 @@ Press `Ctrl+C` in the terminal to stop the server.
 
 If the automatic browser launcher doesn't work:
 
-#### Manual Browser Launch
+### Manual Browser Launch
+
 ```bash
 .venv\Scripts\python.exe run_simple.py
 ```
-Then manually open http://localhost:8050 in your browser.
 
-#### With Waitress (Production-like Server)
+Then manually open <http://localhost:8050> in your browser.
+
+### With Waitress (Production-like Server)
+
 ```bash
 .venv\Scripts\python.exe start_waitress.py
 ```
-Then open http://localhost:8050 in your browser.
+
+Then open <http://localhost:8050> in your browser.
 
 ---
 
@@ -84,6 +93,7 @@ On Windows with Python 3.14, the Flask development server requires an actual bro
 ## Support
 
 For issues or questions, check the project logs in:
-```
+
+```text
 ./artifacts/logs/
 ```

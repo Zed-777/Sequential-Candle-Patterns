@@ -1,4 +1,4 @@
-Project Plan - Recent Changes
+# Project Plan - Recent Changes
 
 This short note records a small but important update that modifies the CI and coverage policy referenced in `PROJECT_PLAN.md`.
 

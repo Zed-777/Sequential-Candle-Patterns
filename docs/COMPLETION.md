@@ -1,4 +1,4 @@
-Summary of completed work and next steps
+# Summary of Completed Work
 
 Completed:
 

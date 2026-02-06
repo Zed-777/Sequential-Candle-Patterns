@@ -8,7 +8,7 @@
 
 ## 🏗️ System Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    CANDLE PATTERNS MVP                       │
 ├─────────────────────────────────────────────────────────────┤
@@ -73,19 +73,22 @@
 ## ⏭️ Next Steps (Priority Order)
 
 ### 🔴 Immediate (This Week)
+
 1. **Fix "Load sample data" button** → Test in browser, verify chart population
 2. **Finish pattern catalog expansion** → Bring to 15+ patterns
 3. **Test CLI end-to-end** → Run on sample CSV, validate output
 
 ### 🟡 Short-term (Next 2 Weeks)
-4. **ML baseline model** → Train RF/LSTM on sample data with TimeSeriesSplit eval
-5. **Backtesting module** → Add Sharpe/drawdown/win-rate calculations
-6. **E2E testing** → Finalize Playwright test suite for dashboard
+
+1. **ML baseline model** → Train RF/LSTM on sample data with TimeSeriesSplit eval
+2. **Backtesting module** → Add Sharpe/drawdown/win-rate calculations
+3. **E2E testing** → Finalize Playwright test suite for dashboard
 
 ### 🟢 Long-term (Next Month)
-7. **Productionization** → GDPR docs, data retention policies, encryption
-8. **Publish Docker image** → Push `candle-patterns:0.1.0` to GHCR
-9. **Extended datasets** → Add real market data samples + notebooks
+
+1. **Productionization** → GDPR docs, data retention policies, encryption
+2. **Publish Docker image** → Push `candle-patterns:0.1.0` to GHCR
+3. **Extended datasets** → Add real market data samples + notebooks
 
 ---
 
@@ -94,7 +97,7 @@
 | File | Purpose |
 |------|---------|
 | `src/candle_patterns/` | Main package (ingestion, detection, reporting, CLI) |
-| `src/candle_patterns/dashboard.py` | Dash web app (http://localhost:8050) |
+| `src/candle_patterns/dashboard.py` | Dash web app (<http://localhost:8050>) |
 | `tests/` | Unit + integration tests |
 | `.github/workflows/` | CI/CD pipelines (ci.yml, cleanup.yml, publish.yml) |
 | `Dockerfile` | Container build spec |
@@ -106,26 +109,32 @@
 
 ## 🚀 Quick Start
 
-### **Launch Dashboard**
+### Launch Dashboard
+
 ```bash
 cd "c:\Users\zmgdi\OneDrive\Desktop\CANDLE PATTERNS"
 .venv\Scripts\python.exe dashboard_launcher.py
 ```
-→ Browser opens automatically at **http://localhost:8050**
 
-### **Run CLI**
+→ Browser opens automatically at **<http://localhost:8050>**
+
+### Run CLI
+
 ```bash
 set PYTHONPATH=src
 .venv\Scripts\python.exe -m candle_patterns.cli run data/samples/sample_synthetic.csv
 ```
+
 → Outputs: `detections.csv`, `summary.txt`
 
-### **Run Tests**
+### Run Tests
+
 ```bash
 .venv\Scripts\pytest tests/ -v --cov=src --cov-fail-under=80
 ```
 
-### **Build Docker Image**
+### Build Docker Image
+
 ```bash
 docker build -t candle-patterns:0.1.0 .
 docker run -v %cd%\data:/app/data candle-patterns:0.1.0 analyzer run data/sample.csv
@@ -148,20 +157,23 @@ docker run -v %cd%\data:/app/data candle-patterns:0.1.0 analyzer run data/sample
 
 ## 🔗 Links
 
-- **Repository:** https://github.com/Zed-777/candle-patterns
-- **Draft PR:** https://github.com/Zed-777/candle-patterns/pull/1
-- **Release:** https://github.com/Zed-777/candle-patterns/releases/tag/v0.1.0
-- **Local Dashboard:** http://localhost:8050
+- **Repository:** <https://github.com/Zed-777/candle-patterns>
+- **Draft PR:** <https://github.com/Zed-777/candle-patterns/pull/1>
+- **Release:** <https://github.com/Zed-777/candle-patterns/releases/tag/v0.1.0>
+- **Local Dashboard:** <http://localhost:8050>
 
 ---
 
 ## 📝 Current Issue
 
-**"Load sample data" button not responding** 
+### Load sample data button not responding
+
 - **Status:** 🔧 Fixed (callback split into separate functions)
 - **Action:** User to refresh browser and test click
 - **Expected Result:** Chart populates with 200 candlestick candles, 5-10 patterns marked
 
 ---
 
-*Last Updated: February 5, 2026 | Next Update: February 12, 2026*
+## Last Updated
+
+February 5, 2026 | Next Update: February 12, 2026
