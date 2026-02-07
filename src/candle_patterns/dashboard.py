@@ -694,12 +694,11 @@ sidebar = dbc.Card(
                         ),
                         style={"cursor": "pointer"}
                     ),
-                    dbc.Button(
+                    html.Button(
                         [html.I(className="bi bi-star-fill"), " Load Sample Data"],
                         id="load-sample-btn",
-                        color="success",
-                        className="w-100 mb-3",
-                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem", "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)"}
+                        className="btn btn-success w-100 mb-3",
+                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem", "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)", "border": "none", "color": "white", "cursor": "pointer", "borderRadius": "10px", "transition": "all 0.3s ease"}
                     ),
                     html.Small(
                         "Load 200 candlesticks with 21 patterns",
@@ -1472,7 +1471,14 @@ def export_chart(n, data):
 )
 def load_sample_data(n_clicks):
     """Load sample data when button is clicked."""
+    print(f"\n{'='*60}")
+    print(f"DEBUG: load_sample_data callback triggered!")
+    print(f"DEBUG: n_clicks={n_clicks}")
+    print(f"{'='*60}\n")
+    logger.info(f"Load sample button clicked (n_clicks={n_clicks})")
+    
     if n_clicks is None or n_clicks == 0:
+        print("DEBUG: Returning early (n_clicks is None or 0)")
         return None, ""
     
     logger.info(f"Load sample button clicked (n_clicks={n_clicks})")
