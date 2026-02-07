@@ -1066,6 +1066,60 @@ def apply_filters(data, selected_patterns, start_date, end_date):
 
     df = pd.DataFrame(data["df"])
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+
+    patterns = data.get("patterns", [])
+
+    # determine available pattern names
+    names = sorted({p["pattern"] for p in patterns})
+    options = [{"label": n, "value": n} for n in names]
+    if selected_patterns is None or not selected_patterns:
+        selected = names.copy()  # default: show all
+    else:
+        selected = selected_patterns
+
+    # filter by date range
+    if start_date:
+        df = df[df["timestamp"] >= pd.to_datetime(start_date)]
+    if end_date:
+        df = df[df["timestamp"] <= pd.to_datetime(end_date) + pd.Timedelta(days=1)]
+
+    # build figure with professional styling
+    fig = go.Figure(data=[go.Candlestick(
+        x=df["timestamp"],
+        open=df["open"],
+        high=df["high"],
+        low=df["low"],
+        close=df["close"],
+        name="OHLC",
+        increasing_line_color='#10b981',
+        decreasing_line_color='#ef4444'
+    )])
+
+    filtered_patterns = [p for p in patterns if p["pattern"] in selected]
+
+    # Add pattern markers with better styling
+    for p in filtered_patterns:
+        try:
+            high_series = df.loc[df["timestamp"]==p["timestamp"], "high"]
+            if isinstance(high_series, pd.Series) and len(high_series) > 0:
+                high_value = float(high_series.iloc[0])
+                fig.add_trace(go.Scatter(
+                    x=[p["timestamp"]],
+                    y=[high_value * 1.02],  # Slightly above the candle
+                    mode='markers+text',
+                    text=[p["pattern"]],
+                    textposition="top center",
+                    name=p["pattern"],
+                    marker=dict(
+                        size=12,
+                        color='#667eea',
+                        symbol='diamond',
+                        opacity=0.8,
+                        line=dict(color='white', width=2)
+                    ),
+                    hovertemplate='<b>%{text}</b><br>Price: $%{y:.2f}<extra></extra>',
+                    showlegend=False
+                ))
         except Exception:
             continue
 
