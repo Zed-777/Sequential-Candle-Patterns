@@ -467,7 +467,7 @@ store_current = dcc.Store(id='current-data', storage_type='session')
 # Modal for pattern detail
 pattern_modal = dbc.Modal(
     [
-        dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), closeButton=True),
+        dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), close_button=True),
         dbc.ModalBody(id="pattern-modal-body"),
         dbc.ModalFooter(
             [

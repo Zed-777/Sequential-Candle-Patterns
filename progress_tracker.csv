@@ -31,7 +31,7 @@ id,title,milestone,priority,owner,estimate_days,start,due,status,pct_complete,RA
 29,Retention & cleanup automation,Infra,P1,@ops,1,2026-01-29,2026-01-30,Done,100,Green,#29,Added `storage.cleanup_old_uploads()` CLI command and scheduled job `.github/workflows/cleanup.yml` (daily); added unit tests
 30,ML Baseline Module,ML,P0,@alice,5,2026-02-21,2026-02-22,Done,100,Green,#30,PatternMLModel class with RandomForest, feature engineering, cross-validation, persistence - 9 tests passing
 31,Load Sample Data Button Fix,Bug Fix,P0,@alice,1,2026-02-20,2026-02-21,Done,100,Green,#31,Split callback into load_sample_data and load_from_history - generates 21 patterns from 200 candlesticks
-32,Full Unit Test Suite Pass,QA,P0,@qa,2,2026-02-21,2026-02-22,Done,100,Green,#32,All 38 unit tests passing (100% pass rate) - fixed timestamp validation and Python 3.14 compatibility
+32,Full Unit Test Suite Pass,QA,P0,@qa,2,2026-02-21,2026-02-22,Done,100,Green,#32,All 38 unit tests passing (100% pass rate) - fixed timestamp validation, Python 3.14 compatibility, dashboard.py closeButton parameter (closed 2026-02-07)
 33,Expand Pattern Catalog to 15+,Enhancement,P1,@bob,4,2026-02-23,2026-03-02,To Do,0,Amber,#33,Add 7-8 patterns: Hanging Man, Shooting Star, Three Line Strike, Kicking, On Neck, Piercing Line, Dark Cloud Cover, Thrusting Line
 34,ML-CLI Integration,Integration,P1,@alice,3,2026-02-24,2026-02-27,To Do,0,Amber,#34,Add analyzer train, predict, backtest commands - integration with ML and backtesting modules
 35,E2E Playwright Tests,QA,P2,@qa,4,2026-02-25,2026-03-01,To Do,0,Green,#35,Browser automation + visual regression testing - full workflow end-to-end
