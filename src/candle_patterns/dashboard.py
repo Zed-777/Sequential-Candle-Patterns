@@ -1008,119 +1008,64 @@ def on_upload(contents, filename):
 )
 def apply_filters(data, selected_patterns, start_date, end_date):
     """Apply filters and update all displays."""
-    try:
-        logger.info(f"apply_filters called: data={'set' if data else 'None'}, selected={len(selected_patterns) if selected_patterns else 0} patterns")
-        
-        # If no data is present, display empty-state placeholders so the UI structure is visible
+    logger.info(f"apply_filters called: data={'set' if data else 'None'}, selected={len(selected_patterns) if selected_patterns else 0} patterns")
+    
+    # If no data is present, display empty-state placeholders so the UI structure is visible
     if not data:
-        # Professional empty state
-        fig = go.Figure()
-        fig.add_annotation(
-            text="📊 No data loaded yet",
-            xref='paper', yref='paper',
-            x=0.5, y=0.6,
-            showarrow=False,
-            font=dict(size=24, color='#667eea', family="Arial Black")
-        )
-        fig.add_annotation(
-            text="Upload CSV or click 'Load Sample Data' in the sidebar to begin",
-            xref='paper', yref='paper',
-            x=0.5, y=0.5,
-            showarrow=False,
-            font=dict(size=14, color='#6c757d')
-        )
-        fig.update_layout(
-            xaxis=dict(visible=False),
-            yaxis=dict(visible=False),
-            template='plotly_white',
-            margin=dict(l=0, r=0, t=0, b=0),
-            height=500,
-            bgcolor='rgba(255,255,255,0.5)'
-        )
+            # Professional empty state
+            fig = go.Figure()
+            fig.add_annotation(
+                text="📊 No data loaded yet",
+                xref='paper', yref='paper',
+                x=0.5, y=0.6,
+                showarrow=False,
+                font=dict(size=24, color='#667eea', family="Arial Black")
+            )
+            fig.add_annotation(
+                text="Upload CSV or click 'Load Sample Data' in the sidebar to begin",
+                xref='paper', yref='paper',
+                x=0.5, y=0.5,
+                showarrow=False,
+                font=dict(size=14, color='#6c757d')
+            )
+            fig.update_layout(
+                xaxis=dict(visible=False),
+                yaxis=dict(visible=False),
+                template='plotly_white',
+                margin=dict(l=0, r=0, t=0, b=0),
+                height=500,
+                bgcolor='rgba(255,255,255,0.5)'
+            )
 
-        placeholder_instructions = html.Div([
-            html.Div(
-                [
-                    html.H5("🚀 Getting Started", style={"color": "#667eea", "fontWeight": "700", "marginBottom": "1rem"}),
-                    html.Ol([
-                        html.Li("Upload a CSV with columns: timestamp, open, high, low, close"),
-                        html.Li("Or click 'Load Sample Data' to use demo data"),
-                        html.Li("View detected patterns in the Chart tab"),
-                        html.Li("Filter by date range or pattern type"),
-                        html.Li("Export aggregated data as CSV"),
-                    ], style={"color": "#495057", "lineHeight": "1.8"}),
-                ],
+            placeholder_instructions = html.Div([
+                html.Div(
+                    [
+                        html.H5("🚀 Getting Started", style={"color": "#667eea", "fontWeight": "700", "marginBottom": "1rem"}),
+                        html.Ol([
+                            html.Li("Upload a CSV with columns: timestamp, open, high, low, close"),
+                            html.Li("Or click 'Load Sample Data' to use demo data"),
+                            html.Li("View detected patterns in the Chart tab"),
+                            html.Li("Filter by date range or pattern type"),
+                            html.Li("Export aggregated data as CSV"),
+                        ], style={"color": "#495057", "lineHeight": "1.8"}),
+                    ],
+                    className="empty-state"
+                )
+            ], style={"padding": "1rem"})
+
+            agg_placeholder = html.Div(
+                [html.H5("📊 Aggregated Summary", style={"color": "#667eea"}), html.P("Data will appear here once you load a file", style={"color": "#6c757d"})],
                 className="empty-state"
             )
-        ], style={"padding": "1rem"})
+            opp_placeholder = html.Div(
+                [html.H5("🎯 Top OPP Patterns", style={"color": "#667eea"}), html.P("Data will appear here once you load a file", style={"color": "#6c757d"})],
+                className="empty-state"
+            )
 
-        agg_placeholder = html.Div(
-            [html.H5("📊 Aggregated Summary", style={"color": "#667eea"}), html.P("Data will appear here once you load a file", style={"color": "#6c757d"})],
-            className="empty-state"
-        )
-        opp_placeholder = html.Div(
-            [html.H5("🎯 Top OPP Patterns", style={"color": "#667eea"}), html.P("Data will appear here once you load a file", style={"color": "#6c757d"})],
-            className="empty-state"
-        )
-
-        return fig, placeholder_instructions, agg_placeholder, opp_placeholder, [], []
+            return fig, placeholder_instructions, agg_placeholder, opp_placeholder, [], []
 
     df = pd.DataFrame(data["df"])
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
-
-    patterns = data.get("patterns", [])
-
-    # determine available pattern names
-    names = sorted({p["pattern"] for p in patterns})
-    options = [{"label": n, "value": n} for n in names]
-    if selected_patterns is None or not selected_patterns:
-        selected = names.copy()  # default: show all
-    else:
-        selected = selected_patterns
-
-    # filter by date range
-    if start_date:
-        df = df[df["timestamp"] >= pd.to_datetime(start_date)]
-    if end_date:
-        df = df[df["timestamp"] <= pd.to_datetime(end_date) + pd.Timedelta(days=1)]
-
-    # build figure with professional styling
-    fig = go.Figure(data=[go.Candlestick(
-        x=df["timestamp"],
-        open=df["open"],
-        high=df["high"],
-        low=df["low"],
-        close=df["close"],
-        name="OHLC",
-        increasing_line_color='#10b981',
-        decreasing_line_color='#ef4444'
-    )])
-
-    filtered_patterns = [p for p in patterns if p["pattern"] in selected]
-
-    # Add pattern markers with better styling
-    for p in filtered_patterns:
-        try:
-            high_series = df.loc[df["timestamp"]==p["timestamp"], "high"]
-            if isinstance(high_series, pd.Series) and len(high_series) > 0:
-                high_value = float(high_series.iloc[0])
-                fig.add_trace(go.Scatter(
-                    x=[p["timestamp"]],
-                    y=[high_value * 1.02],  # Slightly above the candle
-                    mode='markers+text',
-                    text=[p["pattern"]],
-                    textposition="top center",
-                    name=p["pattern"],
-                    marker=dict(
-                        size=12,
-                        color='#667eea',
-                        symbol='diamond',
-                        opacity=0.8,
-                        line=dict(color='white', width=2)
-                    ),
-                    hovertemplate='<b>%{text}</b><br>Price: $%{y:.2f}<extra></extra>',
-                    showlegend=False
-                ))
         except Exception:
             continue
 
@@ -1256,13 +1201,6 @@ def apply_filters(data, selected_patterns, start_date, end_date):
         opp_table = html.Div("No frequent OPP patterns found", className="empty-state")
 
     return fig, list_section, agg_table, opp_table, options, selected
-
-    except Exception as e:
-        logger.exception(f"❌ FATAL ERROR in apply_filters: {e}")
-        # Return empty state with error message
-        fig = go.Figure()
-        fig.add_annotation(text=f"❌ Error: {str(e)}", xref='paper', yref='paper', x=0.5, y=0.5, showarrow=False)
-        return fig, html.Div(f"❌ Error: {e}"), html.Div(f"❌ Error: {e}"), html.Div(f"❌ Error: {e}"), [], []
 
 
 @app.callback(
