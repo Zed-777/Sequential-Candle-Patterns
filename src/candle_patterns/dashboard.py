@@ -694,11 +694,10 @@ sidebar = dbc.Card(
                         ),
                         style={"cursor": "pointer"}
                     ),
-                    html.Button(
-                        [html.I(className="bi bi-star-fill"), " Load Sample Data"],
+                    dbc.Button(
+                        " Load Sample Data",
                         id="load-sample-btn",
-                        className="btn btn-success w-100 mb-3",
-                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem", "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)", "border": "none", "color": "white", "cursor": "pointer", "borderRadius": "10px", "transition": "all 0.3s ease"}
+                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem", "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)", "color": "white", "border": "none", "width": "100%", "marginBottom": "0.75rem", "cursor": "pointer", "borderRadius": "10px", "transition": "all 0.3s ease"}
                     ),
                     html.Small(
                         "Load 200 candlesticks with 21 patterns",
@@ -1008,7 +1007,11 @@ def on_upload(contents, filename):
     Input("date-range", "end_date"),
 )
 def apply_filters(data, selected_patterns, start_date, end_date):
-    # If no data is present, display empty-state placeholders so the UI structure is visible
+    """Apply filters and update all displays."""
+    try:
+        logger.info(f"apply_filters called: data={'set' if data else 'None'}, selected={len(selected_patterns) if selected_patterns else 0} patterns")
+        
+        # If no data is present, display empty-state placeholders so the UI structure is visible
     if not data:
         # Professional empty state
         fig = go.Figure()
@@ -1254,6 +1257,13 @@ def apply_filters(data, selected_patterns, start_date, end_date):
 
     return fig, list_section, agg_table, opp_table, options, selected
 
+    except Exception as e:
+        logger.exception(f"❌ FATAL ERROR in apply_filters: {e}")
+        # Return empty state with error message
+        fig = go.Figure()
+        fig.add_annotation(text=f"❌ Error: {str(e)}", xref='paper', yref='paper', x=0.5, y=0.5, showarrow=False)
+        return fig, html.Div(f"❌ Error: {e}"), html.Div(f"❌ Error: {e}"), html.Div(f"❌ Error: {e}"), [], []
+
 
 @app.callback(
     Output("history-select", "options"),
@@ -1471,71 +1481,81 @@ def export_chart(n, data):
 )
 def load_sample_data(n_clicks):
     """Load sample data when button is clicked."""
-    print(f"\n{'='*60}")
-    print(f"DEBUG: load_sample_data callback triggered!")
-    print(f"DEBUG: n_clicks={n_clicks}")
-    print(f"{'='*60}\n")
-    logger.info(f"Load sample button clicked (n_clicks={n_clicks})")
-    
-    if n_clicks is None or n_clicks == 0:
-        print("DEBUG: Returning early (n_clicks is None or 0)")
-        return None, ""
-    
-    logger.info(f"Load sample button clicked (n_clicks={n_clicks})")
-    from pathlib import Path
-    from candle_patterns.storage import save_upload
-
-    sample_path = Path("data/samples/sample_synthetic.csv")
-    
-    if not sample_path.exists():
-        logger.info("Generating synthetic sample data...")
-        import numpy as np
-        import pandas as _pd
-
-        dates = pd.date_range(end=pd.Timestamp.now('UTC'), periods=200, freq='1h')
-        price = 20000 + np.cumsum(np.random.randn(len(dates)) * 50)
-        open_p = price + np.random.randn(len(dates)) * 5
-        close_p = price + np.random.randn(len(dates)) * 5
-        high_p = np.maximum(open_p, close_p) + np.abs(np.random.randn(len(dates)) * 10)
-        low_p = np.minimum(open_p, close_p) - np.abs(np.random.randn(len(dates)) * 10)
-        sdf = _pd.DataFrame({
-            "timestamp": dates.astype(str),
-            "open": open_p,
-            "high": high_p,
-            "low": low_p,
-            "close": close_p
-        })
-        sample_path.parent.mkdir(parents=True, exist_ok=True)
-        sdf.to_csv(sample_path, index=False)
-        logger.info(f"Generated synthetic sample to {sample_path}")
-
-    df = pd.read_csv(sample_path)
-    if not pd.api.types.is_datetime64_any_dtype(df["timestamp"]):
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
-        # Only localize if it's not already timezone-aware
-        if df["timestamp"].dt.tz is None:
-            df["timestamp"] = df["timestamp"].dt.tz_localize("UTC")
-    
-    logger.info(f"Detecting patterns in sample data...")
-    patterns = detect_patterns(df)
-    logger.info(f"Detected {len(patterns)} patterns")
-    
     try:
-        uid = save_upload(sample_path.name, df, patterns)
-        logger.info(f"Saved sample to DB with upload_id: {uid}")
-    except Exception as e:
-        logger.exception(f"Failed to save sample: {e}")
-        uid = None
+        logger.info(f"Load sample button clicked (n_clicks={n_clicks})")
+        
+        if n_clicks is None or n_clicks == 0:
+            logger.debug("Early return: n_clicks is None or 0")
+            return None, ""
+        
+        from pathlib import Path
+        from candle_patterns.storage import save_upload
 
-    data = {
-        "filename": sample_path.name,
-        "upload_id": uid,
-        "df": df.to_dict("records"),
-        "patterns": patterns
-    }
-    msg = f"✓ Loaded sample: {len(patterns)} patterns detected"
-    logger.info(msg)
-    return data, msg
+        sample_path = Path("data/samples/sample_synthetic.csv")
+        logger.info(f"Sample path: {sample_path}")
+        
+        if not sample_path.exists():
+            logger.info("Generating synthetic sample data...")
+            import numpy as np
+            import pandas as _pd
+
+            dates = pd.date_range(end=pd.Timestamp.now('UTC'), periods=200, freq='1h')
+            price = 20000 + np.cumsum(np.random.randn(len(dates)) * 50)
+            open_p = price + np.random.randn(len(dates)) * 5
+            close_p = price + np.random.randn(len(dates)) * 5
+            high_p = np.maximum(open_p, close_p) + np.abs(np.random.randn(len(dates)) * 10)
+            low_p = np.minimum(open_p, close_p) - np.abs(np.random.randn(len(dates)) * 10)
+            sdf = _pd.DataFrame({
+                "timestamp": dates.astype(str),
+                "open": open_p,
+                "high": high_p,
+                "low": low_p,
+                "close": close_p
+            })
+            sample_path.parent.mkdir(parents=True, exist_ok=True)
+            sdf.to_csv(sample_path, index=False)
+            logger.info(f"Generated synthetic sample to {sample_path}")
+
+        logger.info(f"Loading CSV from {sample_path}")
+        df = pd.read_csv(sample_path)
+        logger.info(f"Loaded {len(df)} rows")
+        
+        # Convert timestamp to datetime with UTC
+        if not pd.api.types.is_datetime64_any_dtype(df["timestamp"]):
+            df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+            logger.info(f"Converted timestamp to UTC datetime")
+        
+        logger.info(f"Detecting patterns...")
+        patterns = detect_patterns(df)
+        logger.info(f"✓ Detected {len(patterns)} patterns")
+        
+        # Try to save to DB, but don't fail if it doesn't work
+        uid = None
+        try:
+            uid = save_upload(sample_path.name, df, patterns)
+            logger.info(f"Saved to DB with upload_id: {uid}")
+        except Exception as db_error:
+            logger.warning(f"Could not save to DB (non-critical): {db_error}")
+
+        # Build response data
+        data = {
+            "filename": str(sample_path.name),
+            "upload_id": uid,
+            "df": df.to_dict("records"),
+            "patterns": patterns
+        }
+        
+        msg = f"✓ Loaded sample: {len(patterns)} patterns detected"
+        logger.info(f"✓ Callback returning: {msg}")
+        logger.info(f"  Data keys: {list(data.keys())}")
+        logger.info(f"  Data['df']: {len(data['df'])} records")
+        logger.info(f"  Data['patterns']: {len(data['patterns'])} patterns")
+        
+        return data, msg
+        
+    except Exception as e:
+        logger.exception(f"❌ FATAL ERROR in load_sample_data: {e}")
+        return None, f"❌ Error: {str(e)}"
 
 
 @app.callback(
