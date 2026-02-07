@@ -34,219 +34,582 @@ app = dash.Dash(
 
 server = app.server
 
-# Custom CSS for professional styling
+# Modern, professional, visually appealing stylesheet
 custom_css = """
 <style>
 :root {
-    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --primary-color: #6366f1;
+    --primary-dark: #4f46e5;
+    --primary-light: #818cf8;
+    --secondary-color: #ec4899;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #3b82f6;
+    
+    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    --secondary-gradient: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+    --success-gradient: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+    --info-gradient: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
+    
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --text-light: #9ca3af;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f9fafb;
+    --bg-tertiary: #f3f4f6;
+    --border-color: #e5e7eb;
+    
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    color: var(--text-primary);
+    min-height: 100vh;
 }
 
 body {
-    background: #f8f9fa;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-attachment: fixed;
+}
+
+/* Navbar & Header Styling */
+.navbar {
+    background: var(--primary-gradient) !important;
+    box-shadow: var(--shadow-lg);
+    padding: 1.25rem 2rem !important;
+    border-bottom: none !important;
 }
 
 .navbar-brand {
-    font-weight: 700;
-    font-size: 1.4rem;
-    letter-spacing: -0.5px;
+    font-weight: 800 !important;
+    font-size: 1.5rem !important;
+    letter-spacing: -0.025em;
+    color: white !important;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
+.navbar-brand::before {
+    content: "📊";
+    font-size: 1.75rem;
+}
+
+/* Main Container */
+.container-fluid {
+    padding: 2rem 1.5rem;
+    max-width: 1920px;
+    margin: 0 auto;
+}
+
+/* Sidebar Card Styling */
 .sidebar-card {
-    background: white;
-    border-radius: 12px;
-    border: 1px solid rgba(0,0,0,0.08);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    transition: all 0.3s ease;
+    background: var(--bg-primary);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+    overflow: hidden;
+    position: sticky;
+    top: 100px;
 }
 
 .sidebar-card:hover {
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.sidebar-card .card-body {
+    padding: 2rem 1.5rem;
 }
 
 .sidebar-card .card-title {
     background: var(--primary-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    font-weight: 700;
-    margin-bottom: 1.2rem;
+    font-weight: 800;
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.025em;
 }
 
 .sidebar-card h6 {
-    color: #495057;
-    font-weight: 600;
-    margin-top: 1.2rem;
-    margin-bottom: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
     text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.btn-primary, .btn-secondary, .btn-danger, .btn-info {
+/* Button Styling - Enhanced */
+.btn {
     border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    padding: 0.6rem 1.2rem;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 10px;
+    font-weight: 700;
+    padding: 0.75rem 1.5rem;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.875rem;
+    cursor: pointer;
 }
 
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
 }
 
 .btn-primary {
-    background: var(--primary-gradient);
+    background: var(--primary-gradient) !important;
+    color: white !important;
+    border: none !important;
 }
 
-.btn-primary:hover {
-    background: var(--primary-gradient);
+.btn-success {
+    background: var(--success-gradient) !important;
+    color: white !important;
+    border: none !important;
 }
 
+.btn-info {
+    background: var(--info-gradient) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Input Fields */
+.form-control, input[type="text"], input[type="date"], input[type="datetime"], input[type="datetime-local"], input[type="month"], input[type="number"], input[type="email"], input[type="password"], select, textarea {
+    border-radius: 10px !important;
+    border: 1.5px solid var(--border-color) !important;
+    padding: 0.75rem 1rem !important;
+    font-weight: 500;
+    transition: var(--transition) !important;
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+.form-control:focus, input:focus, select:focus, textarea:focus {
+    border-color: var(--primary-color) !important;
+    background: var(--bg-primary) !important;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1) !important;
+    outline: none !important;
+}
+
+input::placeholder, textarea::placeholder {
+    color: var(--text-light) !important;
+}
+
+/* Tabs Styling */
 .nav-tabs {
-    border-bottom: 2px solid #e9ecef;
+    border-bottom: 2px solid var(--border-color) !important;
+    gap: 0.5rem;
+    padding: 0;
 }
 
 .nav-tabs .nav-link {
-    color: #6c757d;
-    border: none;
-    border-bottom: 3px solid transparent;
-    font-weight: 600;
-    transition: all 0.3s ease;
+    color: var(--text-secondary) !important;
+    border: none !important;
+    border-bottom: 3px solid transparent !important;
+    font-weight: 700 !important;
+    padding: 1rem 1.5rem !important;
+    transition: var(--transition) !important;
     position: relative;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+}
+
+.nav-tabs .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background: var(--primary-gradient);
+    transition: width var(--transition);
 }
 
 .nav-tabs .nav-link:hover {
-    color: #667eea;
-    border-bottom-color: #667eea;
+    color: var(--primary-color) !important;
+}
+
+.nav-tabs .nav-link:hover::after {
+    width: 100%;
 }
 
 .nav-tabs .nav-link.active {
-    color: #667eea;
-    border-bottom-color: #667eea;
-    background-color: transparent;
+    color: var(--primary-color) !important;
+    border-bottom-color: var(--primary-color) !important;
 }
 
+.nav-tabs .nav-link.active::after {
+    width: 100%;
+}
+
+/* Card Styling */
 .card {
-    border: 1px solid rgba(0,0,0,0.08);
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    transition: all 0.3s ease;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--shadow-md) !important;
+    transition: var(--transition) !important;
+    background: var(--bg-primary) !important;
+    overflow: hidden;
 }
 
 .card:hover {
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    box-shadow: var(--shadow-lg) !important;
+    transform: translateY(-4px);
 }
 
 .card-body {
-    padding: 1.5rem;
+    padding: 1.5rem !important;
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 1.25rem 1.5rem !important;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Statistics Cards */
+.stat-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+}
+
+.stat-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
 .stat-card h6 {
-    color: #6c757d;
-    font-weight: 600;
+    color: var(--text-secondary);
+    font-weight: 700;
     text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
     margin-bottom: 0.5rem;
 }
 
 .stat-card h4 {
-    color: #667eea;
-    font-weight: 700;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    font-size: 2rem;
+    margin: 0.5rem 0;
 }
 
-.input-group .form-control {
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
+.stat-card .stat-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
 }
 
-.input-group .form-control:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+/* Checklist Items */
+.form-check {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--bg-tertiary);
 }
 
-.checklist-item label {
-    margin-bottom: 0.5rem;
-    color: #495057;
-    font-weight: 500;
+.form-check:last-child {
+    border-bottom: none;
 }
 
-.plotly-graph-div {
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+.form-check-input {
+    border-radius: 6px;
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+    transition: var(--transition);
 }
 
+.form-check-input:checked {
+    background: var(--primary-gradient) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.form-check-label {
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 0.75rem;
+}
+
+/* Tables */
 table {
     border-collapse: collapse;
     width: 100%;
-    margin-top: 1rem;
+}
+
+table thead {
+    background: var(--primary-gradient);
 }
 
 table th {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 1rem;
-    font-weight: 600;
+    padding: 1.25rem;
+    font-weight: 700;
+    text-align: left;
     border: none;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
 }
 
 table td {
-    padding: 0.8rem 1rem;
-    border-bottom: 1px solid #e9ecef;
-    color: #495057;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-weight: 500;
 }
 
-table tr:hover {
-    background-color: #f8f9fa;
+table tbody tr {
+    transition: var(--transition);
+    background: var(--bg-primary);
 }
 
-.info-icon {
-    cursor: help;
-    margin-left: 0.3rem;
-    opacity: 0.6;
-    transition: opacity 0.2s;
+table tbody tr:hover {
+    background: var(--bg-secondary);
+    box-shadow: inset 0 0 10px rgba(99, 102, 241, 0.1);
 }
 
-.info-icon:hover {
-    opacity: 1;
+table tbody tr:last-child td {
+    border-bottom: none;
 }
 
+/* Graphs */
+.plotly-graph-div {
+    border-radius: 16px !important;
+    box-shadow: var(--shadow-md) !important;
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border-color);
+    overflow: hidden !important;
+}
+
+/* Empty State */
 .empty-state {
     text-align: center;
-    padding: 2rem;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-    border-radius: 12px;
-    border: 2px dashed #e9ecef;
+    padding: 3rem 2rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+    border-radius: 16px;
+    border: 2px dashed var(--border-color);
+    transition: var(--transition);
+}
+
+.empty-state:hover {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+}
+
+.empty-state .empty-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
 }
 
 .empty-state h5 {
-    color: #667eea;
-    font-weight: 700;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
     margin-top: 1rem;
+    font-size: 1.5rem;
 }
 
 .empty-state p {
-    color: #6c757d;
-}
-
-.upload-feedback {
-    padding: 0.75rem 1rem;
-    background: #d4edda;
-    color: #155724;
-    border-radius: 8px;
-    border: 1px solid #c3e6cb;
+    color: var(--text-secondary);
     font-weight: 500;
-    margin-top: 0.8rem;
+    margin-top: 0.75rem;
 }
 
+/* Modal Styling */
+.modal-content {
+    border-radius: 16px !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
+}
+
+.modal-header {
+    background: var(--primary-gradient) !important;
+    border-bottom: none !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 1.5rem !important;
+}
+
+.modal-header .modal-title {
+    color: white !important;
+    font-weight: 800 !important;
+    font-size: 1.25rem !important;
+}
+
+.modal-header .btn-close {
+    filter: invert(1) brightness(2);
+}
+
+.modal-body {
+    padding: 2rem !important;
+    background: var(--bg-primary);
+}
+
+.modal-footer {
+    background: var(--bg-secondary) !important;
+    border-top: 1px solid var(--border-color) !important;
+    border-radius: 0 0 16px 16px !important;
+    padding: 1.5rem !important;
+}
+
+/* Upload Feedback */
+.upload-feedback {
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #d1fae5 0%, #ccfbf1 100%);
+    color: #047857;
+    border-radius: 10px;
+    border: 1px solid #a7f3d0;
+    font-weight: 600;
+    margin-top: 1rem;
+    box-shadow: var(--shadow-sm);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Divider */
 .hr-style {
-    margin: 1.5rem 0;
+    margin: 1.75rem 0;
     border: none;
-    border-top: 1px solid #e9ecef;
+    border-top: 1px solid var(--border-color);
+    opacity: 0.5;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .sidebar-card {
+        position: sticky;
+        top: auto;
+    }
+    
+    .navbar-brand {
+        font-size: 1.25rem;
+    }
+    
+    .btn {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-gradient);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
+}
+
+/* Selection */
+::selection {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+::-moz-selection {
+    background: var(--primary-gradient);
+    color: white;
 }
 </style>
 """
@@ -281,9 +644,9 @@ navbar = dbc.Navbar(
                     dbc.Col(
                         [
                             html.Span(
-                                "📈 Candle Patterns",
+                                "Candle Patterns",
                                 className="navbar-brand",
-                                style={"color": "white", "fontWeight": "700"}
+                                style={"color": "white", "fontWeight": "800", "fontSize": "1.5rem", "letterSpacing": "-0.5px"}
                             )
                         ],
                         width="auto",
@@ -292,7 +655,7 @@ navbar = dbc.Navbar(
                         [
                             html.Span(
                                 "AI-Powered Candlestick Pattern Detection & Analysis",
-                                style={"color": "rgba(255,255,255,0.8)", "fontSize": "0.9rem"}
+                                style={"color": "rgba(255,255,255,0.85)", "fontSize": "0.95rem", "fontWeight": "500"}
                             )
                         ],
                         width="auto",
@@ -306,8 +669,10 @@ navbar = dbc.Navbar(
     ),
     sticky="top",
     style={
-        "background": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        "boxShadow": "0 4px 12px rgba(0,0,0,0.15)",
+        "background": "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+        "boxShadow": "0 10px 25px rgba(99, 102, 241, 0.15)",
+        "padding": "1.25rem 0",
+        "zIndex": 1030,
     },
 )
 
@@ -315,33 +680,33 @@ sidebar = dbc.Card(
     [
         dbc.CardBody(
             [
-                html.H5("⚙️ Dashboard", className="card-title"),
+                html.H5("⚙️ Configuration", className="card-title"),
                 
                 # Upload section
                 html.Div([
                     dcc.Upload(
                         id="upload-data",
                         children=dbc.Button(
-                            "📁 Upload CSV",
+                            [html.I(className="bi bi-upload"), " Upload CSV"],
                             color="primary",
-                            className="w-100 mb-2",
-                            style={"fontWeight": "600"}
+                            className="w-100 mb-3",
+                            style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem"}
                         ),
                         style={"cursor": "pointer"}
                     ),
                     dbc.Button(
-                        "⭐ Load Sample Data",
+                        [html.I(className="bi bi-star-fill"), " Load Sample Data"],
                         id="load-sample-btn",
                         color="success",
-                        className="w-100 mb-2",
-                        style={"fontWeight": "600", "background": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"}
+                        className="w-100 mb-3",
+                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem", "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)"}
                     ),
                     html.Small(
-                        "Click to load demo data with 200 candlesticks and 21 detected patterns",
-                        style={"marginTop": "6px", "color": "#6c757d", "display": "block"}
+                        "Load 200 candlesticks with 21 patterns",
+                        style={"marginTop": "8px", "color": "#6b7280", "display": "block", "fontWeight": "500"}
                     ),
-                    html.Div(id="upload-status", style={"marginTop": "10px"}),
-                ]),
+                    html.Div(id="upload-status", style={"marginTop": "12px"}),
+                ], style={"marginBottom": "1.5rem"}),
                 
                 html.Hr(className="hr-style"),
                 
@@ -355,7 +720,7 @@ sidebar = dbc.Card(
                         end_date_placeholder_text="End",
                         style={"width": "100%"}
                     ),
-                ]),
+                ], style={"marginBottom": "1.5rem"}),
                 
                 html.Hr(className="hr-style"),
                 
@@ -370,10 +735,10 @@ sidebar = dbc.Card(
                         style={"marginTop": "0.8rem"}
                     ),
                     html.Small(
-                        "(Select patterns to display on chart)",
-                        style={"fontSize": "0.85em", "color": "#6c757d"}
+                        "Select patterns to display",
+                        style={"fontSize": "0.85em", "color": "#6b7280", "fontWeight": "500"}
                     ),
-                ]),
+                ], style={"marginBottom": "1.5rem"}),
                 
                 html.Hr(className="hr-style"),
                 
@@ -386,27 +751,27 @@ sidebar = dbc.Card(
                         clearable=True,
                         style={"marginTop": "0.5rem"}
                     ),
-                ]),
+                ], style={"marginBottom": "1.5rem"}),
                 
                 html.Hr(className="hr-style"),
                 
                 # Custom sequence section
                 html.Div([
-                    html.H6("🔗 Custom Pattern Sequence"),
+                    html.H6("🔗 Custom Sequence"),
                     dcc.Input(
                         id="custom-seq-input",
                         placeholder="e.g. 3R -> Doji -> G",
-                        style={"width": "100%", "borderRadius": "8px", "padding": "0.5rem"}
+                        style={"width": "100%", "borderRadius": "10px", "padding": "0.75rem 1rem", "border": "1.5px solid #e5e7eb"}
                     ),
                     dbc.Button(
                         "▶ Run Sequence",
                         id="run-custom-seq-btn",
                         color="secondary",
                         size="sm",
-                        className="mt-2 w-100",
-                        style={"fontWeight": "600"}
+                        className="mt-3 w-100",
+                        style={"fontWeight": "700", "padding": "0.65rem 1rem"}
                     ),
-                ]),
+                ], style={"marginBottom": "1.5rem"}),
                 
                 html.Hr(className="hr-style"),
                 
@@ -419,13 +784,13 @@ sidebar = dbc.Card(
                         color="danger",
                         size="sm",
                         className="w-100",
-                        style={"fontWeight": "600"}
+                        style={"fontWeight": "700", "padding": "0.65rem 1rem"}
                     ),
                     html.Div(
                         id="cleanup-result",
-                        style={"marginTop": "8px", "fontSize": "0.9em", "color": "#6c757d"}
+                        style={"marginTop": "10px", "fontSize": "0.9em", "color": "#6b7280", "fontWeight": "500"}
                     ),
-                ]),
+                ], style={"marginBottom": "1.5rem"}),
                 
                 html.Hr(className="hr-style"),
                 
@@ -433,23 +798,23 @@ sidebar = dbc.Card(
                 html.Div([
                     html.H6("💾 Export Data"),
                     dbc.Button(
-                        "📊 Export Detections",
+                        "📊 Detections",
                         id="export-detections-btn",
                         color="info",
                         size="sm",
                         className="w-100 mb-2",
-                        style={"fontWeight": "600"}
+                        style={"fontWeight": "700", "padding": "0.65rem 1rem"}
                     ),
                     dbc.Button(
-                        "📈 Export Aggregated",
+                        "📈 Aggregated",
                         id="export-aggregated-btn",
                         color="info",
                         size="sm",
                         className="w-100",
-                        style={"fontWeight": "600"}
+                        style={"fontWeight": "700", "padding": "0.65rem 1rem"}
                     ),
                     dcc.Download(id="download-asset"),
-                ]),
+                ], style={"marginBottom": "1.5rem"}),
                 
                 html.Hr(className="hr-style"),
                 
@@ -467,13 +832,34 @@ store_current = dcc.Store(id='current-data', storage_type='session')
 # Modal for pattern detail
 pattern_modal = dbc.Modal(
     [
-        dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), close_button=True),
-        dbc.ModalBody(id="pattern-modal-body"),
+        dbc.ModalHeader(
+            dbc.ModalTitle(
+                [html.I(className="bi bi-graph-up"), " Pattern Analysis"],
+                style={"fontWeight": "800", "fontSize": "1.25rem"}
+            ),
+            close_button=True,
+            style={"padding": "1.5rem"}
+        ),
+        dbc.ModalBody(id="pattern-modal-body", style={"padding": "2rem"}),
         dbc.ModalFooter(
             [
-                dbc.Button("💾 Export Chart PNG", id="export-chart-btn", color="info", size="sm"),
-                dbc.Button("✕ Close", id="modal-close", color="secondary", size="sm", className="ms-auto"),
-            ]
+                dbc.Button(
+                    [html.I(className="bi bi-image"), " Export PNG"],
+                    id="export-chart-btn",
+                    color="info",
+                    size="sm",
+                    style={"fontWeight": "700", "padding": "0.65rem 1.2rem"}
+                ),
+                dbc.Button(
+                    "✕ Close",
+                    id="modal-close",
+                    color="secondary",
+                    size="sm",
+                    className="ms-auto",
+                    style={"fontWeight": "700", "padding": "0.65rem 1.2rem"}
+                ),
+            ],
+            style={"padding": "1.5rem"}
         ),
     ],
     id="pattern-modal",
@@ -485,15 +871,15 @@ pattern_modal = dbc.Modal(
 main_content = dbc.Tabs(
     [
         dbc.Tab(
-            label="📈 Candlestick Chart",
+            label=[html.I(className="bi bi-graph-up"), " Candlestick Chart"],
             tab_id="tab-chart",
             children=[
                 dbc.Container(
                     [
                         dcc.Graph(
                             id="candle-chart",
-                            style={"marginTop": "1rem"},
-                            config={"responsive": True}
+                            style={"marginTop": "1.5rem"},
+                            config={"responsive": True, "displayModeBar": True, "displaylogo": False}
                         )
                     ],
                     fluid=True,
@@ -502,33 +888,33 @@ main_content = dbc.Tabs(
             className="p-4"
         ),
         dbc.Tab(
-            label="🔍 Individual Patterns",
+            label=[html.I(className="bi bi-search"), " Individual Patterns"],
             tab_id="tab-patterns",
             children=[
                 dbc.Container(
-                    [html.Div(id="pattern-table", style={"marginTop": "1rem"})],
+                    [html.Div(id="pattern-table", style={"marginTop": "1.5rem"})],
                     fluid=True
                 )
             ],
             className="p-4"
         ),
         dbc.Tab(
-            label="📊 Aggregated Summary",
+            label=[html.I(className="bi bi-bar-chart"), " Aggregated Summary"],
             tab_id="tab-agg",
             children=[
                 dbc.Container(
-                    [html.Div(id="aggregated-table", style={"marginTop": "1rem"})],
+                    [html.Div(id="aggregated-table", style={"marginTop": "1.5rem"})],
                     fluid=True
                 )
             ],
             className="p-4"
         ),
         dbc.Tab(
-            label="🎯 OPP Patterns",
+            label=[html.I(className="bi bi-diagram-3"), " OPP Patterns"],
             tab_id="tab-opp",
             children=[
                 dbc.Container(
-                    [html.Div(id="opp-table", style={"marginTop": "1rem"})],
+                    [html.Div(id="opp-table", style={"marginTop": "1.5rem"})],
                     fluid=True
                 )
             ],
@@ -547,15 +933,16 @@ app.layout = dbc.Container(
         store_current,
         dbc.Row(
             [
-                dbc.Col(sidebar, width=12, lg=3, className="mb-4 mb-lg-0"),
-                dbc.Col(main_content, width=12, lg=9),
+                dbc.Col(sidebar, width=12, lg=3, className="mb-4 mb-lg-0", style={"paddingRight": "1.5rem"}),
+                dbc.Col(main_content, width=12, lg=9, style={"paddingLeft": "0.5rem"}),
             ],
-            className="mt-4 g-4"
+            className="mt-4 g-0",
+            style={"gap": "2rem"}
         ),
         pattern_modal
     ],
     fluid=True,
-    style={"background": "#f8f9fa", "minHeight": "100vh", "paddingBottom": "2rem"}
+    style={"background": "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)", "minHeight": "100vh", "paddingBottom": "3rem", "paddingTop": "0"}
 )
 
 # Keep existing callbacks; they target preserved IDs like 'upload-data','candle-chart','pattern-table' etc.

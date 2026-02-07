@@ -1,4 +1,5 @@
 # System Review & PROJECT_PLAN Verification
+
 **Date**: February 7, 2026  
 **Review Status**: IN PROGRESS  
 **Overall Assessment**: ⚠️ DISCREPANCIES FOUND
@@ -10,6 +11,7 @@
 The Candle Patterns project is **substantially complete** with most MVP features implemented, but there are **critical discrepancies** between the documented status in PROJECT_PLAN.md and the actual codebase status.
 
 ### Key Finding
+
 - **Documented Status**: 38/38 tests passing (100%)
 - **Actual Status**: 37/37 unit tests passing + 1 failure + 2 E2E errors = 97% pass rate
 - **Action Required**: Update PROJECT_PLAN.md and progress_tracker.csv to reflect actual status
@@ -21,9 +23,11 @@ The Candle Patterns project is **substantially complete** with most MVP features
 ### ✅ COMPLETED FEATURES (MVP)
 
 #### 1. CSV Ingestion & Validation
+
 **Status**: ✅ COMPLETE  
 **Location**: `src/candle_patterns/ingestion.py`  
 **Tests**: `tests/test_ingestion.py` (2 tests, PASSING)
+
 - OHLCV validation
 - Timezone handling
 - Error recovery
@@ -33,9 +37,11 @@ The Candle Patterns project is **substantially complete** with most MVP features
 ---
 
 #### 2. Pattern Detection (10+ patterns)
+
 **Status**: ✅ COMPLETE  
 **Location**: `src/candle_patterns/detection.py`  
 **Tests**: `tests/test_detection.py` (1 test, PASSING)
+
 - Doji, Hammer, Engulfing
 - Three Soldiers/Crows
 - Morning/Evening Star
@@ -46,14 +52,17 @@ The Candle Patterns project is **substantially complete** with most MVP features
 ---
 
 #### 3. Dash Dashboard
+
 **Status**: ⚠️ MOSTLY COMPLETE (1 FAILING TEST)  
 **Location**: `src/candle_patterns/dashboard.py` (588 lines)  
-**Tests**: 
+**Tests**:
+
 - `tests/test_dashboard_smoke.py` (FAILING) ❌
 - `tests/test_dashboard_history.py` (PASSING) ✅
 - Total dashboard tests: 1 FAILED, 1 PASSED
 
 **Critical Issue Found**:
+
 ```python
 # Line 470: dashboard.py
 dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), closeButton=True)
@@ -63,6 +72,7 @@ dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), closeButton=True
 ```
 
 **Features Implemented**:
+
 - ✅ CSV upload
 - ✅ Real-time candlestick chart
 - ✅ Pattern filtering
@@ -78,9 +88,11 @@ dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), closeButton=True
 ---
 
 #### 4. SQLite Persistence
+
 **Status**: ✅ COMPLETE  
 **Location**: `src/candle_patterns/storage.py`  
 **Tests**: `tests/test_storage.py` (4 tests, PASSING)
+
 - Save/load uploads
 - 30-day auto-cleanup
 - Auto-cleanup job scheduled
@@ -89,9 +101,11 @@ dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), closeButton=True
 ---
 
 #### 5. CLI Tools
+
 **Status**: ✅ COMPLETE  
 **Location**: `src/candle_patterns/cli.py`  
 **Tests**: Not in test files (integration only)
+
 - `analyzer run <csv>` - Detect patterns
 - `analyzer list` - Show recent uploads
 - `analyzer export <id>` - Export results
@@ -101,9 +115,11 @@ dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), closeButton=True
 ---
 
 #### 6. ML Baseline Model
+
 **Status**: ✅ COMPLETE  
 **Location**: `src/candle_patterns/ml_baseline.py` (291 lines)  
 **Tests**: `tests/test_ml_baseline.py` (9 tests, PASSING)
+
 - PatternMLModel class
 - RandomForest classifier
 - Feature engineering (5 features)
@@ -114,9 +130,11 @@ dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), closeButton=True
 ---
 
 #### 7. Backtesting Engine
+
 **Status**: ✅ COMPLETE  
 **Location**: `src/candle_patterns/backtesting.py` (321 lines)  
 **Tests**: `tests/test_backtesting.py` (10 tests, PASSING)
+
 - Sharpe ratio calculation
 - Maximum drawdown
 - Win rate analysis
@@ -127,9 +145,11 @@ dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), closeButton=True
 ---
 
 #### 8. OPP Pattern Miner
+
 **Status**: ✅ COMPLETE  
 **Location**: `src/candle_patterns/opp_miner.py`  
-**Tests**: 
+**Tests**:
+
 - `tests/test_opp_miner.py` (3 tests, PASSING)
 - `tests/test_opp_miner_variable.py` (PASSING)
 - Total: 3+ tests passing
@@ -143,9 +163,11 @@ dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), closeButton=True
 ---
 
 #### 9. Docker Containerization
+
 **Status**: ✅ COMPLETE  
 **Location**: `Dockerfile`  
 **Tests**: Verified in CI pipeline
+
 - Multi-stage build
 - CLI runs in container
 - Image builds successfully
@@ -154,8 +176,10 @@ dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), closeButton=True
 ---
 
 #### 10. GitHub Actions CI/CD
+
 **Status**: ✅ COMPLETE  
 **Workflows**:
+
 - `.github/workflows/ci.yml` - Lint, test, coverage, security
 - `.github/workflows/cleanup.yml` - Daily cleanup job
 - `.github/workflows/publish.yml` - Docker image build & push
@@ -169,10 +193,11 @@ dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), closeButton=True
 ---
 
 #### 11. Release v0.1.0
+
 **Status**: ✅ COMPLETE  
 **Tag**: Created and pushed  
 **Release Notes**: `docs/RELEASE_NOTES.md`  
-**GitHub Release**: Published at https://github.com/Zed-777/candle-patterns/releases/tag/v0.1.0
+**GitHub Release**: Published at <https://github.com/Zed-777/candle-patterns/releases/tag/v0.1.0>
 **Actual Implementation**: Functional
 
 ---
@@ -180,12 +205,15 @@ dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), closeButton=True
 ### 🔴 ISSUES & DISCREPANCIES
 
 #### Issue #1: Test Suite Status Mismatch ⚠️ CRITICAL
+
 **Documented in PROJECT_PLAN.md**:
+
 ```
 ✅ 38/38 unit tests passing (100% pass rate)
 ```
 
 **Actual Test Results**:
+
 ```
 37 PASSED
 1 FAILED  (test_dashboard_smoke.py::test_dashboard_app_importable)
@@ -196,11 +224,13 @@ Pass Rate: 97% (37/38)
 ```
 
 **Root Cause**: Dashboard component version mismatch:
+
 - **Expected**: `dbc.ModalHeader(..., close_button=True)`  [snake_case]
 - **Found**: `dbc.ModalHeader(..., closeButton=True)`  [camelCase - WRONG]
 - **Version**: dash_bootstrap_components v1.4.1
 
-**Impact**: 
+**Impact**:
+
 - Test failure prevents valid project status claim
 - Dashboard still runs (error is in import, caught by test)
 - Not a breaking change for users (API still works)
@@ -208,6 +238,7 @@ Pass Rate: 97% (37/38)
 ---
 
 #### Issue #2: E2E Tests Not Configured ⚠️ EXPECTED
+
 **Status**: Known limitation  
 **Location**: `tests/e2e/test_ui_smoke.py`  
 **Error**: Playwright fixtures not installed/configured
@@ -219,6 +250,7 @@ Pass Rate: 97% (37/38)
 #### Issue #3: Documentation Status Updates Needed ⚠️ ACTION REQUIRED
 
 **Files Requiring Updates**:
+
 1. **PROJECT_PLAN.md** (Line 4)
    - Current: `32/38 Tasks Complete (84%)`
    - Should be: `33/38 Tasks Complete (87%)`
@@ -265,6 +297,7 @@ Pass Rate: 97% (37/38)
 ## Feature Completeness Summary
 
 ### MVP Features Status
+
 | Feature | Target | Actual | Status |
 |---------|--------|--------|--------|
 | CSV Ingestion | ✅ | ✅ | PASS |
@@ -302,6 +335,7 @@ Pass Rate: 97% (37/38)
 ## Recommendations & Action Items
 
 ### 🔴 CRITICAL (Must Fix)
+
 1. **Fix dashboard.py closeButton issue**
    - Line 470: Change `closeButton=True` → `close_button=True`
    - Will restore test pass rate to 38/38 (100%)
@@ -318,17 +352,19 @@ Pass Rate: 97% (37/38)
    - Time: 2 minutes
 
 ### 🟡 IMPORTANT (Should Do Soon)
-4. **Configure Playwright for E2E tests** (optional but good to have)
+
+1. **Configure Playwright for E2E tests** (optional but good to have)
    - Install pytest-playwright
    - Add fixtures to conftest.py
    - Time: 30-45 minutes
 
-5. **Review dashboard code for other potential version conflicts**
+2. **Review dashboard code for other potential version conflicts**
    - Check for other camelCase component arguments
    - Time: 15 minutes
 
 ### 🟢 NICE TO HAVE (Phase 2)
-6. **Begin Phase 2 task #33** (Expand patterns to 15+)
+
+1. **Begin Phase 2 task #33** (Expand patterns to 15+)
    - Add 7-8 new pattern detectors
    - Est: 2-4 hours
 
@@ -356,9 +392,10 @@ Pass Rate: 97% (37/38)
 
 ## Conclusion
 
-The Candle Patterns project is **production-ready with minor documentation corrections needed**. 
+The Candle Patterns project is **production-ready with minor documentation corrections needed**.
 
 ### Current State
+
 - ✅ All MVP features implemented
 - ✅ 37/38 unit tests passing (97%)
 - ✅ Dashboard running and functional
@@ -368,6 +405,7 @@ The Candle Patterns project is **production-ready with minor documentation corre
 - ⚠️ Documentation needs updating to reflect actual test count
 
 ### Action Required
+
 1. **URGENT**: Fix `closeButton` → `close_button` in dashboard.py (2 min)
 2. **URGENT**: Update PROJECT_PLAN.md with accurate test count (5 min)
 3. **URGENT**: Update progress_tracker.csv with accurate status (2 min)
