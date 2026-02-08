@@ -697,7 +697,9 @@ sidebar = dbc.Card(
                     dbc.Button(
                         " Load Sample Data",
                         id="load-sample-btn",
-                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem", "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)", "color": "white", "border": "none", "width": "100%", "marginBottom": "0.75rem", "cursor": "pointer", "borderRadius": "10px", "transition": "all 0.3s ease"}
+                        color="success",
+                        className="w-100 mb-3",
+                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem", "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)", "color": "white", "border": "none", "cursor": "pointer", "borderRadius": "10px"}
                     ),
                     html.Small(
                         "Load 200 candlesticks with 21 patterns",
@@ -1469,7 +1471,6 @@ def export_chart(n, data):
     Output("current-data", "data"),
     Output("upload-status", "children"),
     Input("load-sample-btn", "n_clicks"),
-    prevent_initial_call=True,
 )
 def load_sample_data(n_clicks):
     """Load sample data when button is clicked."""
