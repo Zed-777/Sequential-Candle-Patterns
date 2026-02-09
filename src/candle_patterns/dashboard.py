@@ -6,7 +6,7 @@ import dash
 import dash_bootstrap_components as dbc
 import requests
 
-from dash import html, dcc, Input, Output, State, callback_context
+from dash import html, dcc, Input, Output, State, callback_context, clientside_callback
 from dash.dcc.express import send_data_frame, send_bytes
 
 import plotly.graph_objects as go
@@ -34,6 +34,18 @@ app = dash.Dash(
 )
 
 server = app.server
+
+# Client-side callback to handle button clicks and increment the trigger counter
+app.clientside_callback(
+    """
+    function(n_clicks) {
+        console.log('🔘 Button clicked! n_clicks =', n_clicks);
+        return n_clicks ? n_clicks : 1;
+    }
+    """,
+    Output('load-sample-trigger', 'data'),
+    Input('load-sample-btn', 'n_clicks')
+)
 
 # Modern, professional, visually appealing stylesheet
 custom_css = """
@@ -702,6 +714,7 @@ sidebar = dbc.Card(
                         className="w-100 mb-3",
                         style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem", "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)", "color": "white", "border": "none", "cursor": "pointer", "borderRadius": "10px"}
                     ),
+                    dcc.Store(id="load-sample-trigger", data=0),  # Counter for button clicks
                     html.Small(
                         "Load 200 candlesticks with 21 patterns",
                         style={"marginTop": "8px", "color": "#6b7280", "display": "block", "fontWeight": "500"}
@@ -1548,16 +1561,16 @@ def load_from_history(upload_id):
 @app.callback(
     Output("current-data", "data", allow_duplicate=True),
     Output("upload-status", "children", allow_duplicate=True),
-    Input("load-sample-btn", "n_clicks"),
+    Input("load-sample-trigger", "data"),
     prevent_initial_call=True,
 )
-def handle_load_sample_click(n_clicks):
-    """Handle Load Sample Data button click - directly load and detect patterns."""
-    if not n_clicks or n_clicks == 0:
+def handle_load_sample_click(trigger_value):
+    """Handle Load Sample Data button click via trigger store - directly load and detect patterns."""
+    if not trigger_value or trigger_value == 0:
         return None, ""
     
     try:
-        logger.info(f"🔵 LOAD SAMPLE BUTTON CLICKED: n_clicks={n_clicks}")
+        logger.info(f"🔵 LOAD SAMPLE TRIGGERED: trigger_value={trigger_value}")
         
         from pathlib import Path
         from candle_patterns.detection import detect_patterns
