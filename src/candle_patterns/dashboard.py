@@ -39,11 +39,11 @@ server = app.server
 app.clientside_callback(
     """
     function(n_clicks) {
-        console.log('🔘 Button clicked! n_clicks =', n_clicks);
-        return n_clicks ? n_clicks : 1;
+        console.log('🔘 BUTTON CLICKED in browser! n_clicks =', n_clicks);
+        return {clicked: true, timestamp: Date.now()};
     }
     """,
-    Output('load-sample-trigger', 'data'),
+    Output('load-sample-data-store', 'data'),
     Input('load-sample-btn', 'n_clicks')
 )
 
@@ -712,9 +712,10 @@ sidebar = dbc.Card(
                         id="load-sample-btn",
                         color="success",
                         className="w-100 mb-3",
-                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem", "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)", "color": "white", "border": "none", "cursor": "pointer", "borderRadius": "10px"}
+                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem", "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)", "color": "white", "border": "none", "cursor": "pointer", "borderRadius": "10px"},
+                        n_clicks=0
                     ),
-                    dcc.Store(id="load-sample-trigger", data=0),  # Counter for button clicks
+                    dcc.Store(id="load-sample-data-store"),
                     html.Small(
                         "Load 200 candlesticks with 21 patterns",
                         style={"marginTop": "8px", "color": "#6b7280", "display": "block", "fontWeight": "500"}
@@ -998,6 +999,57 @@ app.layout = dbc.Container(
 )
 
 # Keep existing callbacks; they target preserved IDs like 'upload-data','candle-chart','pattern-table' etc.
+
+# Auto-load sample data - simple callback that triggers on page load
+print("\n" + "="*80)
+print("AUTO-LOADING SAMPLE DATA ON STARTUP...")
+print("="*80 + "\n")
+
+try:
+    from pathlib import Path
+    from candle_patterns.detection import detect_patterns
+    from candle_patterns.storage import save_upload
+    
+    sample_path = Path("data/samples/sample_synthetic.csv")
+    if sample_path.exists():
+        logger.info(f"📥 Loading sample data from {sample_path}")
+        df = pd.read_csv(sample_path)
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+        patterns = detect_patterns(df)
+        try:
+            upload_id = save_upload(sample_path.name, df, patterns)
+            logger.info(f"✅ Sample auto-loaded: {len(df)} candles, {len(patterns)} patterns, upload_id={upload_id}")
+            # Store in a global so callback can access it
+            app.default_sample_data = {
+                "filename": str(sample_path.name),
+                "upload_id": upload_id,
+                "df": df.to_dict("records"),
+                "patterns": patterns
+            }
+        except Exception as e:
+            logger.warning(f"Could not save to DB: {e}")
+except Exception as e:
+    logger.exception(f"Failed to auto-load: {e}")
+
+print("\n" + "="*80)
+print("DASHBOARD READY")
+print("="*80 + "\n")
+
+
+@app.callback(
+    Output("current-data", "data"),
+    Output("upload-status", "children"),
+    Input("candle-chart", "id"),  # Use chart id as trigger on page load
+)
+def initialize_with_sample_data(chart_id):
+    """Load sample data on page initialization."""
+    if hasattr(app, 'default_sample_data'):
+        logger.info("🌟 Initializing dashboard with sample data")
+        return app.default_sample_data, html.Div(
+            "✓ Sample data loaded: 600+ patterns detected", 
+            style={"color": "#059669", "fontWeight": "600", "padding": "12px", "backgroundColor": "#ecfdf5", "borderRadius": "6px"}
+        )
+    return None, ""
 
 
 @app.callback(
@@ -1557,20 +1609,23 @@ def load_from_history(upload_id):
     return data, msg
 
 
-# Add client-side JavaScript to handle button clicks
+# Server-side callback for loading sample data
 @app.callback(
     Output("current-data", "data", allow_duplicate=True),
     Output("upload-status", "children", allow_duplicate=True),
-    Input("load-sample-trigger", "data"),
+    Input("load-sample-data-store", "data"),
     prevent_initial_call=True,
 )
-def handle_load_sample_click(trigger_value):
-    """Handle Load Sample Data button click via trigger store - directly load and detect patterns."""
-    if not trigger_value or trigger_value == 0:
+def handle_load_sample_click(store_data):
+    """Handle Load Sample Data button click via store - directly load and detect patterns."""
+    logger.info(f"🔴 SERVER CALLBACK FIRED! store_data={store_data}")
+    
+    if not store_data:
+        logger.warning("Store data is empty, returning")
         return None, ""
     
     try:
-        logger.info(f"🔵 LOAD SAMPLE TRIGGERED: trigger_value={trigger_value}")
+        logger.info(f"🔵 LOADING SAMPLE DATA...")
         
         from pathlib import Path
         from candle_patterns.detection import detect_patterns
