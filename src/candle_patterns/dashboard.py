@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import dash
 import dash_bootstrap_components as dbc
+import requests
 
 from dash import html, dcc, Input, Output, State, callback_context
 from dash.dcc.express import send_data_frame, send_bytes
@@ -926,6 +927,44 @@ main_content = dbc.Tabs(
     className="mt-4"
 )
 
+# Flask API endpoint for loading sample data
+@server.route('/api/load-sample')
+def api_load_sample():
+    """API endpoint to load sample data directly."""
+    import json
+    from flask import jsonify
+    from pathlib import Path
+    from candle_patterns.detection import detect_candlestick_patterns
+    from candle_patterns.storage import save_upload
+    import pandas as pd
+    
+    try:
+        sample_path = Path("data/samples/sample_synthetic.csv")
+        
+        if not sample_path.exists():
+            return jsonify({"error": "Sample data file not found"}), 404
+        
+        # Load the sample data
+        df = pd.read_csv(sample_path)
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        
+        # Detect patterns
+        patterns = detect_candlestick_patterns(df)
+        
+        # Save to storage
+        upload_info = save_upload(f"sample_synthetic_automated_{pd.Timestamp.now().isoformat()}", df, patterns)
+        
+        return jsonify({
+            "success": True,
+            "message": f"✓ Loaded sample: {len(patterns)} patterns detected",
+            "patterns": len(patterns),
+            "rows": len(df),
+            "upload_id": upload_info.get('upload_id')
+        })
+    except Exception as e:
+        logger.exception('API load sample failed: %s', e)
+        return jsonify({"error": str(e)}), 500
+
 # Main layout
 app.layout = dbc.Container(
     [
@@ -1468,92 +1507,8 @@ def export_chart(n, data):
 
 
 @app.callback(
-    Output("current-data", "data"),
-    Output("upload-status", "children"),
-    Input("load-sample-btn", "n_clicks"),
-)
-def load_sample_data(n_clicks):
-    """Load sample data when button is clicked."""
-    try:
-        logger.info(f"Load sample button clicked (n_clicks={n_clicks})")
-        
-        if n_clicks is None or n_clicks == 0:
-            logger.debug("Early return: n_clicks is None or 0")
-            return None, ""
-        
-        from pathlib import Path
-        from candle_patterns.storage import save_upload
-
-        sample_path = Path("data/samples/sample_synthetic.csv")
-        logger.info(f"Sample path: {sample_path}")
-        
-        if not sample_path.exists():
-            logger.info("Generating synthetic sample data...")
-            import numpy as np
-            import pandas as _pd
-
-            dates = pd.date_range(end=pd.Timestamp.now('UTC'), periods=200, freq='1h')
-            price = 20000 + np.cumsum(np.random.randn(len(dates)) * 50)
-            open_p = price + np.random.randn(len(dates)) * 5
-            close_p = price + np.random.randn(len(dates)) * 5
-            high_p = np.maximum(open_p, close_p) + np.abs(np.random.randn(len(dates)) * 10)
-            low_p = np.minimum(open_p, close_p) - np.abs(np.random.randn(len(dates)) * 10)
-            sdf = _pd.DataFrame({
-                "timestamp": dates.astype(str),
-                "open": open_p,
-                "high": high_p,
-                "low": low_p,
-                "close": close_p
-            })
-            sample_path.parent.mkdir(parents=True, exist_ok=True)
-            sdf.to_csv(sample_path, index=False)
-            logger.info(f"Generated synthetic sample to {sample_path}")
-
-        logger.info(f"Loading CSV from {sample_path}")
-        df = pd.read_csv(sample_path)
-        logger.info(f"Loaded {len(df)} rows")
-        
-        # Convert timestamp to datetime with UTC
-        if not pd.api.types.is_datetime64_any_dtype(df["timestamp"]):
-            df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
-            logger.info(f"Converted timestamp to UTC datetime")
-        
-        logger.info(f"Detecting patterns...")
-        patterns = detect_patterns(df)
-        logger.info(f"✓ Detected {len(patterns)} patterns")
-        
-        # Try to save to DB, but don't fail if it doesn't work
-        uid = None
-        try:
-            uid = save_upload(sample_path.name, df, patterns)
-            logger.info(f"Saved to DB with upload_id: {uid}")
-        except Exception as db_error:
-            logger.warning(f"Could not save to DB (non-critical): {db_error}")
-
-        # Build response data
-        data = {
-            "filename": str(sample_path.name),
-            "upload_id": uid,
-            "df": df.to_dict("records"),
-            "patterns": patterns
-        }
-        
-        msg = f"✓ Loaded sample: {len(patterns)} patterns detected"
-        logger.info(f"✓ Callback returning: {msg}")
-        logger.info(f"  Data keys: {list(data.keys())}")
-        logger.info(f"  Data['df']: {len(data['df'])} records")
-        logger.info(f"  Data['patterns']: {len(data['patterns'])} patterns")
-        
-        return data, msg
-        
-    except Exception as e:
-        logger.exception(f"❌ FATAL ERROR in load_sample_data: {e}")
-        return None, f"❌ Error: {str(e)}"
-
-
-@app.callback(
-    Output("current-data", "data"),
-    Output("upload-status", "children"),
+    Output("current-data", "data", allow_duplicate=True),
+    Output("upload-status", "children", allow_duplicate=True),
     Input("history-select", "value"),
     prevent_initial_call=True,
 )
@@ -1587,6 +1542,69 @@ def load_from_history(upload_id):
     msg = f"Loaded: {rec.get('filename')}"
     logger.info(msg)
     return data, msg
+
+
+# Add client-side JavaScript to handle button clicks
+@app.callback(
+    Output("current-data", "data", allow_duplicate=True),
+    Output("upload-status", "children", allow_duplicate=True),
+    Input("load-sample-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def handle_load_sample_click(n_clicks):
+    """Handle Load Sample Data button click - call API and update store."""
+    if not n_clicks or n_clicks == 0:
+        return None, ""
+    
+    try:
+        logger.info(f"Load sample button clicked - n_clicks={n_clicks}")
+        
+        # Call the API endpoint directly
+        response = requests.get('http://127.0.0.1:8050/api/load-sample', timeout=10)
+        response.raise_for_status()
+        result = response.json()
+        
+        if result.get('success'):
+            # Now load the data from the database
+            upload_id = result.get('upload_id')
+            logger.info(f"API returned upload_id: {upload_id}")
+            
+            if upload_id:
+                from candle_patterns.storage import get_upload
+                from pathlib import Path
+                rec = get_upload(upload_id)
+                if rec:
+                    df = pd.read_csv(rec["filepath"]) if rec.get("filepath") else pd.DataFrame()
+                    detections_path = rec.get("detections_path")
+                    patterns = []
+                    if detections_path and isinstance(detections_path, str) and Path(detections_path).exists():
+                        patterns = pd.read_csv(detections_path).to_dict("records")
+                    
+                    data = {
+                        "filename": rec.get("filename", "sample_data.csv"),
+                        "upload_id": upload_id,
+                        "df": df.to_dict("records"),
+                        "patterns": patterns
+                    }
+                    
+                    msg = result.get('message', 'Data loaded successfully')
+                    logger.info(f"Sample data loaded: {msg}")
+                    msg_html = html.Div(msg, style={"color": "#059669", "fontWeight": "600", "padding": "12px", "backgroundColor": "#ecfdf5", "borderRadius": "6px"})
+                    return data, msg_html
+            
+            # Fallback if no upload_id
+            msg = result.get('message', 'Data loaded but not stored')
+            return None, html.Div(msg, style={"color": "#059669", "fontWeight": "600", "padding": "12px", "backgroundColor": "#ecfdf5", "borderRadius": "6px"})
+        else:
+            error = result.get('error', 'Unknown error')
+            logger.warning(f"API error: {error}")
+            return None, html.Div(f"Error: {error}", style={"color": "#dc2626", "fontWeight": "600"})
+    except Exception as e:
+        logger.exception(f"Failed to load sample data: {e}")
+        return None, html.Div(f"Error: {str(e)}", style={"color": "#dc2626", "fontWeight": "600"})
+
+
+
 
 
 if __name__ == "__main__":
