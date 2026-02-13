@@ -23,3 +23,13 @@ exclude = [".conda", ".venv", "env", "venv", "ENV", "build", "dist", ".git", "__
 # Optional: adjust select/ignore rules if needed
 # select = ["E","F","W","C" ]
 # ignore = ["E203","W503"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+	"asyncio: mark a test as asyncio-enabled",
+	"e2e: mark an end-to-end Playwright test"
+]

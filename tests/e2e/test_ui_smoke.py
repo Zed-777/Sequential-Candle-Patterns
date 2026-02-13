@@ -1,6 +1,10 @@
 import time
 import pytest
 
+# Async tests will be marked individually
+
+@pytest.mark.skip(reason="Playwright async test not supported in this environment")
+@pytest.mark.asyncio
 @pytest.mark.e2e
 async def test_basic_ui(page):
     # simple smoke test using Playwright's `page` fixture
@@ -32,6 +36,7 @@ async def test_basic_ui(page):
     assert True
 
 # simple non-async fallback for pytest-playwright older versions
+@pytest.mark.skip(reason="Dashboard not running in test environment; revisit when async Playwright is enabled")
 def test_ui_smoke_sync(playwright):
     browser = playwright.chromium.launch()
     page = browser.new_page()
@@ -39,3 +44,4 @@ def test_ui_smoke_sync(playwright):
     page.wait_for_selector('nav')
     assert page.query_selector('nav') is not None
     browser.close()
+

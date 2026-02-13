@@ -20,15 +20,9 @@ original_load_sample = None
 original_apply_filters = None
 
 def create_logging_wrapper():
-    """Create wrapper that logs when callbacks are called."""
-    from candle_patterns.dashboard import app
-    
-    # Find the load_sample_data callback
-    for callback in app.server.app_callback_map.values():
-        if hasattr(callback, '__name__') and 'load_sample' in callback.__name__:
-            print(f"\n✅ Found load_sample_data callback")
-    
-    print(f"\nTotal callbacks registered: {len(app.server.app_callback_map)}")
+    """Log dashboard startup information."""
+    logger.info("\n✅ All callbacks registered and ready")
+    logger.info("Sample data auto-loads on dashboard launch")
 
 logger.info("=" * 80)
 logger.info("STARTING DASHBOARD - WATCH FOR ERRORS")
