@@ -90,3 +90,45 @@ The system must:
 
 - **Rule-based detectors added:** Spinning Top, Shooting Star, Hanging Man, Piercing Line, Morning Star, Evening Star.
 - **Notes:** These detectors use simple, conservative heuristics suitable for synthetic unit tests; further parameterization will be added as part of ML calibration and validation.
+
+---
+
+## Phase 2 Pattern Expansion (February 22, 2026)
+
+### New Patterns Added (5)
+
+| Pattern | Type | Description | Detection Logic |
+|---------|------|-------------|-----------------|
+| **Dark Cloud Cover** | Bearish Reversal | Green candle followed by red candle that opens above prior close and closes below midpoint of prior body | 2-candle pattern: prior green, current red opens above prior close, closes below (prior open + prior close) / 2 |
+| **Bullish Harami** | Bullish Reversal | Small green candle contained entirely within prior large red candle's range | 2-candle pattern: prior red, current green with high < prior high AND low > prior low |
+| **Bearish Harami** | Bearish Reversal | Small red candle contained entirely within prior large green candle's range | 2-candle pattern: prior green, current red with high < prior high AND low > prior low |
+| **On Neck Line** | Bearish Continuation | After a red candle, a second red candle closes at or very near the prior candle's low | 2-candle pattern: both red, current close ≈ prior low (tolerance: 1% of prior high) |
+| **In Neck Line** | Bearish Continuation | After a red candle, a second red candle closes above the prior close but opens below the prior open | 2-candle pattern: both red, current close > prior close, current open < prior open |
+
+### Complete Pattern Catalog (17 patterns)
+
+| # | Pattern | Type | Candles Required |
+|---|---------|------|------------------|
+| 1 | Doji | Neutral/Reversal | 1 |
+| 2 | Hammer | Bullish Reversal | 1 |
+| 3 | Spinning Top | Neutral | 1 |
+| 4 | Shooting Star | Bearish Reversal | 1 |
+| 5 | Hanging Man | Bearish Reversal | 1 |
+| 6 | Bullish Engulfing | Bullish Reversal | 2 |
+| 7 | Bearish Engulfing | Bearish Reversal | 2 |
+| 8 | Piercing Line | Bullish Reversal | 2 |
+| 9 | Dark Cloud Cover | Bearish Reversal | 2 |
+| 10 | Bullish Harami | Bullish Reversal | 2 |
+| 11 | Bearish Harami | Bearish Reversal | 2 |
+| 12 | On Neck Line | Bearish Continuation | 2 |
+| 13 | In Neck Line | Bearish Continuation | 2 |
+| 14 | Three White Soldiers | Bullish Continuation | 3 |
+| 15 | Three Black Crows | Bearish Continuation | 3 |
+| 16 | Morning Star | Bullish Reversal | 3 |
+| 17 | Evening Star | Bearish Reversal | 3 |
+
+### Test Coverage
+
+- 10 dedicated unit tests for new patterns (positive + negative cases)
+- Integration test verifying all patterns registered in RULES
+- Total test suite: **48 passed, 2 skipped**

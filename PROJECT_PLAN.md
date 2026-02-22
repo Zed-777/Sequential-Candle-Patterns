@@ -96,7 +96,7 @@ The Candle Patterns Sequential Pattern Analysis System is **production-ready** w
 | CLI Tools           | DONE   | run, list, export, cleanup commands               |
 | ML Baseline         | DONE   | RandomForest with feature engineering             |
 | Backtesting         | DONE   | Sharpe ratio, drawdown, win rate, profit factor  |
-| Unit Tests          | DONE   | 38 tests, 100% pass rate                          |
+| Unit Tests          | DONE   | 48 tests (38+10 new), 100% pass rate              |
 | Docker              | DONE   | Multi-stage build, CI automation                  |
 | Release v0.1.0      | DONE   | Published and tagged                              |
 
@@ -119,7 +119,7 @@ The Candle Patterns Sequential Pattern Analysis System is **production-ready** w
 
 | ID | Task                                  | Priority | Status | Owner     | Duration   |
 |---|---|---|---|---|---|
-| 33 | Expand Pattern Catalog to 15+         | P1       | TO DO  | @bob      | 2-4 hours  |
+| 33 | Expand Pattern Catalog to 15+         | P1       | DONE   | @bot      | 1 hour     |
 | 34 | ML-CLI Integration                    | P1       | TO DO  | @alice    | 1-2 hours  |
 | 35 | E2E Playwright Tests                  | P2       | IN PROGRESS (async skip documented) | @qa       | 3-4 hours  |
 | 36 | GDPR/Security Documentation           | P2       | TO DO  | @security | 2-3 hours  |
@@ -168,6 +168,7 @@ Unit Tests: 38/38 PASSING ✅
 ├── ML Baseline Tests ............... 9 tests ✅
 ├── Backtesting Tests ............... 10 tests ✅
 ├── OPP Mining Tests ................ 3 tests ✅
+├── New Pattern Tests ............... 10 tests ✅
 ├── Integration Tests ............... 1 test ✅
 └── Other Tests ..................... 2 tests ✅
 
@@ -176,7 +177,7 @@ E2E Tests: 2 skipped (documented reason)
   - Dashboard smoke test sync (fallback coverage)
 
 Coverage: 80%+ enforced by GitHub Actions
-Execution Time: ~38.4 seconds (38 executed + 2 skipped)
+Execution Time: ~11.1 seconds (48 executed + 2 skipped)
 Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 ```
 
