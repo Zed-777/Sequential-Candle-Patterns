@@ -27,7 +27,10 @@ from candle_patterns.opp_miner import top_patterns_across_lengths
 from candle_patterns.storage import save_upload
 
 # Modern professional stylesheet with custom CSS
-external_stylesheets = [dbc.themes.BOOTSTRAP]
+external_stylesheets = [
+    dbc.themes.BOOTSTRAP,
+    "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css",
+]
 external_scripts = ['https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js']
 
 app = dash.Dash(
@@ -114,17 +117,7 @@ print("="*80)
 print("DASHBOARD READY")
 print("="*80 + "\n")
 
-# Client-side callback to handle button clicks and increment the trigger counter
-app.clientside_callback(
-    """
-    function(n_clicks) {
-        console.log('? BUTTON CLICKED in browser! n_clicks =', n_clicks);
-        return {clicked: true, timestamp: Date.now()};
-    }
-    """,
-    Output('load-sample-data-store', 'data'),
-    Input('load-sample-btn', 'n_clicks')
-)
+# NOTE: Clientside callback removed - load-sample-btn handled by on_load_sample_click server callback
 
 # Modern, professional, visually appealing stylesheet
 custom_css = """
@@ -194,7 +187,7 @@ body {
 }
 
 .navbar-brand::before {
-    content: "[STATS]";
+    content: '';
     font-size: 1.75rem;
 }
 
@@ -806,7 +799,7 @@ sidebar = dbc.Card(
                 
                 # Filters section
                 html.Div([
-                    html.H6("? Date Range Filter"),
+                    html.H6([html.I(className="bi bi-calendar-range"), " Date Range Filter"]),
                     dcc.DatePickerRange(
                         id="date-range",
                         display_format="YYYY-MM-DD",
@@ -820,7 +813,7 @@ sidebar = dbc.Card(
                 
                 # Patterns section
                 html.Div([
-                    html.H6("[TARGET] Pattern Filters"),
+                    html.H6([html.I(className="bi bi-bullseye"), " Pattern Filters"]),
                     dcc.Checklist(
                         id="pattern-checklist",
                         options=[],
@@ -838,7 +831,7 @@ sidebar = dbc.Card(
                 
                 # History section
                 html.Div([
-                    html.H6("[HISTORY] Load from History"),
+                    html.H6([html.I(className="bi bi-clock-history"), " Load from History"]),
                     dcc.Dropdown(
                         id="history-select",
                         placeholder="Select a past upload...",
@@ -851,14 +844,14 @@ sidebar = dbc.Card(
                 
                 # Custom sequence section
                 html.Div([
-                    html.H6("[LINK] Custom Sequence"),
+                    html.H6([html.I(className="bi bi-link-45deg"), " Custom Sequence"]),
                     dcc.Input(
                         id="custom-seq-input",
                         placeholder="e.g. 3R -> Doji -> G",
                         style={"width": "100%", "borderRadius": "10px", "padding": "0.75rem 1rem", "border": "1.5px solid #e5e7eb"}
                     ),
                     dbc.Button(
-                        "[PLAY] Run Sequence",
+                        [html.I(className="bi bi-play-fill"), " Run Sequence"],
                         id="run-custom-seq-btn",
                         color="secondary",
                         size="sm",
@@ -871,9 +864,9 @@ sidebar = dbc.Card(
                 
                 # Maintenance section
                 html.Div([
-                    html.H6("[CLEAN] Maintenance"),
+                    html.H6([html.I(className="bi bi-wrench"), " Maintenance"]),
                     dbc.Button(
-                        "[TRASH] Run Cleanup",
+                        [html.I(className="bi bi-trash"), " Run Cleanup"],
                         id="cleanup-btn",
                         color="danger",
                         size="sm",
@@ -890,9 +883,9 @@ sidebar = dbc.Card(
                 
                 # Export section
                 html.Div([
-                    html.H6("[SAVE] Export Data"),
+                    html.H6([html.I(className="bi bi-download"), " Export Data"]),
                     dbc.Button(
-                        "[STATS] Detections",
+                        [html.I(className="bi bi-table"), " Detections"],
                         id="export-detections-btn",
                         color="info",
                         size="sm",
@@ -900,7 +893,7 @@ sidebar = dbc.Card(
                         style={"fontWeight": "700", "padding": "0.65rem 1rem"}
                     ),
                     dbc.Button(
-                        "[UP] Aggregated",
+                        [html.I(className="bi bi-bar-chart"), " Aggregated"],
                         id="export-aggregated-btn",
                         color="info",
                         size="sm",
@@ -946,7 +939,7 @@ pattern_modal = dbc.Modal(
                     style={"fontWeight": "700", "padding": "0.65rem 1.2rem"}
                 ),
                 dbc.Button(
-                    "? Close",
+                    [html.I(className="bi bi-x-circle"), " Close"],
                     id="modal-close",
                     color="secondary",
                     size="sm",
@@ -966,7 +959,7 @@ pattern_modal = dbc.Modal(
 main_content = dbc.Tabs(
     [
         dbc.Tab(
-            label=[html.I(className="bi bi-graph-up"), " Candlestick Chart"],
+            label="Candlestick Chart",
             tab_id="tab-chart",
             children=[
                 dbc.Container(
@@ -983,7 +976,7 @@ main_content = dbc.Tabs(
             className="p-4"
         ),
         dbc.Tab(
-            label=[html.I(className="bi bi-search"), " Individual Patterns"],
+            label="Individual Patterns",
             tab_id="tab-patterns",
             children=[
                 dbc.Container(
@@ -994,7 +987,7 @@ main_content = dbc.Tabs(
             className="p-4"
         ),
         dbc.Tab(
-            label=[html.I(className="bi bi-bar-chart"), " Aggregated Summary"],
+            label="Aggregated Summary",
             tab_id="tab-agg",
             children=[
                 dbc.Container(
@@ -1005,7 +998,7 @@ main_content = dbc.Tabs(
             className="p-4"
         ),
         dbc.Tab(
-            label=[html.I(className="bi bi-diagram-3"), " OPP Patterns"],
+            label="OPP Patterns",
             tab_id="tab-opp",
             children=[
                 dbc.Container(
@@ -1028,7 +1021,7 @@ def api_load_sample():
     import json
     from flask import jsonify
     from pathlib import Path
-    from candle_patterns.detection import detect_candlestick_patterns
+    from candle_patterns.detection import detect_patterns as _detect
     from candle_patterns.storage import save_upload
     import pandas as pd
     
@@ -1043,7 +1036,7 @@ def api_load_sample():
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         
         # Detect patterns
-        patterns = detect_candlestick_patterns(df)
+        patterns = _detect(df)
         
         # Save to storage
         upload_info = save_upload(f"sample_synthetic_automated_{pd.Timestamp.now().isoformat()}", df, patterns)
@@ -1082,16 +1075,8 @@ app.layout = dbc.Container(
 
 # Keep existing callbacks; they target preserved IDs like 'upload-data','candle-chart','pattern-table' etc.
 
-# Trigger apply_filters on page load
-@app.callback(
-    Output("current-data", "data", allow_duplicate=True),
-    Input("page-load-signal", "children"),
-    prevent_initial_call='initial_duplicate'
-)
-def init_data_on_page_load(_):
-    """Initialize store with sample data on page load."""
-    logger.info("[PAGE_LOAD] Initializing store with sample data")
-    return app.default_sample_data
+# Store is already pre-loaded with sample data; apply_filters fires on initial load
+# via prevent_initial_call=False, so no extra init callback is needed.
 
 
 # apply_filters will run when store data changes, including on initial page load
@@ -1099,16 +1084,17 @@ def init_data_on_page_load(_):
 # Handle file upload
 @app.callback(
     Output("upload-status", "children"),
-    Output("current-data", "data"),
+    Output("current-data", "data", allow_duplicate=True),
     Input("upload-data", "contents"),
     State("upload-data", "filename"),
+    prevent_initial_call=True,
 )
 def on_upload(contents, filename):
 
     from candle_patterns.storage import save_upload
 
     if contents is None:
-        return "", None
+        return "", dash.no_update
 
     content_type, content_string = contents.split(",", 1)
     import base64
@@ -1117,10 +1103,8 @@ def on_upload(contents, filename):
     decoded = base64.b64decode(content_string)
     df = pd.read_csv(io.BytesIO(decoded))
 
-    try:
-        df = load_csv(filename)
-    except (FileNotFoundError, ValueError, pd.errors.ParserError) as e:
-        logger.debug("load_csv fallback parsing for %s: %s", filename, e)
+    # Ensure timestamp column is present and parsed
+    if "timestamp" in df.columns:
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
         df = df.sort_values("timestamp").reset_index(drop=True)
 
@@ -1165,18 +1149,33 @@ def on_load_sample_click(n_clicks):
     return None, ""
 
 
-# new callback: apply filters and update chart/tables whenever current-data, pattern toggles or date range changes
+# Populate pattern checklist when data changes
+@app.callback(
+    Output("pattern-checklist", "options"),
+    Output("pattern-checklist", "value"),
+    Input("current-data", "data"),
+    prevent_initial_call=False,
+)
+def update_checklist(data):
+    """Update pattern checklist options when new data is loaded."""
+    if not data:
+        return [], []
+    patterns = data.get("patterns", [])
+    names = sorted({p["pattern"] for p in patterns})
+    options = [{"label": n, "value": n} for n in names]
+    return options, names  # select all by default
+
+
+# Apply filters and update chart/tables when data, date range, or pattern selection changes
 @app.callback(
     Output("candle-chart", "figure"),
     Output("pattern-table", "children"),
     Output("aggregated-table", "children"),
     Output("opp-table", "children"),
-    Output("pattern-checklist", "options"),
-    Output("pattern-checklist", "value"),
     Input("current-data", "data"),
     Input("date-range", "start_date"),
     Input("date-range", "end_date"),
-    State("pattern-checklist", "value"),
+    Input("pattern-checklist", "value"),
     prevent_initial_call=False,
 )
 def apply_filters(data, start_date, end_date, selected_patterns):
@@ -1188,19 +1187,18 @@ def apply_filters(data, start_date, end_date, selected_patterns):
         if not data:
             logger.warning("[CALLBACK] No data provided, returning empty state")
             fig = go.Figure()
-            fig.add_annotation(text="[STATS] No data loaded yet", xref='paper', yref='paper', x=0.5, y=0.6, showarrow=False, font=dict(size=20, color='#667eea'))
+            fig.add_annotation(text="No data loaded yet", xref='paper', yref='paper', x=0.5, y=0.6, showarrow=False, font=dict(size=20, color='#667eea'))
             fig.update_layout(xaxis=dict(visible=False), yaxis=dict(visible=False), template='plotly_white', height=500, margin=dict(l=0, r=0, t=0, b=0))
             empty_div = html.Div("Click 'Load Sample Data' to begin", style={"padding": "2rem", "textAlign": "center", "color": "#6b7280"})
-            return fig, empty_div, empty_div, empty_div, [], []
+            return fig, empty_div, empty_div, empty_div
 
         # Process data
         df = pd.DataFrame(data["df"])
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
         patterns = data.get("patterns", [])
 
-        # Get pattern names and filter options
+        # Get pattern names for filtering
         names = sorted({p["pattern"] for p in patterns})
-        options = [{"label": n, "value": n} for n in names]
         selected = selected_patterns if (selected_patterns and len(selected_patterns) > 0) else names
         
         # Filter by date range
@@ -1228,35 +1226,53 @@ def apply_filters(data, start_date, end_date, selected_patterns):
 
         fig.update_layout(title=f"Candlestick Analysis | {len(filtered_patterns)} patterns", template='plotly_white', height=500, hovermode='x unified')
 
-        # Pattern list
-        list_items = [html.Li(f"{p['timestamp']}: {p['pattern']}", style={"marginBottom": "0.5rem"}) for p in filtered_patterns]
-        list_section = html.Div(list_items if list_items else "No patterns detected", style={"padding": "1rem"})
+        # Pattern list — styled as dbc.Table
+        if filtered_patterns:
+            pat_rows = [html.Tr([html.Td(p['timestamp']), html.Td(p['pattern'])]) for p in filtered_patterns]
+            list_section = dbc.Table(
+                [html.Thead(html.Tr([html.Th("Timestamp"), html.Th("Pattern")])), html.Tbody(pat_rows)],
+                bordered=True, hover=True, responsive=True, striped=True, size="sm",
+                className="mt-3", style={"fontSize": "0.9rem"}
+            )
+        else:
+            list_section = html.Div("No patterns detected", style={"padding": "1rem", "color": "#6b7280"})
 
-        # Aggregated summary
+        # Aggregated summary — styled as dbc.Table
         summary = summarize_detections(pd.DataFrame(data["df"]), patterns)
         if summary:
-            rows = [html.Tr([html.Th("Pattern"), html.Th("Count"), html.Th("Support"), html.Th("Avg Return"), html.Th("Win Rate")])]
+            agg_rows = []
             for r in summary:
-                rows.append(html.Tr([
-                    html.Td(r["pattern"]), html.Td(str(r["count"])), html.Td(f"{r['support']:.3f}"),
-                    html.Td(f"{r['avg_return']:.4f}", style={"color": "#10b981" if r['avg_return'] > 0 else "#ef4444"}),
-                    html.Td(f"{r['win_rate']:.2%}", style={"color": "#10b981" if r['win_rate'] > 0.5 else "#ef4444"})
+                agg_rows.append(html.Tr([
+                    html.Td(r["pattern"], style={"fontWeight": "600"}),
+                    html.Td(str(r["count"])),
+                    html.Td(f"{r['support']:.3f}"),
+                    html.Td(f"{r['avg_return']:.4f}", style={"color": "#10b981" if r['avg_return'] > 0 else "#ef4444", "fontWeight": "600"}),
+                    html.Td(f"{r['win_rate']:.2%}", style={"color": "#10b981" if r['win_rate'] > 0.5 else "#ef4444", "fontWeight": "600"})
                 ]))
-            agg_table = html.Table(rows, style={"width": "100%", "borderCollapse": "collapse"})
+            agg_table = dbc.Table(
+                [html.Thead(html.Tr([html.Th("Pattern"), html.Th("Count"), html.Th("Support"), html.Th("Avg Return"), html.Th("Win Rate")])),
+                 html.Tbody(agg_rows)],
+                bordered=True, hover=True, responsive=True, striped=True, size="sm",
+                className="mt-3", style={"fontSize": "0.9rem"}
+            )
         else:
             agg_table = html.Div("No summary available", style={"color": "#6b7280", "padding": "1rem"})
 
-        # OPP patterns
+        # OPP patterns — styled as dbc.Table
         top_opp = top_patterns_across_lengths(pd.DataFrame(data["df"]), min_len=3, max_len=6, min_support=0.02, top_k=5)
         if top_opp:
-            rows = [html.Tr([html.Th("Length"), html.Th("Pattern"), html.Th("Count"), html.Th("Support")])]
-            rows.extend([html.Tr([html.Td(str(t['length'])), html.Td(str(t['pattern'])), html.Td(str(t['count'])), html.Td(f"{t['support']:.3f}")]) for t in top_opp])
-            opp_table = html.Table(rows, style={"width": "100%", "borderCollapse": "collapse"})
+            opp_rows = [html.Tr([html.Td(str(t['length'])), html.Td(str(t['pattern'])), html.Td(str(t['count'])), html.Td(f"{t['support']:.3f}")]) for t in top_opp]
+            opp_table = dbc.Table(
+                [html.Thead(html.Tr([html.Th("Length"), html.Th("Pattern"), html.Th("Count"), html.Th("Support")])),
+                 html.Tbody(opp_rows)],
+                bordered=True, hover=True, responsive=True, striped=True, size="sm",
+                className="mt-3", style={"fontSize": "0.9rem"}
+            )
         else:
             opp_table = html.Div("No OPP patterns found", style={"color": "#6b7280", "padding": "1rem"})
 
-        logger.info(f"[CALLBACK] Returning: {len(filtered_patterns)} patterns, {len(options)} options")
-        return fig, list_section, agg_table, opp_table, options, selected
+        logger.info(f"[CALLBACK] Returning: {len(filtered_patterns)} patterns")
+        return fig, list_section, agg_table, opp_table
         
     except Exception as e:
         logger.exception(f"[CALLBACK ERROR] apply_filters crashed: {e}")
@@ -1264,20 +1280,10 @@ def apply_filters(data, start_date, end_date, selected_patterns):
         error_fig.add_annotation(text=f"ERROR: {str(e)[:80]}", xref='paper', yref='paper', x=0.5, y=0.5, showarrow=False, font=dict(size=14, color='#ef4444'))
         error_fig.update_layout(height=400, template='plotly_white')
         error_div = html.Div(f"Error: {str(e)[:100]}", style={"color": "#ef4444", "padding": "1rem"})
-        return error_fig, error_div, error_div, error_div, [], []
+        return error_fig, error_div, error_div, error_div
 
 
-@app.callback(
-    Output("current-data", "data", allow_duplicate=True),
-    Output("upload-status", "children", allow_duplicate=True),
-    Input("load-sample-data-store", "data"),
-    prevent_initial_call=True,
-)
-def handle_load_sample_trigger(store_data):
-    """Reload sample data when the button-derived store fires."""
-    if not store_data:
-        return dash.no_update, dash.no_update
-    return load_sample_data(store_data)
+# NOTE: handle_load_sample_trigger removed - on_load_sample_click handles the button directly
 
 
 @app.callback(
@@ -1294,7 +1300,7 @@ def refresh_history(_):
 
 
 @app.callback(
-    Output("cleanup-result", "children"),
+    Output("cleanup-result", "children", allow_duplicate=True),
     Input("cleanup-btn", "n_clicks"),
     prevent_initial_call=True,
 )
@@ -1307,8 +1313,8 @@ def run_cleanup(n):
 
 
 @app.callback(
-    Output("current-data", "data"),
-    Output("cleanup-result", "children"),
+    Output("current-data", "data", allow_duplicate=True),
+    Output("cleanup-result", "children", allow_duplicate=True),
     Input("run-custom-seq-btn", "n_clicks"),
     State("custom-seq-input", "value"),
     State("current-data", "data"),
@@ -1415,7 +1421,7 @@ def update_stats(_, __):
             dbc.Col(
                 dbc.Card(
                     dbc.CardBody([
-                        html.H6("? Total Uploads", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
+                        html.H6("Total Uploads", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
                         html.H4(str(total_uploads), style={"color": "#667eea", "fontWeight": "700"})
                     ]),
                     className="stat-card"
@@ -1425,7 +1431,7 @@ def update_stats(_, __):
             dbc.Col(
                 dbc.Card(
                     dbc.CardBody([
-                        html.H6("? Last Upload", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
+                        html.H6("Last Upload", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
                         html.P(last_upload_label, style={"color": "#495057", "fontSize": "0.85rem", "margin": "0"})
                     ]),
                     className="stat-card"
@@ -1441,51 +1447,34 @@ def update_stats(_, __):
 @app.callback(
     Output("download-asset", "data"),
     Input("export-detections-btn", "n_clicks"),
-    State("current-data", "data"),
-    prevent_initial_call=True,
-)
-def export_detections(n, data):
-    if not data:
-        return dash.no_update
-    df = pd.DataFrame(data.get("patterns", []))
-    return send_data_frame(df.to_csv, f"detections_{data.get('filename','upload')}.csv", index=False)
-
-
-@app.callback(
-    Output("download-asset", "data"),
     Input("export-aggregated-btn", "n_clicks"),
-    State("current-data", "data"),
-    prevent_initial_call=True,
-)
-def export_aggregated(n, data):
-    if not data:
-        return dash.no_update
-    summary = summarize_detections(pd.DataFrame(data["df"]), data.get("patterns", []))
-    df = pd.DataFrame(summary)
-    return send_data_frame(df.to_csv, f"aggregated_{data.get('filename','upload')}.csv", index=False)
-
-
-@app.callback(
-    Output("download-asset", "data"),
     Input("export-chart-btn", "n_clicks"),
     State("current-data", "data"),
     prevent_initial_call=True,
 )
-def export_chart(n, data):
-    """Generate a PNG of the current chart and return as download."""
+def export_data(n_det, n_agg, n_chart, data):
+    """Unified export callback — determines which button triggered it."""
     if not data:
         return dash.no_update
-    import plotly.io as pio
-    df = pd.DataFrame(data['df'])
-    df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
-    fig = go.Figure(data=[go.Candlestick(x=df['timestamp'], open=df['open'], high=df['high'], low=df['low'], close=df['close'])])
-    # server-side image export using kaleido
-    try:
-        img_bytes = fig.to_image(format='png', width=1200, height=600, scale=2)
-        return send_bytes(lambda: img_bytes, f"chart_{data.get('filename','upload')}.png")
-    except Exception as e:
-        logger.exception('export chart failed: %s', e)
-        return dash.no_update
+    triggered = callback_context.triggered_id
+    if triggered == "export-detections-btn":
+        df = pd.DataFrame(data.get("patterns", []))
+        return send_data_frame(df.to_csv, f"detections_{data.get('filename','upload')}.csv", index=False)
+    elif triggered == "export-aggregated-btn":
+        summary = summarize_detections(pd.DataFrame(data["df"]), data.get("patterns", []))
+        df = pd.DataFrame(summary)
+        return send_data_frame(df.to_csv, f"aggregated_{data.get('filename','upload')}.csv", index=False)
+    elif triggered == "export-chart-btn":
+        df = pd.DataFrame(data['df'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
+        fig = go.Figure(data=[go.Candlestick(x=df['timestamp'], open=df['open'], high=df['high'], low=df['low'], close=df['close'])])
+        try:
+            img_bytes = fig.to_image(format='png', width=1200, height=600, scale=2)
+            return send_bytes(lambda: img_bytes, f"chart_{data.get('filename','upload')}.png")
+        except Exception as e:
+            logger.exception('export chart failed: %s', e)
+            return dash.no_update
+    return dash.no_update
 
 
 @app.callback(

@@ -18,3 +18,5 @@ models/
 .env
 coverage.xml
 htmlcov/
+artifacts/
+*.egg-info/
