@@ -5,6 +5,7 @@ import logging
 import dash
 import dash_bootstrap_components as dbc
 import requests
+from pathlib import Path
 
 from dash import html, dcc, Input, Output, State, callback_context, clientside_callback
 from dash.dcc.express import send_data_frame, send_bytes
@@ -23,6 +24,8 @@ from candle_patterns.reporting import summarize_detections
 
 from candle_patterns.opp_miner import top_patterns_across_lengths
 
+from candle_patterns.storage import save_upload
+
 # Modern professional stylesheet with custom CSS
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 external_scripts = ['https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js']
@@ -35,11 +38,87 @@ app = dash.Dash(
 
 server = app.server
 
+
+def load_sample_data(trigger_data=None):
+    """Load the built-in sample dataset and return the payload + status message."""
+    logger.info("[INFO] Loading sample data (trigger=%s)", trigger_data)
+    sample_path = Path("data/samples/sample_synthetic.csv")
+
+    if not sample_path.exists():
+        msg = html.Div(
+            "[ERROR] Sample file not found. Please ensure data/samples/sample_synthetic.csv exists.",
+            style={"color": "#dc2626", "fontWeight": "600"}
+        )
+        return None, msg
+
+    try:
+        df = pd.read_csv(sample_path)
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+        patterns = detect_patterns(df)
+        try:
+            upload_meta = save_upload(sample_path.name, df, patterns)
+            upload_id = upload_meta.get("upload_id") if isinstance(upload_meta, dict) else upload_meta
+        except Exception as db_error:
+            logger.warning("?? Could not save to DB: %s", db_error)
+            upload_id = None
+
+        data = {
+            "filename": str(sample_path.name),
+            "upload_id": upload_id,
+            "df": df.to_dict("records"),
+            "patterns": patterns,
+        }
+
+        status_html = html.Div(
+            f"[OK] Loaded sample: {len(patterns)} patterns detected",
+            style={
+                "color": "#059669",
+                "fontWeight": "600",
+                "padding": "12px",
+                "backgroundColor": "#ecfdf5",
+                "borderRadius": "6px",
+                "marginTop": "8px"
+            }
+        )
+
+        return data, status_html
+    except Exception as exc:
+        logger.exception("[ERROR] Failed to load sample data: %s", exc)
+        return None, html.Div(
+            f"[ERROR] Error loading sample data: {exc}",
+            style={"color": "#dc2626", "fontWeight": "600", "whiteSpace": "pre-wrap"}
+        )
+
+# ============================================================================
+# AUTO-LOAD SAMPLE DATA ON STARTUP
+# ============================================================================
+print("\n" + "="*80)
+print("AUTO-LOADING SAMPLE DATA ON STARTUP...")
+print("="*80 + "\n")
+
+app.default_sample_data = None
+
+try:
+    data, _ = load_sample_data()
+    if data:
+        app.default_sample_data = data
+        logger.info("[OK] Sample auto-loaded for layout")
+        try:
+            print(f"\n[OK] LOADED: {len(data['df'])} candles, {len(data['patterns'])} patterns\n")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            print(f"\n[OK] LOADED: {len(data['df'])} candles, {len(data['patterns'])} patterns\n")
+except Exception as e:
+    logger.exception(f"Failed to auto-load: {e}")
+
+print("="*80)
+print("DASHBOARD READY")
+print("="*80 + "\n")
+
 # Client-side callback to handle button clicks and increment the trigger counter
 app.clientside_callback(
     """
     function(n_clicks) {
-        console.log('🔘 BUTTON CLICKED in browser! n_clicks =', n_clicks);
+        console.log('? BUTTON CLICKED in browser! n_clicks =', n_clicks);
         return {clicked: true, timestamp: Date.now()};
     }
     """,
@@ -115,7 +194,7 @@ body {
 }
 
 .navbar-brand::before {
-    content: "📊";
+    content: "[STATS]";
     font-size: 1.75rem;
 }
 
@@ -693,7 +772,7 @@ sidebar = dbc.Card(
     [
         dbc.CardBody(
             [
-                html.H5("⚙️ Configuration", className="card-title"),
+                html.H5("[CONFIG] Configuration", className="card-title"),
                 
                 # Upload section
                 html.Div([
@@ -727,7 +806,7 @@ sidebar = dbc.Card(
                 
                 # Filters section
                 html.Div([
-                    html.H6("📅 Date Range Filter"),
+                    html.H6("? Date Range Filter"),
                     dcc.DatePickerRange(
                         id="date-range",
                         display_format="YYYY-MM-DD",
@@ -741,7 +820,7 @@ sidebar = dbc.Card(
                 
                 # Patterns section
                 html.Div([
-                    html.H6("🎯 Pattern Filters"),
+                    html.H6("[TARGET] Pattern Filters"),
                     dcc.Checklist(
                         id="pattern-checklist",
                         options=[],
@@ -759,7 +838,7 @@ sidebar = dbc.Card(
                 
                 # History section
                 html.Div([
-                    html.H6("📜 Load from History"),
+                    html.H6("[HISTORY] Load from History"),
                     dcc.Dropdown(
                         id="history-select",
                         placeholder="Select a past upload...",
@@ -772,14 +851,14 @@ sidebar = dbc.Card(
                 
                 # Custom sequence section
                 html.Div([
-                    html.H6("🔗 Custom Sequence"),
+                    html.H6("[LINK] Custom Sequence"),
                     dcc.Input(
                         id="custom-seq-input",
                         placeholder="e.g. 3R -> Doji -> G",
                         style={"width": "100%", "borderRadius": "10px", "padding": "0.75rem 1rem", "border": "1.5px solid #e5e7eb"}
                     ),
                     dbc.Button(
-                        "▶ Run Sequence",
+                        "[PLAY] Run Sequence",
                         id="run-custom-seq-btn",
                         color="secondary",
                         size="sm",
@@ -792,9 +871,9 @@ sidebar = dbc.Card(
                 
                 # Maintenance section
                 html.Div([
-                    html.H6("🧹 Maintenance"),
+                    html.H6("[CLEAN] Maintenance"),
                     dbc.Button(
-                        "🗑️ Run Cleanup",
+                        "[TRASH] Run Cleanup",
                         id="cleanup-btn",
                         color="danger",
                         size="sm",
@@ -811,9 +890,9 @@ sidebar = dbc.Card(
                 
                 # Export section
                 html.Div([
-                    html.H6("💾 Export Data"),
+                    html.H6("[SAVE] Export Data"),
                     dbc.Button(
-                        "📊 Detections",
+                        "[STATS] Detections",
                         id="export-detections-btn",
                         color="info",
                         size="sm",
@@ -821,7 +900,7 @@ sidebar = dbc.Card(
                         style={"fontWeight": "700", "padding": "0.65rem 1rem"}
                     ),
                     dbc.Button(
-                        "📈 Aggregated",
+                        "[UP] Aggregated",
                         id="export-aggregated-btn",
                         color="info",
                         size="sm",
@@ -842,7 +921,8 @@ sidebar = dbc.Card(
 )
 
 # Stores to keep the current upload and detections in-browser
-store_current = dcc.Store(id='current-data', storage_type='session')
+# Initialize with sample data that was loaded at startup
+store_current = dcc.Store(id='current-data', data=(app.default_sample_data if app.default_sample_data is not None else None), storage_type='memory')
 
 # Modal for pattern detail
 pattern_modal = dbc.Modal(
@@ -866,7 +946,7 @@ pattern_modal = dbc.Modal(
                     style={"fontWeight": "700", "padding": "0.65rem 1.2rem"}
                 ),
                 dbc.Button(
-                    "✕ Close",
+                    "? Close",
                     id="modal-close",
                     color="secondary",
                     size="sm",
@@ -970,7 +1050,7 @@ def api_load_sample():
         
         return jsonify({
             "success": True,
-            "message": f"✓ Loaded sample: {len(patterns)} patterns detected",
+            "message": f"[OK] Loaded sample: {len(patterns)} patterns detected",
             "patterns": len(patterns),
             "rows": len(df),
             "upload_id": upload_info.get('upload_id')
@@ -984,6 +1064,8 @@ app.layout = dbc.Container(
     [
         navbar,
         store_current,
+        dcc.Location(id='url', refresh=False),  # Track page location
+        html.Div(id='page-load-signal', children=1, style={'display': 'none'}),  # Trigger initial render
         dbc.Row(
             [
                 dbc.Col(sidebar, width=12, lg=3, className="mb-4 mb-lg-0", style={"paddingRight": "1.5rem"}),
@@ -1000,58 +1082,21 @@ app.layout = dbc.Container(
 
 # Keep existing callbacks; they target preserved IDs like 'upload-data','candle-chart','pattern-table' etc.
 
-# Auto-load sample data - simple callback that triggers on page load
-print("\n" + "="*80)
-print("AUTO-LOADING SAMPLE DATA ON STARTUP...")
-print("="*80 + "\n")
-
-try:
-    from pathlib import Path
-    from candle_patterns.detection import detect_patterns
-    from candle_patterns.storage import save_upload
-    
-    sample_path = Path("data/samples/sample_synthetic.csv")
-    if sample_path.exists():
-        logger.info(f"📥 Loading sample data from {sample_path}")
-        df = pd.read_csv(sample_path)
-        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
-        patterns = detect_patterns(df)
-        try:
-            upload_id = save_upload(sample_path.name, df, patterns)
-            logger.info(f"✅ Sample auto-loaded: {len(df)} candles, {len(patterns)} patterns, upload_id={upload_id}")
-            # Store in a global so callback can access it
-            app.default_sample_data = {
-                "filename": str(sample_path.name),
-                "upload_id": upload_id,
-                "df": df.to_dict("records"),
-                "patterns": patterns
-            }
-        except Exception as e:
-            logger.warning(f"Could not save to DB: {e}")
-except Exception as e:
-    logger.exception(f"Failed to auto-load: {e}")
-
-print("\n" + "="*80)
-print("DASHBOARD READY")
-print("="*80 + "\n")
-
-
+# Trigger apply_filters on page load
 @app.callback(
-    Output("current-data", "data"),
-    Output("upload-status", "children"),
-    Input("candle-chart", "id"),  # Use chart id as trigger on page load
+    Output("current-data", "data", allow_duplicate=True),
+    Input("page-load-signal", "children"),
+    prevent_initial_call='initial_duplicate'
 )
-def initialize_with_sample_data(chart_id):
-    """Load sample data on page initialization."""
-    if hasattr(app, 'default_sample_data'):
-        logger.info("🌟 Initializing dashboard with sample data")
-        return app.default_sample_data, html.Div(
-            "✓ Sample data loaded: 600+ patterns detected", 
-            style={"color": "#059669", "fontWeight": "600", "padding": "12px", "backgroundColor": "#ecfdf5", "borderRadius": "6px"}
-        )
-    return None, ""
+def init_data_on_page_load(_):
+    """Initialize store with sample data on page load."""
+    logger.info("[PAGE_LOAD] Initializing store with sample data")
+    return app.default_sample_data
 
 
+# apply_filters will run when store data changes, including on initial page load
+# because prevent_initial_call=False and store has data
+# Handle file upload
 @app.callback(
     Output("upload-status", "children"),
     Output("current-data", "data"),
@@ -1099,6 +1144,27 @@ def on_upload(contents, filename):
     return f"Uploaded: {filename}", data
 
 
+# Handle "Load Sample Data" button
+@app.callback(
+    Output("current-data", "data", allow_duplicate=True),
+    Output("upload-status", "children", allow_duplicate=True),
+    Input("load-sample-btn", "n_clicks"),
+    prevent_initial_call=True
+)
+def on_load_sample_click(n_clicks):
+    """Load sample data when the button is clicked."""
+    if n_clicks and n_clicks > 0:
+        logger.info("Load Sample Data button clicked")
+        data, status = load_sample_data()
+        if data:
+            logger.info("Sample data loaded: %d candles, %d patterns", len(data['df']), len(data['patterns']))
+            return data, status
+        else:
+            logger.warning("Failed to load sample data")
+            return None, status
+    return None, ""
+
+
 # new callback: apply filters and update chart/tables whenever current-data, pattern toggles or date range changes
 @app.callback(
     Output("candle-chart", "figure"),
@@ -1108,259 +1174,110 @@ def on_upload(contents, filename):
     Output("pattern-checklist", "options"),
     Output("pattern-checklist", "value"),
     Input("current-data", "data"),
-    Input("pattern-checklist", "value"),
     Input("date-range", "start_date"),
     Input("date-range", "end_date"),
+    State("pattern-checklist", "value"),
+    prevent_initial_call=False,
 )
-def apply_filters(data, selected_patterns, start_date, end_date):
+def apply_filters(data, start_date, end_date, selected_patterns):
     """Apply filters and update all displays."""
-    logger.info(f"apply_filters called: data={'set' if data else 'None'}, selected={len(selected_patterns) if selected_patterns else 0} patterns")
+    logger.info(f"[CALLBACK] apply_filters called: data={'set' if data else 'None'}")
     
-    # If no data is present, display empty-state placeholders so the UI structure is visible
-    if not data:
-            # Professional empty state
+    try:
+        # If no data is present, display empty-state placeholders
+        if not data:
+            logger.warning("[CALLBACK] No data provided, returning empty state")
             fig = go.Figure()
-            fig.add_annotation(
-                text="📊 No data loaded yet",
-                xref='paper', yref='paper',
-                x=0.5, y=0.6,
-                showarrow=False,
-                font=dict(size=24, color='#667eea', family="Arial Black")
-            )
-            fig.add_annotation(
-                text="Upload CSV or click 'Load Sample Data' in the sidebar to begin",
-                xref='paper', yref='paper',
-                x=0.5, y=0.5,
-                showarrow=False,
-                font=dict(size=14, color='#6c757d')
-            )
-            fig.update_layout(
-                xaxis=dict(visible=False),
-                yaxis=dict(visible=False),
-                template='plotly_white',
-                margin=dict(l=0, r=0, t=0, b=0),
-                height=500,
-                bgcolor='rgba(255,255,255,0.5)'
-            )
+            fig.add_annotation(text="[STATS] No data loaded yet", xref='paper', yref='paper', x=0.5, y=0.6, showarrow=False, font=dict(size=20, color='#667eea'))
+            fig.update_layout(xaxis=dict(visible=False), yaxis=dict(visible=False), template='plotly_white', height=500, margin=dict(l=0, r=0, t=0, b=0))
+            empty_div = html.Div("Click 'Load Sample Data' to begin", style={"padding": "2rem", "textAlign": "center", "color": "#6b7280"})
+            return fig, empty_div, empty_div, empty_div, [], []
 
-            placeholder_instructions = html.Div([
-                html.Div(
-                    [
-                        html.H5("🚀 Getting Started", style={"color": "#667eea", "fontWeight": "700", "marginBottom": "1rem"}),
-                        html.Ol([
-                            html.Li("Upload a CSV with columns: timestamp, open, high, low, close"),
-                            html.Li("Or click 'Load Sample Data' to use demo data"),
-                            html.Li("View detected patterns in the Chart tab"),
-                            html.Li("Filter by date range or pattern type"),
-                            html.Li("Export aggregated data as CSV"),
-                        ], style={"color": "#495057", "lineHeight": "1.8"}),
-                    ],
-                    className="empty-state"
-                )
-            ], style={"padding": "1rem"})
+        # Process data
+        df = pd.DataFrame(data["df"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+        patterns = data.get("patterns", [])
 
-            agg_placeholder = html.Div(
-                [html.H5("📊 Aggregated Summary", style={"color": "#667eea"}), html.P("Data will appear here once you load a file", style={"color": "#6c757d"})],
-                className="empty-state"
-            )
-            opp_placeholder = html.Div(
-                [html.H5("🎯 Top OPP Patterns", style={"color": "#667eea"}), html.P("Data will appear here once you load a file", style={"color": "#6c757d"})],
-                className="empty-state"
-            )
+        # Get pattern names and filter options
+        names = sorted({p["pattern"] for p in patterns})
+        options = [{"label": n, "value": n} for n in names]
+        selected = selected_patterns if (selected_patterns and len(selected_patterns) > 0) else names
+        
+        # Filter by date range
+        if start_date:
+            df = df[df["timestamp"] >= pd.to_datetime(start_date)]
+        if end_date:
+            df = df[df["timestamp"] <= pd.to_datetime(end_date) + pd.Timedelta(days=1)]
 
-            return fig, placeholder_instructions, agg_placeholder, opp_placeholder, [], []
+        # Build candlestick figure
+        fig = go.Figure(data=[go.Candlestick(
+            x=df["timestamp"], open=df["open"], high=df["high"], low=df["low"], close=df["close"],
+            name="OHLC", increasing_line_color='#10b981', decreasing_line_color='#ef4444'
+        )])
+        
+        # Add pattern markers
+        filtered_patterns = [p for p in patterns if p["pattern"] in selected]
+        for p in filtered_patterns:
+            try:
+                high_val = df[df["timestamp"] == p["timestamp"]]["high"].values[0] if len(df[df["timestamp"] == p["timestamp"]]) > 0 else None
+                if high_val:
+                    fig.add_trace(go.Scatter(x=[p["timestamp"]], y=[high_val * 1.02], mode='markers+text', text=[p["pattern"]], 
+                        textposition="top center", marker=dict(size=10, color='#667eea'), showlegend=False))
+            except:
+                pass
 
-    df = pd.DataFrame(data["df"])
-    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+        fig.update_layout(title=f"Candlestick Analysis | {len(filtered_patterns)} patterns", template='plotly_white', height=500, hovermode='x unified')
 
-    patterns = data.get("patterns", [])
+        # Pattern list
+        list_items = [html.Li(f"{p['timestamp']}: {p['pattern']}", style={"marginBottom": "0.5rem"}) for p in filtered_patterns]
+        list_section = html.Div(list_items if list_items else "No patterns detected", style={"padding": "1rem"})
 
-    # determine available pattern names
-    names = sorted({p["pattern"] for p in patterns})
-    options = [{"label": n, "value": n} for n in names]
-    if selected_patterns is None or not selected_patterns:
-        selected = names.copy()  # default: show all
-    else:
-        selected = selected_patterns
+        # Aggregated summary
+        summary = summarize_detections(pd.DataFrame(data["df"]), patterns)
+        if summary:
+            rows = [html.Tr([html.Th("Pattern"), html.Th("Count"), html.Th("Support"), html.Th("Avg Return"), html.Th("Win Rate")])]
+            for r in summary:
+                rows.append(html.Tr([
+                    html.Td(r["pattern"]), html.Td(str(r["count"])), html.Td(f"{r['support']:.3f}"),
+                    html.Td(f"{r['avg_return']:.4f}", style={"color": "#10b981" if r['avg_return'] > 0 else "#ef4444"}),
+                    html.Td(f"{r['win_rate']:.2%}", style={"color": "#10b981" if r['win_rate'] > 0.5 else "#ef4444"})
+                ]))
+            agg_table = html.Table(rows, style={"width": "100%", "borderCollapse": "collapse"})
+        else:
+            agg_table = html.Div("No summary available", style={"color": "#6b7280", "padding": "1rem"})
 
-    # filter by date range
-    if start_date:
-        df = df[df["timestamp"] >= pd.to_datetime(start_date)]
-    if end_date:
-        df = df[df["timestamp"] <= pd.to_datetime(end_date) + pd.Timedelta(days=1)]
+        # OPP patterns
+        top_opp = top_patterns_across_lengths(pd.DataFrame(data["df"]), min_len=3, max_len=6, min_support=0.02, top_k=5)
+        if top_opp:
+            rows = [html.Tr([html.Th("Length"), html.Th("Pattern"), html.Th("Count"), html.Th("Support")])]
+            rows.extend([html.Tr([html.Td(str(t['length'])), html.Td(str(t['pattern'])), html.Td(str(t['count'])), html.Td(f"{t['support']:.3f}")]) for t in top_opp])
+            opp_table = html.Table(rows, style={"width": "100%", "borderCollapse": "collapse"})
+        else:
+            opp_table = html.Div("No OPP patterns found", style={"color": "#6b7280", "padding": "1rem"})
 
-    # build figure with professional styling
-    fig = go.Figure(data=[go.Candlestick(
-        x=df["timestamp"],
-        open=df["open"],
-        high=df["high"],
-        low=df["low"],
-        close=df["close"],
-        name="OHLC",
-        increasing_line_color='#10b981',
-        decreasing_line_color='#ef4444'
-    )])
+        logger.info(f"[CALLBACK] Returning: {len(filtered_patterns)} patterns, {len(options)} options")
+        return fig, list_section, agg_table, opp_table, options, selected
+        
+    except Exception as e:
+        logger.exception(f"[CALLBACK ERROR] apply_filters crashed: {e}")
+        error_fig = go.Figure()
+        error_fig.add_annotation(text=f"ERROR: {str(e)[:80]}", xref='paper', yref='paper', x=0.5, y=0.5, showarrow=False, font=dict(size=14, color='#ef4444'))
+        error_fig.update_layout(height=400, template='plotly_white')
+        error_div = html.Div(f"Error: {str(e)[:100]}", style={"color": "#ef4444", "padding": "1rem"})
+        return error_fig, error_div, error_div, error_div, [], []
 
-    filtered_patterns = [p for p in patterns if p["pattern"] in selected]
 
-    # Add pattern markers with better styling
-    for p in filtered_patterns:
-        try:
-            high_series = df.loc[df["timestamp"]==p["timestamp"], "high"]
-            if isinstance(high_series, pd.Series) and len(high_series) > 0:
-                high_value = float(high_series.iloc[0])
-                fig.add_trace(go.Scatter(
-                    x=[p["timestamp"]],
-                    y=[high_value * 1.02],  # Slightly above the candle
-                    mode='markers+text',
-                    text=[p["pattern"]],
-                    textposition="top center",
-                    name=p["pattern"],
-                    marker=dict(
-                        size=12,
-                        color='#667eea',
-                        symbol='diamond',
-                        opacity=0.8,
-                        line=dict(color='white', width=2)
-                    ),
-                    hovertemplate='<b>%{text}</b><br>Price: $%{y:.2f}<extra></extra>',
-                    showlegend=False
-                ))
-        except Exception:
-            continue
-
-    # Enhance figure layout
-    fig.update_layout(
-        title=dict(
-            text=f"<b>📈 Candlestick Analysis</b> | {len(filtered_patterns)} patterns detected",
-            font=dict(size=18, color='#667eea')
-        ),
-        template='plotly_white',
-        height=600,
-        hovermode='x unified',
-        margin=dict(l=0, r=0, t=40, b=0),
-        xaxis=dict(
-            rangeslider=dict(visible=False),
-            title="Timestamp",
-            titlefont=dict(color='#6c757d')
-        ),
-        yaxis=dict(
-            title="Price (USD)",
-            titlefont=dict(color='#6c757d')
-        )
-    )
-
-    # occurrence list with better styling
-    list_items = [html.Li(
-        f"🎯 {p['timestamp']}: <strong>{p['pattern']}</strong>",
-        style={"marginBottom": "0.5rem", "color": "#495057"}
-    ) for p in filtered_patterns]
-
-    list_section = dbc.Card(
-        dbc.CardBody([
-            html.H5("🔍 Detected Patterns", style={"color": "#667eea", "fontWeight": "700", "marginBottom": "1.5rem"}),
-            html.Ol(list_items) if list_items else html.P("No patterns match the current filters", style={"color": "#6c757d"})
-        ]),
-        className="mt-3"
-    ) if list_items else html.Div()
-
-    # aggregated
-    summary = summarize_detections(pd.DataFrame(data["df"]), patterns)
-    if summary:
-        # compute sparkline series per pattern
-        from candle_patterns.reporting import pattern_sparkline_series
-
-        spark_map = pattern_sparkline_series(pd.DataFrame(data["df"]), patterns, horizon=6)
-
-        rows = [html.Tr([
-            html.Th("Pattern", style={"width": "15%"}),
-            html.Th("Count", style={"width": "10%"}),
-            html.Th("Support", style={"width": "12%"}),
-            html.Th("Avg Return", style={"width": "15%"}),
-            html.Th("Win Rate", style={"width": "15%"}),
-            html.Th("Trend", style={"width": "33%"})
-        ])]
-        for r in summary:
-            pname = r["pattern"]
-            series = spark_map.get(pname, [])
-            # build mini sparkline
-            mini_fig = go.Figure(data=[go.Scatter(
-                x=list(range(len(series))),
-                y=series,
-                mode="lines",
-                line=dict(width=2, color='#667eea'),
-                fill='tozeroy',
-                fillcolor='rgba(102, 126, 234, 0.2)',
-                hoverinfo='y'
-            )])
-            mini_fig.update_layout(
-                margin=dict(l=0, r=0, t=2, b=0),
-                height=60,
-                xaxis=dict(visible=False),
-                yaxis=dict(visible=False),
-                template='plotly_white',
-                hovermode='closest'
-            )
-
-            # info icon with native tooltip (title)
-            PATTERN_EXPLANATIONS = {
-                "doji": "Small body; open and close are near. Indicates indecision.",
-                "hammer": "Small body with long lower wick; potential bullish reversal.",
-                "bullish_engulfing": "A bullish candle that fully engulfs the prior bearish candle.",
-                "morning_star": "Three-candle bullish reversal pattern.",
-            }
-            expl = PATTERN_EXPLANATIONS.get(pname, "Candlestick pattern")
-            info_icon = html.Span("ℹ️", title=expl, className="info-icon")
-
-            rows.append(
-                html.Tr([
-                    html.Td([html.Strong(pname), " ", info_icon]),
-                    html.Td(str(r["count"])),
-                    html.Td(f"{r['support']:.3f}"),
-                    html.Td(f"{r['avg_return']:.4f}", style={"color": "#10b981" if r['avg_return'] > 0 else "#ef4444", "fontWeight": "600"}),
-                    html.Td(f"{r['win_rate']:.2%}", style={"color": "#10b981" if r['win_rate'] > 0.5 else "#ef4444"}),
-                    html.Td(dcc.Graph(figure=mini_fig, config={"displayModeBar": False}, style={"height": "60px"})),
-                ])
-            )
-
-        agg_table = dbc.Card(
-            dbc.CardBody([
-                html.H5("📊 Aggregated Pattern Summary", style={"color": "#667eea", "fontWeight": "700", "marginBottom": "1.5rem"}),
-                html.Table(rows)
-            ]),
-            className="mt-3"
-        )
-    else:
-        agg_table = html.Div("No aggregated data available", className="empty-state")
-
-    # OPP
-    top_opp = top_patterns_across_lengths(pd.DataFrame(data["df"]), min_len=3, max_len=6, min_support=0.02, top_k=5)
-    if top_opp:
-        rows = [html.Tr([
-            html.Th("Length"),
-            html.Th("Pattern"),
-            html.Th("Count"),
-            html.Th("Support")
-        ])]
-        rows.extend([
-            html.Tr([
-                html.Td(str(t['length'])),
-                html.Td(str(t['pattern'])),
-                html.Td(str(t['count'])),
-                html.Td(f"{t['support']:.3f}")
-            ]) for t in top_opp
-        ])
-        opp_table = dbc.Card(
-            dbc.CardBody([
-                html.H5("🎯 Top OPP Patterns", style={"color": "#667eea", "fontWeight": "700", "marginBottom": "1.5rem"}),
-                html.Table(rows)
-            ]),
-            className="mt-3"
-        )
-    else:
-        opp_table = html.Div("No frequent OPP patterns found", className="empty-state")
-
-    return fig, list_section, agg_table, opp_table, options, selected
+@app.callback(
+    Output("current-data", "data", allow_duplicate=True),
+    Output("upload-status", "children", allow_duplicate=True),
+    Input("load-sample-data-store", "data"),
+    prevent_initial_call=True,
+)
+def handle_load_sample_trigger(store_data):
+    """Reload sample data when the button-derived store fires."""
+    if not store_data:
+        return dash.no_update, dash.no_update
+    return load_sample_data(store_data)
 
 
 @app.callback(
@@ -1498,7 +1415,7 @@ def update_stats(_, __):
             dbc.Col(
                 dbc.Card(
                     dbc.CardBody([
-                        html.H6("📁 Total Uploads", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
+                        html.H6("? Total Uploads", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
                         html.H4(str(total_uploads), style={"color": "#667eea", "fontWeight": "700"})
                     ]),
                     className="stat-card"
@@ -1508,7 +1425,7 @@ def update_stats(_, __):
             dbc.Col(
                 dbc.Card(
                     dbc.CardBody([
-                        html.H6("⏰ Last Upload", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
+                        html.H6("? Last Upload", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
                         html.P(last_upload_label, style={"color": "#495057", "fontSize": "0.85rem", "margin": "0"})
                     ]),
                     className="stat-card"
@@ -1607,96 +1524,6 @@ def load_from_history(upload_id):
     msg = f"Loaded: {rec.get('filename')}"
     logger.info(msg)
     return data, msg
-
-
-# Server-side callback for loading sample data
-@app.callback(
-    Output("current-data", "data", allow_duplicate=True),
-    Output("upload-status", "children", allow_duplicate=True),
-    Input("load-sample-data-store", "data"),
-    prevent_initial_call=True,
-)
-def handle_load_sample_click(store_data):
-    """Handle Load Sample Data button click via store - directly load and detect patterns."""
-    logger.info(f"🔴 SERVER CALLBACK FIRED! store_data={store_data}")
-    
-    if not store_data:
-        logger.warning("Store data is empty, returning")
-        return None, ""
-    
-    try:
-        logger.info(f"🔵 LOADING SAMPLE DATA...")
-        
-        from pathlib import Path
-        from candle_patterns.detection import detect_patterns
-        from candle_patterns.storage import save_upload
-        
-        # Load the sample data file
-        sample_path = Path("data/samples/sample_synthetic.csv")
-        logger.info(f"📁 Looking for sample file: {sample_path.absolute()}")
-        
-        if not sample_path.exists():
-            logger.error(f"❌ Sample file not found at {sample_path}")
-            return None, html.Div("❌ Sample file not found. Please upload a CSV.", style={"color": "#dc2626", "fontWeight": "600"})
-        
-        # Load CSV
-        logger.info(f"📥 Loading CSV from {sample_path}")
-        df = pd.read_csv(sample_path)
-        logger.info(f"✅ Loaded {len(df)} rows")
-        
-        # Convert timestamp to datetime
-        if "timestamp" in df.columns:
-            df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
-            logger.info(f"✅ Converted timestamp to datetime")
-        
-        # Detect patterns
-        logger.info(f"🔍 Detecting candlestick patterns...")
-        patterns = detect_patterns(df)
-        logger.info(f"✅ Detected {len(patterns)} patterns")
-        
-        # Save to database
-        try:
-            upload_id = save_upload(sample_path.name, df, patterns)
-            logger.info(f"✅ Saved to database with upload_id={upload_id}")
-        except Exception as db_error:
-            logger.warning(f"⚠️ Could not save to DB: {db_error}")
-            upload_id = None
-        
-        # Build response data
-        data = {
-            "filename": str(sample_path.name),
-            "upload_id": upload_id,
-            "df": df.to_dict("records"),
-            "patterns": patterns
-        }
-        
-        msg = f"✓ Loaded sample: {len(patterns)} patterns detected"
-        logger.info(f"🎉 SUCCESS: {msg}")
-        
-        status_html = html.Div(
-            msg,
-            style={
-                "color": "#059669",
-                "fontWeight": "600",
-                "padding": "12px",
-                "backgroundColor": "#ecfdf5",
-                "borderRadius": "6px",
-                "marginTop": "8px"
-            }
-        )
-        
-        return data, status_html
-        
-    except Exception as e:
-        logger.exception(f"❌ FATAL ERROR in load_sample_click: {e}")
-        import traceback
-        error_msg = f"Error: {str(e)}\n{traceback.format_exc()}"
-        logger.error(error_msg)
-        
-        return None, html.Div(
-            f"❌ Error: {str(e)}",
-            style={"color": "#dc2626", "fontWeight": "600", "whiteSpace": "pre-wrap"}
-        )
 
 
 
