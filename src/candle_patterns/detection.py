@@ -108,6 +108,41 @@ RULES = {
         <= 0.25 * (w.iloc[-2]["high"] - w.iloc[-2]["low"])
         and w.iloc[-1]["close"] < w.iloc[-1]["open"]
     ),
+    # Additional patterns for Phase 2 expansion
+    "dark_cloud_cover": lambda w: (
+        len(w) >= 2
+        and w.iloc[-2]["close"] > w.iloc[-2]["open"]
+        and w.iloc[-1]["close"] < w.iloc[-1]["open"]
+        and w.iloc[-1]["open"] > w.iloc[-2]["close"]
+        and w.iloc[-1]["close"] < (w.iloc[-2]["close"] + w.iloc[-2]["open"]) / 2
+    ),
+    "bullish_harami": lambda w: (
+        len(w) >= 2
+        and w.iloc[-2]["close"] < w.iloc[-2]["open"]
+        and w.iloc[-1]["close"] > w.iloc[-1]["open"]
+        and w.iloc[-1]["high"] < w.iloc[-2]["high"]
+        and w.iloc[-1]["low"] > w.iloc[-2]["low"]
+    ),
+    "bearish_harami": lambda w: (
+        len(w) >= 2
+        and w.iloc[-2]["close"] > w.iloc[-2]["open"]
+        and w.iloc[-1]["close"] < w.iloc[-1]["open"]
+        and w.iloc[-1]["high"] < w.iloc[-2]["high"]
+        and w.iloc[-1]["low"] > w.iloc[-2]["low"]
+    ),
+    "on_neck_line": lambda w: (
+        len(w) >= 2
+        and w.iloc[-2]["close"] < w.iloc[-2]["open"]
+        and w.iloc[-1]["close"] < w.iloc[-1]["open"]
+        and abs(w.iloc[-1]["close"] - w.iloc[-2]["low"]) <= 0.01 * w.iloc[-2]["high"]
+    ),
+    "in_neck_line": lambda w: (
+        len(w) >= 2
+        and w.iloc[-2]["close"] < w.iloc[-2]["open"]
+        and w.iloc[-1]["close"] < w.iloc[-1]["open"]
+        and w.iloc[-1]["close"] > w.iloc[-2]["close"]
+        and w.iloc[-1]["open"] < w.iloc[-2]["open"]
+    ),
 }
 
 
