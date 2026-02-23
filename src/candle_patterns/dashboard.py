@@ -25,6 +25,42 @@ from candle_patterns.opp_miner import top_patterns_across_lengths
 
 from candle_patterns.storage import save_upload
 
+# ============================================================================
+# PATTERN METADATA — descriptions, categories, colors
+# ============================================================================
+PATTERN_META = {
+    "doji":                {"cat": "Single", "signal": "neutral",  "desc": "Tiny body (open ≈ close) with long wicks. Signals indecision."},
+    "hammer":              {"cat": "Single", "signal": "bullish",  "desc": "Small body at top, long lower wick. Bullish reversal signal."},
+    "spinning_top":        {"cat": "Single", "signal": "neutral",  "desc": "Very small body with wicks on both sides. Indecision."},
+    "shooting_star":       {"cat": "Single", "signal": "bearish",  "desc": "Small body at bottom, long upper wick. Bearish reversal signal."},
+    "hanging_man":         {"cat": "Single", "signal": "bearish",  "desc": "Long lower wick after uptrend. Warning of potential reversal."},
+    "bullish_engulfing":   {"cat": "Two",    "signal": "bullish",  "desc": "Green candle engulfs prior red candle. Strong bullish reversal."},
+    "bearish_engulfing":   {"cat": "Two",    "signal": "bearish",  "desc": "Red candle engulfs prior green candle. Strong bearish reversal."},
+    "piercing_line":       {"cat": "Two",    "signal": "bullish",  "desc": "Green candle closes above midpoint of prior red candle. Bullish."},
+    "dark_cloud_cover":    {"cat": "Two",    "signal": "bearish",  "desc": "Red candle opens above prior close, closes below midpoint. Bearish."},
+    "bullish_harami":      {"cat": "Two",    "signal": "bullish",  "desc": "Small green candle inside prior large red candle. Potential reversal."},
+    "bearish_harami":      {"cat": "Two",    "signal": "bearish",  "desc": "Small red candle inside prior large green candle. Potential reversal."},
+    "on_neck_line":        {"cat": "Two",    "signal": "bearish",  "desc": "Red candle closing near prior low. Downtrend continuation."},
+    "in_neck_line":        {"cat": "Two",    "signal": "bearish",  "desc": "Red candle closing slightly above prior close. Weak recovery."},
+    "morning_star":        {"cat": "Three",  "signal": "bullish",  "desc": "Red then small body then green. Classic bullish reversal."},
+    "evening_star":        {"cat": "Three",  "signal": "bearish",  "desc": "Green then small body then red. Classic bearish reversal."},
+    "three_white_soldiers":{"cat": "Three",  "signal": "bullish",  "desc": "Three consecutive green candles. Strong bullish momentum."},
+    "three_black_crows":   {"cat": "Three",  "signal": "bearish",  "desc": "Three consecutive red candles. Strong bearish momentum."},
+}
+
+SIGNAL_COLORS = {"bullish": "#10b981", "bearish": "#ef4444", "neutral": "#8b8b8b"}
+SIGNAL_SYMBOLS = {"bullish": "triangle-up", "bearish": "triangle-down", "neutral": "diamond"}
+
+# Multi-candle patterns shown by default (less noisy)
+TOP_PATTERNS = {
+    "bullish_engulfing", "bearish_engulfing", "piercing_line", "dark_cloud_cover",
+    "bullish_harami", "bearish_harami", "morning_star", "evening_star",
+    "three_white_soldiers", "three_black_crows", "on_neck_line", "in_neck_line",
+}
+
+def _get_meta(name):
+    return PATTERN_META.get(name, {"cat": "Other", "signal": "neutral", "desc": name})
+
 # Modern professional stylesheet with custom CSS
 external_stylesheets = [
     dbc.themes.BOOTSTRAP,
@@ -813,20 +849,31 @@ sidebar = dbc.Card(
                 # Patterns section
                 html.Div([
                     html.H6([html.I(className="bi bi-bullseye"), " Pattern Filters"]),
+                    html.Div([
+                        dbc.ButtonGroup([
+                            dbc.Button("All", id="select-all-patterns", color="link", size="sm",
+                                       style={"fontSize": "0.75rem", "padding": "2px 8px", "fontWeight": "700", "textDecoration": "none"}),
+                            dbc.Button("Top", id="select-top-patterns", color="link", size="sm",
+                                       style={"fontSize": "0.75rem", "padding": "2px 8px", "fontWeight": "700", "textDecoration": "none"}),
+                            dbc.Button("None", id="select-no-patterns", color="link", size="sm",
+                                       style={"fontSize": "0.75rem", "padding": "2px 8px", "fontWeight": "700", "textDecoration": "none"}),
+                        ], size="sm", style={"marginBottom": "0.5rem"}),
+                    ], style={"display": "flex", "justifyContent": "flex-end"}),
                     html.Div(
                         dcc.Checklist(
                             id="pattern-checklist",
                             options=[],
                             value=[],
                             inline=False,
-                            style={"marginTop": "0.8rem"}
+                            style={"marginTop": "0.4rem"}
                         ),
                         style={"maxHeight": "260px", "overflowY": "auto", "paddingRight": "4px"}
                     ),
-                    html.Small(
-                        "Select patterns to display",
-                        style={"fontSize": "0.85em", "color": "#6b7280", "fontWeight": "500"}
-                    ),
+                    html.Div([
+                        html.Span("\u25B2", style={"color": "#10b981", "fontSize": "0.7rem"}), html.Small(" Bullish  ", style={"color": "#6b7280"}),
+                        html.Span("\u25BC", style={"color": "#ef4444", "fontSize": "0.7rem"}), html.Small(" Bearish  ", style={"color": "#6b7280"}),
+                        html.Span("\u25C6", style={"color": "#8b8b8b", "fontSize": "0.7rem"}), html.Small(" Neutral", style={"color": "#6b7280"}),
+                    ], style={"marginTop": "0.5rem", "fontSize": "0.8em"}),
                 ], style={"marginBottom": "1.5rem"}),
                 
                 html.Hr(className="hr-style"),
@@ -1167,8 +1214,40 @@ def update_checklist(data):
         return [], []
     patterns = data.get("patterns", [])
     names = sorted({p["pattern"] for p in patterns})
-    options = [{"label": n, "value": n} for n in names]
-    return options, names  # select all by default
+    # Build labels with signal color indicator
+    options = []
+    for n in names:
+        meta = _get_meta(n)
+        signal = meta["signal"]
+        dot = "\u25B2" if signal == "bullish" else ("\u25BC" if signal == "bearish" else "\u25C6")
+        cat = meta["cat"]
+        label = f"{dot} {n}  ({cat})"
+        options.append({"label": label, "value": n})
+    # Default to TOP patterns only (multi-candle, less noise)
+    default_selected = [n for n in names if n in TOP_PATTERNS]
+    return options, default_selected
+
+
+# All / Top / None quick-select buttons for pattern checklist
+@app.callback(
+    Output("pattern-checklist", "value", allow_duplicate=True),
+    Input("select-all-patterns", "n_clicks"),
+    Input("select-top-patterns", "n_clicks"),
+    Input("select-no-patterns", "n_clicks"),
+    State("pattern-checklist", "options"),
+    prevent_initial_call=True,
+)
+def quick_select_patterns(n_all, n_top, n_none, options):
+    """Handle All / Top / None quick-select buttons."""
+    trig = callback_context.triggered_id
+    all_values = [o["value"] for o in options] if options else []
+    if trig == "select-all-patterns":
+        return all_values
+    elif trig == "select-top-patterns":
+        return [v for v in all_values if v in TOP_PATTERNS]
+    elif trig == "select-no-patterns":
+        return []
+    return dash.no_update
 
 
 # Apply filters and update chart/tables when data, date range, or pattern selection changes
@@ -1231,43 +1310,75 @@ def apply_filters(data, start_date, end_date, selected_patterns):
             name="OHLC", increasing_line_color='#10b981', decreasing_line_color='#ef4444'
         )])
         
-        # Add pattern markers (batched into a single trace for performance)
+        # Add pattern markers — color-coded by signal (bullish/bearish/neutral)
         filtered_patterns = [p for p in patterns if p["pattern"] in selected]
         
-        # Build a lookup from timestamp → high value
+        # Build lookups from timestamp → high/low values
         high_lookup = dict(zip(df["timestamp"].astype(str), df["high"]))
+        low_lookup = dict(zip(df["timestamp"].astype(str), df["low"]))
         
-        marker_x, marker_y, marker_text = [], [], []
+        # Group markers by signal type for color-coded traces
+        marker_groups = {"bullish": {"x": [], "y": [], "text": [], "hover": []},
+                         "bearish": {"x": [], "y": [], "text": [], "hover": []},
+                         "neutral": {"x": [], "y": [], "text": [], "hover": []}}
+        
         for p in filtered_patterns:
             ts_str = str(p["timestamp"])
-            # Try direct match, then try parsing
             high_val = high_lookup.get(ts_str)
+            low_val = low_lookup.get(ts_str)
             if high_val is None:
                 try:
                     ts_parsed = pd.to_datetime(p["timestamp"], utc=True)
-                    match = df.loc[(df["timestamp"] - ts_parsed).abs().dt.total_seconds() < 1, "high"]
-                    if len(match) > 0:
-                        high_val = match.iloc[0]
+                    match_h = df.loc[(df["timestamp"] - ts_parsed).abs().dt.total_seconds() < 1, "high"]
+                    match_l = df.loc[(df["timestamp"] - ts_parsed).abs().dt.total_seconds() < 1, "low"]
+                    if len(match_h) > 0:
+                        high_val = match_h.iloc[0]
+                        low_val = match_l.iloc[0]
                 except Exception:
                     pass
             if high_val is not None:
-                marker_x.append(p["timestamp"])
-                marker_y.append(high_val * 1.005)
-                marker_text.append(p["pattern"])
+                meta = _get_meta(p["pattern"])
+                signal = meta["signal"]
+                # Position bearish markers below candles, bullish/neutral above
+                if signal == "bearish":
+                    y_val = low_val * 0.995 if low_val else high_val * 1.005
+                else:
+                    y_val = high_val * 1.005
+                grp = marker_groups[signal]
+                grp["x"].append(p["timestamp"])
+                grp["y"].append(y_val)
+                grp["text"].append(p["pattern"])
+                grp["hover"].append(f"<b>{p['pattern']}</b><br>{meta['desc']}<br>{meta['cat']}-candle | {signal}")
         
-        if marker_x:
-            fig.add_trace(go.Scatter(
-                x=marker_x, y=marker_y, mode='markers',
-                text=marker_text, hovertemplate='%{text}<br>%{x}<extra></extra>',
-                marker=dict(size=8, color='#6366f1', symbol='triangle-up', line=dict(width=1, color='white')),
-                showlegend=False, name="Patterns"
-            ))
+        # One trace per signal type with distinct color, shape, and legend entry
+        signal_labels = {"bullish": "Bullish", "bearish": "Bearish", "neutral": "Neutral"}
+        for signal, grp in marker_groups.items():
+            if grp["x"]:
+                fig.add_trace(go.Scatter(
+                    x=grp["x"], y=grp["y"], mode='markers',
+                    text=grp["text"],
+                    hovertext=grp["hover"],
+                    hovertemplate='%{hovertext}<extra></extra>',
+                    marker=dict(
+                        size=9, color=SIGNAL_COLORS[signal],
+                        symbol=SIGNAL_SYMBOLS[signal],
+                        line=dict(width=1, color='white'),
+                        opacity=0.9,
+                    ),
+                    name=f"{signal_labels[signal]} Patterns",
+                    showlegend=True,
+                ))
 
         fig.update_layout(
             title=dict(text=f"Candlestick Analysis | {len(filtered_patterns)} patterns detected", font=dict(size=16, color='#1f2937')),
             template='plotly_white', height=550, hovermode='x unified',
             xaxis=dict(rangeslider=dict(visible=False)),
-            margin=dict(l=50, r=20, t=50, b=40),
+            margin=dict(l=50, r=20, t=70, b=40),
+            legend=dict(
+                orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1,
+                font=dict(size=11), bgcolor='rgba(255,255,255,0.8)',
+                bordercolor='#e5e7eb', borderwidth=1,
+            ),
         )
 
         # Pattern list — styled as dbc.Table with count badge
