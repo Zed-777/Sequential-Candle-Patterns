@@ -4,10 +4,9 @@ from __future__ import annotations
 import logging
 import dash
 import dash_bootstrap_components as dbc
-import requests
 from pathlib import Path
 
-from dash import html, dcc, Input, Output, State, callback_context, clientside_callback
+from dash import html, dcc, Input, Output, State, callback_context
 from dash.dcc.express import send_data_frame, send_bytes
 
 import plotly.graph_objects as go
@@ -62,7 +61,7 @@ def load_sample_data(trigger_data=None):
             upload_meta = save_upload(sample_path.name, df, patterns)
             upload_id = upload_meta.get("upload_id") if isinstance(upload_meta, dict) else upload_meta
         except Exception as db_error:
-            logger.warning("?? Could not save to DB: %s", db_error)
+            logger.warning("Could not save to DB: %s", db_error)
             upload_id = None
 
         data = {
@@ -765,7 +764,7 @@ sidebar = dbc.Card(
     [
         dbc.CardBody(
             [
-                html.H5("[CONFIG] Configuration", className="card-title"),
+                html.H5([html.I(className="bi bi-gear-fill"), " Configuration"], className="card-title"),
                 
                 # Upload section
                 html.Div([
@@ -780,7 +779,7 @@ sidebar = dbc.Card(
                         style={"cursor": "pointer"}
                     ),
                     dbc.Button(
-                        " Load Sample Data",
+                        [html.I(className="bi bi-database-fill"), " Load Sample Data"],
                         id="load-sample-btn",
                         color="success",
                         className="w-100 mb-3",
@@ -789,7 +788,7 @@ sidebar = dbc.Card(
                     ),
                     dcc.Store(id="load-sample-data-store"),
                     html.Small(
-                        "Load 200 candlesticks with 21 patterns",
+                        "Load sample dataset (200 candlesticks)",
                         style={"marginTop": "8px", "color": "#6b7280", "display": "block", "fontWeight": "500"}
                     ),
                     html.Div(id="upload-status", style={"marginTop": "12px"}),
@@ -814,12 +813,15 @@ sidebar = dbc.Card(
                 # Patterns section
                 html.Div([
                     html.H6([html.I(className="bi bi-bullseye"), " Pattern Filters"]),
-                    dcc.Checklist(
-                        id="pattern-checklist",
-                        options=[],
-                        value=[],
-                        inline=False,
-                        style={"marginTop": "0.8rem"}
+                    html.Div(
+                        dcc.Checklist(
+                            id="pattern-checklist",
+                            options=[],
+                            value=[],
+                            inline=False,
+                            style={"marginTop": "0.8rem"}
+                        ),
+                        style={"maxHeight": "260px", "overflowY": "auto", "paddingRight": "4px"}
                     ),
                     html.Small(
                         "Select patterns to display",
@@ -964,10 +966,13 @@ main_content = dbc.Tabs(
             children=[
                 dbc.Container(
                     [
-                        dcc.Graph(
-                            id="candle-chart",
-                            style={"marginTop": "1.5rem"},
-                            config={"responsive": True, "displayModeBar": True, "displaylogo": False}
+                        dcc.Loading(
+                            dcc.Graph(
+                                id="candle-chart",
+                                style={"marginTop": "1.5rem"},
+                                config={"responsive": True, "displayModeBar": True, "displaylogo": False}
+                            ),
+                            type="circle", color="#6366f1"
                         )
                     ],
                     fluid=True,
@@ -980,7 +985,7 @@ main_content = dbc.Tabs(
             tab_id="tab-patterns",
             children=[
                 dbc.Container(
-                    [html.Div(id="pattern-table", style={"marginTop": "1.5rem"})],
+                    [dcc.Loading(html.Div(id="pattern-table", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
                     fluid=True
                 )
             ],
@@ -991,7 +996,7 @@ main_content = dbc.Tabs(
             tab_id="tab-agg",
             children=[
                 dbc.Container(
-                    [html.Div(id="aggregated-table", style={"marginTop": "1.5rem"})],
+                    [dcc.Loading(html.Div(id="aggregated-table", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
                     fluid=True
                 )
             ],
@@ -1002,7 +1007,7 @@ main_content = dbc.Tabs(
             tab_id="tab-opp",
             children=[
                 dbc.Container(
-                    [html.Div(id="opp-table", style={"marginTop": "1.5rem"})],
+                    [dcc.Loading(html.Div(id="opp-table", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
                     fluid=True
                 )
             ],
@@ -1187,9 +1192,22 @@ def apply_filters(data, start_date, end_date, selected_patterns):
         if not data:
             logger.warning("[CALLBACK] No data provided, returning empty state")
             fig = go.Figure()
-            fig.add_annotation(text="No data loaded yet", xref='paper', yref='paper', x=0.5, y=0.6, showarrow=False, font=dict(size=20, color='#667eea'))
-            fig.update_layout(xaxis=dict(visible=False), yaxis=dict(visible=False), template='plotly_white', height=500, margin=dict(l=0, r=0, t=0, b=0))
-            empty_div = html.Div("Click 'Load Sample Data' to begin", style={"padding": "2rem", "textAlign": "center", "color": "#6b7280"})
+            fig.add_annotation(
+                text="Upload a CSV or click 'Load Sample Data' to begin",
+                xref='paper', yref='paper', x=0.5, y=0.5, showarrow=False,
+                font=dict(size=18, color='#6366f1', family='sans-serif')
+            )
+            fig.update_layout(
+                xaxis=dict(visible=False), yaxis=dict(visible=False),
+                template='plotly_white', height=400,
+                margin=dict(l=0, r=0, t=0, b=0),
+                plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+            )
+            empty_div = html.Div(
+                [html.I(className="bi bi-inbox", style={"fontSize": "2rem", "color": "#c7d2fe"}),
+                 html.P("No data loaded", style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+                style={"padding": "3rem", "textAlign": "center"}
+            )
             return fig, empty_div, empty_div, empty_div
 
         # Process data
@@ -1213,27 +1231,62 @@ def apply_filters(data, start_date, end_date, selected_patterns):
             name="OHLC", increasing_line_color='#10b981', decreasing_line_color='#ef4444'
         )])
         
-        # Add pattern markers
+        # Add pattern markers (batched into a single trace for performance)
         filtered_patterns = [p for p in patterns if p["pattern"] in selected]
+        
+        # Build a lookup from timestamp → high value
+        high_lookup = dict(zip(df["timestamp"].astype(str), df["high"]))
+        
+        marker_x, marker_y, marker_text = [], [], []
         for p in filtered_patterns:
-            try:
-                high_val = df[df["timestamp"] == p["timestamp"]]["high"].values[0] if len(df[df["timestamp"] == p["timestamp"]]) > 0 else None
-                if high_val:
-                    fig.add_trace(go.Scatter(x=[p["timestamp"]], y=[high_val * 1.02], mode='markers+text', text=[p["pattern"]], 
-                        textposition="top center", marker=dict(size=10, color='#667eea'), showlegend=False))
-            except:
-                pass
+            ts_str = str(p["timestamp"])
+            # Try direct match, then try parsing
+            high_val = high_lookup.get(ts_str)
+            if high_val is None:
+                try:
+                    ts_parsed = pd.to_datetime(p["timestamp"], utc=True)
+                    match = df.loc[(df["timestamp"] - ts_parsed).abs().dt.total_seconds() < 1, "high"]
+                    if len(match) > 0:
+                        high_val = match.iloc[0]
+                except Exception:
+                    pass
+            if high_val is not None:
+                marker_x.append(p["timestamp"])
+                marker_y.append(high_val * 1.005)
+                marker_text.append(p["pattern"])
+        
+        if marker_x:
+            fig.add_trace(go.Scatter(
+                x=marker_x, y=marker_y, mode='markers',
+                text=marker_text, hovertemplate='%{text}<br>%{x}<extra></extra>',
+                marker=dict(size=8, color='#6366f1', symbol='triangle-up', line=dict(width=1, color='white')),
+                showlegend=False, name="Patterns"
+            ))
 
-        fig.update_layout(title=f"Candlestick Analysis | {len(filtered_patterns)} patterns", template='plotly_white', height=500, hovermode='x unified')
+        fig.update_layout(
+            title=dict(text=f"Candlestick Analysis | {len(filtered_patterns)} patterns detected", font=dict(size=16, color='#1f2937')),
+            template='plotly_white', height=550, hovermode='x unified',
+            xaxis=dict(rangeslider=dict(visible=False)),
+            margin=dict(l=50, r=20, t=50, b=40),
+        )
 
-        # Pattern list — styled as dbc.Table
+        # Pattern list — styled as dbc.Table with count badge
         if filtered_patterns:
-            pat_rows = [html.Tr([html.Td(p['timestamp']), html.Td(p['pattern'])]) for p in filtered_patterns]
-            list_section = dbc.Table(
-                [html.Thead(html.Tr([html.Th("Timestamp"), html.Th("Pattern")])), html.Tbody(pat_rows)],
-                bordered=True, hover=True, responsive=True, striped=True, size="sm",
-                className="mt-3", style={"fontSize": "0.9rem"}
-            )
+            # Show first 100 rows with a summary header
+            display_limit = 100
+            header_text = f"Showing {min(display_limit, len(filtered_patterns))} of {len(filtered_patterns)} detected patterns"
+            list_section = html.Div([
+                html.Div(
+                    [html.I(className="bi bi-list-check me-2"), header_text],
+                    style={"padding": "0.75rem 1rem", "backgroundColor": "#f0f0ff", "borderRadius": "8px", "fontWeight": "600", "color": "#4f46e5", "marginBottom": "0.75rem"}
+                ),
+                dbc.Table(
+                    [html.Thead(html.Tr([html.Th("#"), html.Th("Timestamp"), html.Th("Pattern")])),
+                     html.Tbody([html.Tr([html.Td(str(i+1), style={"color": "#9ca3af", "width": "50px"}), html.Td(p['timestamp']), html.Td(p['pattern'])]) for i, p in enumerate(filtered_patterns[:display_limit])])],
+                    bordered=True, hover=True, responsive=True, striped=True, size="sm",
+                    className="mt-2", style={"fontSize": "0.9rem"}
+                )
+            ])
         else:
             list_section = html.Div("No patterns detected", style={"padding": "1rem", "color": "#6b7280"})
 
@@ -1345,8 +1398,9 @@ def run_custom_sequence(n, seq_str, data):
     Input("candle-chart", "clickData"),
     Input("modal-close", "n_clicks"),
     State("pattern-modal", "is_open"),
+    State("current-data", "data"),
 )
-def show_pattern_detail(clickData, nclose, is_open):
+def show_pattern_detail(clickData, nclose, is_open, current_data):
     """Open modal and show details when a pattern marker is clicked."""
     ctx = callback_context
     if not ctx.triggered:
@@ -1358,43 +1412,33 @@ def show_pattern_detail(clickData, nclose, is_open):
         pt = clickData["points"][0]
         txt = pt.get("text") or pt.get("data", {}).get("name") or ""
         x = pt.get("x")
-        # Build context mini-chart +/- 5 candles around clicked timestamp
+        
+        body_items: list = [
+            html.H5(txt or "Pattern Detail", style={"fontWeight": "700", "color": "#4f46e5"}),
+            html.P([html.I(className="bi bi-clock me-2"), f"Timestamp: {x}"], style={"color": "#6b7280"}),
+        ]
         try:
-            from datetime import timedelta
-            df_all = None
-            # get current-data from server-side via storage (best-effort)
-            # we will parse out a small window
-            cid = callback_context.triggered[0]['value'] if callback_context and callback_context.triggered else None
-        except Exception:
-            df_all = None
-        body_items: list = [html.P(f"Pattern: {txt}"), html.P(f"Timestamp: {x}"), html.P("Click Export to download detections CSV for details.")]
-        try:
-            # Attempt to create a mini-chart using the global data if accessible via server memory
-            data = callback_context.states.get('current-data.data') if callback_context and getattr(callback_context, 'states', None) else None
-            if not data:
-                # fallback: try loading last upload from storage
-                from candle_patterns.storage import list_uploads, get_upload
-                rows = list_uploads(limit=1)
-                if rows:
-                    rec = get_upload(rows[0]['id'])
-                    if rec and 'filepath' in rec:
-                        import pandas as _pd
-                        df_all = _pd.read_csv(rec['filepath'])
-            if data and df_all is None:
-                import pandas as _pd
-                df_all = _pd.DataFrame(data.get('df', []))
-
-            if df_all is not None and len(df_all):
-                df_all['timestamp'] = pd.to_datetime(df_all['timestamp'], utc=True)
-                # find nearest index by timestamp
-                ts = pd.to_datetime(x)
-                idx = df_all.index[(df_all['timestamp'] - ts).abs().argsort()[:1]][0]
-                start = max(0, idx - 5)
-                end = min(len(df_all)-1, idx + 5)
-                window = df_all.iloc[start:end+1]
-                mini_fig = go.Figure(data=[go.Candlestick(x=window['timestamp'], open=window['open'], high=window['high'], low=window['low'], close=window['close'])])
-                mini_fig.update_layout(margin=dict(l=0, r=0, t=10, b=0), height=220)
-                body_items.append(dcc.Graph(figure=mini_fig, config={'displayModeBar': False}))
+            # Build context mini-chart +/- 5 candles around clicked timestamp
+            if current_data:
+                df_all = pd.DataFrame(current_data.get('df', []))
+                if len(df_all):
+                    df_all['timestamp'] = pd.to_datetime(df_all['timestamp'], utc=True)
+                    ts = pd.to_datetime(x, utc=True)
+                    idx = df_all.index[(df_all['timestamp'] - ts).abs().argsort()[:1]][0]
+                    start = max(0, idx - 5)
+                    end = min(len(df_all)-1, idx + 5)
+                    window = df_all.iloc[start:end+1]
+                    mini_fig = go.Figure(data=[go.Candlestick(
+                        x=window['timestamp'], open=window['open'], 
+                        high=window['high'], low=window['low'], close=window['close'],
+                        increasing_line_color='#10b981', decreasing_line_color='#ef4444'
+                    )])
+                    mini_fig.update_layout(
+                        margin=dict(l=40, r=10, t=10, b=30), height=250,
+                        template='plotly_white',
+                        xaxis=dict(rangeslider=dict(visible=False)),
+                    )
+                    body_items.append(dcc.Graph(figure=mini_fig, config={'displayModeBar': False}))
         except Exception as e:
             logger.debug('mini-chart build error: %s', e)
         body = html.Div(body_items)
