@@ -10,9 +10,11 @@
 ## Phase 2 Roadmap
 
 ### Tier 1: Pattern Catalog Expansion (2-4 hours)
+
 **Goal**: Add 5-8 new candlestick patterns to reach 15+  
 
 Current patterns (10):
+
 1. Bullish Engulfing
 2. Bearish Engulfing  
 3. Hammer
@@ -25,6 +27,7 @@ Current patterns (10):
 10. Long-Legged Doji
 
 New patterns to implement:
+
 - [ ] Hanging Man (bearish reversal)
 - [ ] Shooting Star (bearish reversal)
 - [ ] Piercing Line (bullish reversal)
@@ -35,6 +38,7 @@ New patterns to implement:
 - [ ] Harami (bullish engulfing variant)
 
 **Tasks**:
+
 1. Add detector methods to `src/candle_patterns/detection.py`
 2. Register in `src/candle_patterns/patterns.py`
 3. Write unit tests for each new pattern
@@ -43,6 +47,7 @@ New patterns to implement:
 6. Verify dashboard shows all new patterns in checklist
 
 **Success Criteria**:
+
 - ✅ 15+ detectors implemented
 - ✅ All tests passing (50+ tests total)
 - ✅ Sample data includes new patterns
@@ -51,9 +56,11 @@ New patterns to implement:
 ---
 
 ### Tier 2: ML-CLI Integration (1-2 hours)
+
 **Goal**: Add ML training/prediction commands to analyzer CLI  
 
 New commands:
+
 - [ ] `analyzer train --input data.csv --output model.pkl`
   - Load data, train RandomForest with k-fold CV
   - Save model to disk
@@ -70,6 +77,7 @@ New commands:
   - Generate equity curve chart
 
 **Tasks**:
+
 1. Add `train` subcommand to `src/candle_patterns/cli.py`
 2. Add `predict` subcommand
 3. Add `backtest` subcommand
@@ -78,6 +86,7 @@ New commands:
 6. Test end-to-end: train model → predict → backtest
 
 **Success Criteria**:
+
 - ✅ 3 new CLI commands working
 - ✅ All tests passing
 - ✅ Can train model from CSV
@@ -87,14 +96,17 @@ New commands:
 ---
 
 ### Tier 3: E2E Test Enhancement (3-4 hours)
+
 **Goal**: Complete Playwright test coverage, resolve async conflict  
 
 Current status:
+
 - 2 tests skipped (documented reason)
 - 1 sync smoke test covers basic UI
 - Need: Full multi-tab testing
 
 **Tasks**:
+
 1. Analyze pytest-asyncio event loop conflict (root cause)
 2. Refactor E2E tests to use sync-only approach
 3. Add tests for each dashboard tab:
@@ -114,6 +126,7 @@ Current status:
 6. Add performance benchmarks
 
 **Success Criteria**:
+
 - ✅ All E2E tests running (no skips)
 - ✅ 10+ E2E scenarios covered
 - ✅ Dashboard tabs all verified
@@ -123,9 +136,11 @@ Current status:
 ---
 
 ### Tier 4: Optional - Security & Documentation (2-3 hours)
+
 **Goal**: GDPR compliance, security hardening, Docker registry  
 
 **Tasks**:
+
 1. Write GDPR/Privacy documentation
 2. Add Docker image push to GitHub Container Registry (GHCR)
 3. Create comprehensive API documentation
@@ -133,6 +148,7 @@ Current status:
 5. Generate architecture diagram (Mermaid)
 
 **Success Criteria**:
+
 - ✅ GDPR documentation written
 - ✅ Docker image tagged and pushed
 - ✅ API docs complete
@@ -143,38 +159,47 @@ Current status:
 ## Execution Strategy
 
 ### Week 1: Pattern Expansion + Initial ML-CLI
+
 **Monday** (4 hours):
+
 - Add 4 new patterns (Hanging Man, Shooting Star, Piercing Line, Dark Cloud Cover)
 - Write tests for new patterns
 - Update sample data
 
 **Tuesday** (3 hours):
+
 - Add 4 more patterns (On Neck, In Neck, Breakaway, Harami)
 - Complete pattern tests
 - Update dashboard
 
 **Wednesday** (2 hours):
+
 - Add train command to CLI
 - Add predict command to CLI
 - Test train + predict workflow
 
 **Thursday** (2 hours):
+
 - Add backtest command to CLI
 - End-to-end testing: train → predict → backtest
 - Update README with examples
 
 ### Week 2: E2E Testing + Polish
+
 **Friday** (3 hours):
+
 - Analyze and fix async test conflict
 - Implement sync-only Playwright tests
 - Test all dashboard tabs
 
 **Monday** (2 hours):
+
 - Add filter tests
 - Add interaction tests
 - Performance optimization
 
 **Tuesday** (2 hours):
+
 - Optional: GDPR docs
 - Optional: Docker push to GHCR
 - Final polish and review
@@ -184,6 +209,7 @@ Current status:
 ## Dependencies & Prerequisites
 
 ### Required Packages (Already Installed)
+
 - scikit-learn (RandomForest)
 - Dash/Plotly (dashboard)
 - Pandas (data processing)
@@ -191,12 +217,14 @@ Current status:
 - Docker (containerization)
 
 ### Required Knowledge
+
 - Candlestick pattern recognition (rules)
 - RandomForest feature engineering
 - Playwright test automation
 - Docker image publishing
 
 ### Risk Mitigation
+
 - All tests already passing (low risk for regressions)
 - Pattern detection logic isolated (low risk)
 - CLI commands follow existing patterns (low risk)
@@ -219,7 +247,8 @@ Current status:
 ## Handoff Checklist
 
 ### System State (Feb 22, 2026 - 09:56 UTC)
-- ✅ All tests passing (38 executed, 2 skipped) 
+
+- ✅ All tests passing (38 executed, 2 skipped)
 - ✅ Dashboard operational (callback fix deployed)
 - ✅ Sample data loaded (200 candles, 544 patterns)
 - ✅ Module imports clean
@@ -227,6 +256,7 @@ Current status:
 - ✅ Code repository synchronized
 
 ### Ready to Begin Phase 2?
+
 - ✅ MVP features complete
 - ✅ Test coverage adequate (80%+)
 - ✅ CI/CD pipeline functional
@@ -268,4 +298,3 @@ cd "C:\Users\zmgdi\OneDrive\Desktop\CANDLE PATTERNS"
 **Critical Dependencies**: None blocking  
 **Recommended Start**: Pattern expansion (Tier 1)  
 **Estimated Completion**: February 26, 2026
-

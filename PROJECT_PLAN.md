@@ -30,52 +30,52 @@ The Candle Patterns Sequential Pattern Analysis System is **fully operational** 
 
 ### Dashboard Overhaul (10+ Critical Bugs Fixed)
 
-9. **Fixed Duplicate Callback Outputs** (Priority 0)
+1. **Fixed Duplicate Callback Outputs** (Priority 0)
    - Merged 3 export callbacks (`download-asset.data`) into single unified handler using `ctx.triggered_id`
    - Added `allow_duplicate=True` to cleanup and custom sequence callbacks
    - Added `allow_duplicate=True` + `prevent_initial_call=True` to upload callback
    - Status: ✅ COMPLETE
 
-10. **Added Bootstrap Icons CSS** (Priority 0)
+2. **Added Bootstrap Icons CSS** (Priority 0)
     - Added `bootstrap-icons@1.11.3` to `external_stylesheets`
     - All `bi bi-*` icon classes now render correctly throughout the UI
     - Status: ✅ COMPLETE
 
-11. **Fixed Tab Labels & UI Text** (Priority 0)
+3. **Fixed Tab Labels & UI Text** (Priority 0)
     - Changed tab labels from `[html.I(...), " text"]` (rendered as `[object Object]`) to plain strings
     - Replaced all corrupted `?` emoji characters with Bootstrap Icon components
     - Fixed sidebar section headers, button labels, modal buttons, stats cards
     - Status: ✅ COMPLETE
 
-12. **Fixed Upload Callback Logic** (Priority 0)
+4. **Fixed Upload Callback Logic** (Priority 0)
     - Removed broken `load_csv(filename)` filesystem call that always failed after in-memory parsing
     - Added proper timestamp parsing and sorting of uploaded data
     - Status: ✅ COMPLETE
 
-13. **Removed Redundant Callbacks** (Priority 0)
+5. **Removed Redundant Callbacks** (Priority 0)
     - Removed clientside callback for load-sample-btn (race condition with server callback)
     - Removed `init_data_on_page_load` callback (store already pre-loaded)
     - Removed `handle_load_sample_trigger` callback (redundant with `on_load_sample_click`)
     - Total callbacks: 15 → 11
     - Status: ✅ COMPLETE
 
-14. **Made Pattern Checklist Filter Functional** (Priority 0)
+6. **Made Pattern Checklist Filter Functional** (Priority 0)
     - Split into two callbacks: `update_checklist` (populates options) and `apply_filters` (uses selection)
     - Pattern checklist is now an `Input` — toggling checkboxes updates chart and tables immediately
     - Status: ✅ COMPLETE
 
-15. **Modernized Dashboard Tables** (Priority 1)
+7. **Modernized Dashboard Tables** (Priority 1)
     - All tables use `dbc.Table` with bordered, striped, hover, responsive, compact sizing
     - Color-coded return/win-rate values (green positive, red negative)
     - Status: ✅ COMPLETE
 
-16. **Fixed API Endpoint** (Priority 1)
+8. **Fixed API Endpoint** (Priority 1)
     - Changed `detect_candlestick_patterns` (non-existent) to `detect_patterns`
     - Status: ✅ COMPLETE
 
 ### Pattern Expansion (12 → 17 detectors)
 
-17. **Added 5 New Pattern Detectors** (Priority 1)
+1. **Added 5 New Pattern Detectors** (Priority 1)
     - dark_cloud_cover, bullish_harami, bearish_harami, on_neck_line, in_neck_line
     - 10 new unit tests, all passing
     - PATTERN_CATALOG.md updated
@@ -83,7 +83,7 @@ The Candle Patterns Sequential Pattern Analysis System is **fully operational** 
 
 ### ML-CLI Integration
 
-18. **Added 3 New CLI Commands** (Priority 1)
+1. **Added 3 New CLI Commands** (Priority 1)
     - `train` — trains PatternMLModel, saves to disk, reports accuracy + cross-validation
     - `predict` — loads trained model, generates predictions CSV
     - `backtest` — runs BacktestEngine, reports win rate, profit factor, per-pattern metrics

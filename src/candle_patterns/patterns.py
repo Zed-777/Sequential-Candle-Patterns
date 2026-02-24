@@ -150,3 +150,76 @@ def find_sequence_occurrences(df: pd.DataFrame, seq_str: str) -> List[int]:
             results.append(i - 1)  # end index
 
     return results
+
+
+def sequence_length(seq_str: str) -> int:
+    """Return the total number of candles consumed by a sequence string."""
+    tokens = parse_sequence(seq_str)
+    return sum(cnt for cnt, _ in tokens)
+
+
+def _run_length_encode(syms: tuple) -> str:
+    """Convert ('R','R','R','G','G') to '3R -> 2G'."""
+    if not syms:
+        return ""
+    parts: List[str] = []
+    current = syms[0]
+    count = 1
+    for s in syms[1:]:
+        if s == current:
+            count += 1
+        else:
+            parts.append(f"{count}{current}" if current in ("R", "G") else current)
+            current = s
+            count = 1
+    parts.append(f"{count}{current}" if current in ("R", "G") else current)
+    return " -> ".join(parts)
+
+
+def discover_color_sequences(
+    df: pd.DataFrame,
+    min_len: int = 3,
+    max_len: int = 8,
+    top_k: int = 20,
+) -> List[dict]:
+    """Auto-discover the most common R/G colour sequences in *df*.
+
+    Returns a list of dicts sorted by count descending::
+
+        [{"sequence": "3R -> 2G", "count": 12, "length": 5, "support": 0.061}, ...]
+    """
+    from .detection import is_doji, candle_color  # local import to avoid circular
+
+    syms = symbol_sequence(df)
+    n = len(syms)
+
+    # Count raw sub-sequences of each window length
+    raw_counts: dict = {}
+    for length in range(min_len, max_len + 1):
+        for start in range(n - length + 1):
+            window = tuple(syms[start : start + length])
+            raw_counts[window] = raw_counts.get(window, 0) + 1
+
+    # Merge into run-length-encoded strings
+    encoded_counts: dict = {}
+    for seq_tuple, count in raw_counts.items():
+        encoded = _run_length_encode(seq_tuple)
+        encoded_counts[encoded] = encoded_counts.get(encoded, 0) + count
+
+    # Sort by count desc
+    sorted_seqs = sorted(encoded_counts.items(), key=lambda x: x[1], reverse=True)
+
+    results: List[dict] = []
+    for seq_str, count in sorted_seqs[:top_k]:
+        length = sequence_length(seq_str)
+        support = count / max(1, n - length + 1)
+        results.append(
+            {
+                "sequence": seq_str,
+                "count": count,
+                "length": length,
+                "support": round(support, 4),
+            }
+        )
+
+    return results

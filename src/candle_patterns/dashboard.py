@@ -17,49 +17,42 @@ logger = logging.getLogger(__name__)
 
 from candle_patterns.ingestion import load_csv
 
-from candle_patterns.detection import detect_patterns
-
-from candle_patterns.reporting import summarize_detections
-
-from candle_patterns.opp_miner import top_patterns_across_lengths
+from candle_patterns.patterns import (
+    find_sequence_occurrences,
+    parse_sequence,
+    sequence_length,
+    discover_color_sequences,
+)
 
 from candle_patterns.storage import save_upload
 
 # ============================================================================
-# PATTERN METADATA — descriptions, categories, colors
+# PRESET SEQUENCE LIBRARY — common colour-based candle sequences
 # ============================================================================
-PATTERN_META = {
-    "doji":                {"cat": "Single", "signal": "neutral",  "desc": "Tiny body (open ≈ close) with long wicks. Signals indecision."},
-    "hammer":              {"cat": "Single", "signal": "bullish",  "desc": "Small body at top, long lower wick. Bullish reversal signal."},
-    "spinning_top":        {"cat": "Single", "signal": "neutral",  "desc": "Very small body with wicks on both sides. Indecision."},
-    "shooting_star":       {"cat": "Single", "signal": "bearish",  "desc": "Small body at bottom, long upper wick. Bearish reversal signal."},
-    "hanging_man":         {"cat": "Single", "signal": "bearish",  "desc": "Long lower wick after uptrend. Warning of potential reversal."},
-    "bullish_engulfing":   {"cat": "Two",    "signal": "bullish",  "desc": "Green candle engulfs prior red candle. Strong bullish reversal."},
-    "bearish_engulfing":   {"cat": "Two",    "signal": "bearish",  "desc": "Red candle engulfs prior green candle. Strong bearish reversal."},
-    "piercing_line":       {"cat": "Two",    "signal": "bullish",  "desc": "Green candle closes above midpoint of prior red candle. Bullish."},
-    "dark_cloud_cover":    {"cat": "Two",    "signal": "bearish",  "desc": "Red candle opens above prior close, closes below midpoint. Bearish."},
-    "bullish_harami":      {"cat": "Two",    "signal": "bullish",  "desc": "Small green candle inside prior large red candle. Potential reversal."},
-    "bearish_harami":      {"cat": "Two",    "signal": "bearish",  "desc": "Small red candle inside prior large green candle. Potential reversal."},
-    "on_neck_line":        {"cat": "Two",    "signal": "bearish",  "desc": "Red candle closing near prior low. Downtrend continuation."},
-    "in_neck_line":        {"cat": "Two",    "signal": "bearish",  "desc": "Red candle closing slightly above prior close. Weak recovery."},
-    "morning_star":        {"cat": "Three",  "signal": "bullish",  "desc": "Red then small body then green. Classic bullish reversal."},
-    "evening_star":        {"cat": "Three",  "signal": "bearish",  "desc": "Green then small body then red. Classic bearish reversal."},
-    "three_white_soldiers":{"cat": "Three",  "signal": "bullish",  "desc": "Three consecutive green candles. Strong bullish momentum."},
-    "three_black_crows":   {"cat": "Three",  "signal": "bearish",  "desc": "Three consecutive red candles. Strong bearish momentum."},
+PRESET_SEQUENCES = {
+    "3R -> 2G":               "3R -> 2G",
+    "3G -> 2R":               "3G -> 2R",
+    "5R -> 3G":               "5R -> 3G",
+    "5G -> 3R":               "5G -> 3R",
+    "2R -> 1G -> 2R":         "2R -> 1G -> 2R",
+    "2G -> 1R -> 2G":         "2G -> 1R -> 2G",
+    "4R -> 1G -> 3R":         "4R -> 1G -> 3R",
+    "3G -> 1R -> 3G":         "3G -> 1R -> 3G",
+    "2R -> Doji -> 2G":       "2R -> Doji -> 2G",
+    "3G -> Doji -> 3R":       "3G -> Doji -> 3R",
+    "1R -> 1G -> 1R -> 1G":   "1R -> 1G -> 1R -> 1G",
+    "5R -> 5G":               "5R -> 5G",
+    "4G -> 4R":               "4G -> 4R",
+    "3R -> 1G -> 1R -> 1G":   "3R -> 1G -> 1R -> 1G",
+    "2G -> 2R -> 2G":         "2G -> 2R -> 2G",
 }
 
-SIGNAL_COLORS = {"bullish": "#10b981", "bearish": "#ef4444", "neutral": "#8b8b8b"}
-SIGNAL_SYMBOLS = {"bullish": "triangle-up", "bearish": "triangle-down", "neutral": "diamond"}
-
-# Multi-candle patterns shown by default (less noisy)
-TOP_PATTERNS = {
-    "bullish_engulfing", "bearish_engulfing", "piercing_line", "dark_cloud_cover",
-    "bullish_harami", "bearish_harami", "morning_star", "evening_star",
-    "three_white_soldiers", "three_black_crows", "on_neck_line", "in_neck_line",
-}
-
-def _get_meta(name):
-    return PATTERN_META.get(name, {"cat": "Other", "signal": "neutral", "desc": name})
+# Distinct colours for up to 15 simultaneous sequences on the chart
+SEQUENCE_COLORS = [
+    "#6366f1", "#ec4899", "#f59e0b", "#10b981", "#3b82f6",
+    "#8b5cf6", "#ef4444", "#14b8a6", "#f97316", "#06b6d4",
+    "#84cc16", "#e879f9", "#fb923c", "#22d3ee", "#a78bfa",
+]
 
 # Modern professional stylesheet with custom CSS
 external_stylesheets = [
@@ -92,9 +85,8 @@ def load_sample_data(trigger_data=None):
     try:
         df = pd.read_csv(sample_path)
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
-        patterns = detect_patterns(df)
         try:
-            upload_meta = save_upload(sample_path.name, df, patterns)
+            upload_meta = save_upload(sample_path.name, df, [])
             upload_id = upload_meta.get("upload_id") if isinstance(upload_meta, dict) else upload_meta
         except Exception as db_error:
             logger.warning("Could not save to DB: %s", db_error)
@@ -104,11 +96,10 @@ def load_sample_data(trigger_data=None):
             "filename": str(sample_path.name),
             "upload_id": upload_id,
             "df": df.to_dict("records"),
-            "patterns": patterns,
         }
 
         status_html = html.Div(
-            f"[OK] Loaded sample: {len(patterns)} patterns detected",
+            f"[OK] Loaded sample: {len(df)} candles",
             style={
                 "color": "#059669",
                 "fontWeight": "600",
@@ -142,9 +133,9 @@ try:
         app.default_sample_data = data
         logger.info("[OK] Sample auto-loaded for layout")
         try:
-            print(f"\n[OK] LOADED: {len(data['df'])} candles, {len(data['patterns'])} patterns\n")
+            print(f"\n[OK] LOADED: {len(data['df'])} candles\n")
         except (UnicodeEncodeError, UnicodeDecodeError):
-            print(f"\n[OK] LOADED: {len(data['df'])} candles, {len(data['patterns'])} patterns\n")
+            print(f"\n[OK] LOADED: {len(data['df'])} candles\n")
 except Exception as e:
     logger.exception(f"Failed to auto-load: {e}")
 
@@ -774,7 +765,7 @@ navbar = dbc.Navbar(
                     dbc.Col(
                         [
                             html.Span(
-                                "AI-Powered Candlestick Pattern Detection & Analysis",
+                                "Sequential Candle Pattern Scanner",
                                 style={"color": "rgba(255,255,255,0.85)", "fontSize": "0.95rem", "fontWeight": "500"}
                             )
                         ],
@@ -832,7 +823,7 @@ sidebar = dbc.Card(
                 
                 html.Hr(className="hr-style"),
                 
-                # Filters section
+                # Date range filter
                 html.Div([
                     html.H6([html.I(className="bi bi-calendar-range"), " Date Range Filter"]),
                     dcc.DatePickerRange(
@@ -846,34 +837,53 @@ sidebar = dbc.Card(
                 
                 html.Hr(className="hr-style"),
                 
-                # Patterns section
+                # ==========================================
+                # SEQUENCE SCANNER — the main feature
+                # ==========================================
                 html.Div([
-                    html.H6([html.I(className="bi bi-bullseye"), " Pattern Filters"]),
-                    html.Div([
-                        dbc.ButtonGroup([
-                            dbc.Button("All", id="select-all-patterns", color="link", size="sm",
-                                       style={"fontSize": "0.75rem", "padding": "2px 8px", "fontWeight": "700", "textDecoration": "none"}),
-                            dbc.Button("Top", id="select-top-patterns", color="link", size="sm",
-                                       style={"fontSize": "0.75rem", "padding": "2px 8px", "fontWeight": "700", "textDecoration": "none"}),
-                            dbc.Button("None", id="select-no-patterns", color="link", size="sm",
-                                       style={"fontSize": "0.75rem", "padding": "2px 8px", "fontWeight": "700", "textDecoration": "none"}),
-                        ], size="sm", style={"marginBottom": "0.5rem"}),
-                    ], style={"display": "flex", "justifyContent": "flex-end"}),
-                    html.Div(
-                        dcc.Checklist(
-                            id="pattern-checklist",
-                            options=[],
-                            value=[],
-                            inline=False,
-                            style={"marginTop": "0.4rem"}
-                        ),
-                        style={"maxHeight": "260px", "overflowY": "auto", "paddingRight": "4px"}
+                    html.H6([html.I(className="bi bi-search"), " Sequence Scanner"]),
+                    html.Small(
+                        "Define colour sequences and scan 200 candles for matches.",
+                        style={"color": "#6b7280", "display": "block", "marginBottom": "0.75rem", "fontWeight": "500"}
                     ),
-                    html.Div([
-                        html.Span("\u25B2", style={"color": "#10b981", "fontSize": "0.7rem"}), html.Small(" Bullish  ", style={"color": "#6b7280"}),
-                        html.Span("\u25BC", style={"color": "#ef4444", "fontSize": "0.7rem"}), html.Small(" Bearish  ", style={"color": "#6b7280"}),
-                        html.Span("\u25C6", style={"color": "#8b8b8b", "fontSize": "0.7rem"}), html.Small(" Neutral", style={"color": "#6b7280"}),
-                    ], style={"marginTop": "0.5rem", "fontSize": "0.8em"}),
+                    
+                    # Preset sequences (multi-select dropdown)
+                    html.Label("Preset Sequences", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
+                    dcc.Dropdown(
+                        id="preset-sequences",
+                        options=[{"label": k, "value": v} for k, v in PRESET_SEQUENCES.items()],
+                        multi=True,
+                        placeholder="Pick common sequences...",
+                        style={"marginBottom": "0.75rem"},
+                    ),
+                    
+                    # Custom sequences textarea
+                    html.Label("Custom Sequences (one per line)", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "marginTop": "0.25rem"}),
+                    dcc.Textarea(
+                        id="custom-sequences-input",
+                        placeholder="5R -> 3G\n2R -> Doji -> 1G\n4G -> 2R",
+                        style={
+                            "width": "100%", "height": "80px", "borderRadius": "10px",
+                            "padding": "0.75rem", "border": "1.5px solid #e5e7eb",
+                            "fontSize": "0.85rem", "fontFamily": "monospace",
+                        },
+                    ),
+                    html.Small(
+                        "Syntax: NR = N red, NG = N green, Doji, Hammer. Arrow separators: ->",
+                        style={"color": "#9ca3af", "display": "block", "marginTop": "4px", "fontSize": "0.7rem"},
+                    ),
+                    
+                    # Scan button
+                    dbc.Button(
+                        [html.I(className="bi bi-play-fill"), " Scan Sequences"],
+                        id="scan-sequences-btn",
+                        color="primary",
+                        className="w-100 mt-3",
+                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem"},
+                    ),
+                    
+                    # Results summary
+                    html.Div(id="scan-results-summary", style={"marginTop": "0.75rem"}),
                 ], style={"marginBottom": "1.5rem"}),
                 
                 html.Hr(className="hr-style"),
@@ -886,26 +896,6 @@ sidebar = dbc.Card(
                         placeholder="Select a past upload...",
                         clearable=True,
                         style={"marginTop": "0.5rem"}
-                    ),
-                ], style={"marginBottom": "1.5rem"}),
-                
-                html.Hr(className="hr-style"),
-                
-                # Custom sequence section
-                html.Div([
-                    html.H6([html.I(className="bi bi-link-45deg"), " Custom Sequence"]),
-                    dcc.Input(
-                        id="custom-seq-input",
-                        placeholder="e.g. 3R -> Doji -> G",
-                        style={"width": "100%", "borderRadius": "10px", "padding": "0.75rem 1rem", "border": "1.5px solid #e5e7eb"}
-                    ),
-                    dbc.Button(
-                        [html.I(className="bi bi-play-fill"), " Run Sequence"],
-                        id="run-custom-seq-btn",
-                        color="secondary",
-                        size="sm",
-                        className="mt-3 w-100",
-                        style={"fontWeight": "700", "padding": "0.65rem 1rem"}
                     ),
                 ], style={"marginBottom": "1.5rem"}),
                 
@@ -934,7 +924,7 @@ sidebar = dbc.Card(
                 html.Div([
                     html.H6([html.I(className="bi bi-download"), " Export Data"]),
                     dbc.Button(
-                        [html.I(className="bi bi-table"), " Detections"],
+                        [html.I(className="bi bi-table"), " Matches CSV"],
                         id="export-detections-btn",
                         color="info",
                         size="sm",
@@ -942,7 +932,7 @@ sidebar = dbc.Card(
                         style={"fontWeight": "700", "padding": "0.65rem 1rem"}
                     ),
                     dbc.Button(
-                        [html.I(className="bi bi-bar-chart"), " Aggregated"],
+                        [html.I(className="bi bi-bar-chart"), " Discovery CSV"],
                         id="export-aggregated-btn",
                         color="info",
                         size="sm",
@@ -962,9 +952,9 @@ sidebar = dbc.Card(
     className="sidebar-card",
 )
 
-# Stores to keep the current upload and detections in-browser
-# Initialize with sample data that was loaded at startup
+# Stores to keep the current upload and scan results in-browser
 store_current = dcc.Store(id='current-data', data=(app.default_sample_data if app.default_sample_data is not None else None), storage_type='memory')
+store_scan = dcc.Store(id='scan-results', data=None, storage_type='memory')
 
 # Modal for pattern detail
 pattern_modal = dbc.Modal(
@@ -1028,33 +1018,22 @@ main_content = dbc.Tabs(
             className="p-4"
         ),
         dbc.Tab(
-            label="Individual Patterns",
-            tab_id="tab-patterns",
+            label="Sequence Matches",
+            tab_id="tab-matches",
             children=[
                 dbc.Container(
-                    [dcc.Loading(html.Div(id="pattern-table", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
+                    [dcc.Loading(html.Div(id="matches-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
                     fluid=True
                 )
             ],
             className="p-4"
         ),
         dbc.Tab(
-            label="Aggregated Summary",
-            tab_id="tab-agg",
+            label="Auto-Discovery",
+            tab_id="tab-discovery",
             children=[
                 dbc.Container(
-                    [dcc.Loading(html.Div(id="aggregated-table", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
-                    fluid=True
-                )
-            ],
-            className="p-4"
-        ),
-        dbc.Tab(
-            label="OPP Patterns",
-            tab_id="tab-opp",
-            children=[
-                dbc.Container(
-                    [dcc.Loading(html.Div(id="opp-table", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
+                    [dcc.Loading(html.Div(id="discovery-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
                     fluid=True
                 )
             ],
@@ -1109,6 +1088,7 @@ app.layout = dbc.Container(
     [
         navbar,
         store_current,
+        store_scan,
         dcc.Location(id='url', refresh=False),  # Track page location
         html.Div(id='page-load-signal', children=1, style={'display': 'none'}),  # Trigger initial render
         dbc.Row(
@@ -1125,252 +1105,232 @@ app.layout = dbc.Container(
     style={"background": "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)", "minHeight": "100vh", "paddingBottom": "3rem", "paddingTop": "0"}
 )
 
-# Keep existing callbacks; they target preserved IDs like 'upload-data','candle-chart','pattern-table' etc.
+# =========================================================================
+# CALLBACKS
+# =========================================================================
 
-# Store is already pre-loaded with sample data; apply_filters fires on initial load
-# via prevent_initial_call=False, so no extra init callback is needed.
-
-
-# apply_filters will run when store data changes, including on initial page load
-# because prevent_initial_call=False and store has data
-# Handle file upload
+# Handle file upload --------------------------------------------------
 @app.callback(
     Output("upload-status", "children"),
     Output("current-data", "data", allow_duplicate=True),
+    Output("scan-results", "data", allow_duplicate=True),
     Input("upload-data", "contents"),
     State("upload-data", "filename"),
     prevent_initial_call=True,
 )
 def on_upload(contents, filename):
-
     from candle_patterns.storage import save_upload
 
     if contents is None:
-        return "", dash.no_update
+        return "", dash.no_update, dash.no_update
 
     content_type, content_string = contents.split(",", 1)
-    import base64
-    import io
+    import base64, io
 
     decoded = base64.b64decode(content_string)
     df = pd.read_csv(io.BytesIO(decoded))
 
-    # Ensure timestamp column is present and parsed
     if "timestamp" in df.columns:
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
         df = df.sort_values("timestamp").reset_index(drop=True)
 
-    patterns = detect_patterns(df)
-
-    # persist upload and detections
     try:
-        upload_id = save_upload(filename, df, patterns)
+        upload_id = save_upload(filename, df, [])
     except Exception as e:
         logger.exception("save_upload failed: %s", e)
         upload_id = None
 
-    # prepare the data to store in the session
     data = {
         "filename": filename,
         "upload_id": upload_id,
         "df": df.to_dict("records"),
-        "patterns": patterns,
     }
 
-    return f"Uploaded: {filename}", data
+    return f"Uploaded: {filename} ({len(df)} candles)", data, None  # reset scan
 
 
-# Handle "Load Sample Data" button
+# Handle "Load Sample Data" button ------------------------------------
 @app.callback(
     Output("current-data", "data", allow_duplicate=True),
     Output("upload-status", "children", allow_duplicate=True),
+    Output("scan-results", "data", allow_duplicate=True),
     Input("load-sample-btn", "n_clicks"),
-    prevent_initial_call=True
+    prevent_initial_call=True,
 )
 def on_load_sample_click(n_clicks):
-    """Load sample data when the button is clicked."""
     if n_clicks and n_clicks > 0:
         logger.info("Load Sample Data button clicked")
         data, status = load_sample_data()
         if data:
-            logger.info("Sample data loaded: %d candles, %d patterns", len(data['df']), len(data['patterns']))
-            return data, status
-        else:
-            logger.warning("Failed to load sample data")
-            return None, status
-    return None, ""
+            logger.info("Sample data loaded: %d candles", len(data['df']))
+            return data, status, None  # reset scan
+        return None, status, None
+    return None, "", None
 
 
-# Populate pattern checklist when data changes
+# Scan sequences  -------------------------------------------------------
 @app.callback(
-    Output("pattern-checklist", "options"),
-    Output("pattern-checklist", "value"),
-    Input("current-data", "data"),
-    prevent_initial_call=False,
-)
-def update_checklist(data):
-    """Update pattern checklist options when new data is loaded."""
-    if not data:
-        return [], []
-    patterns = data.get("patterns", [])
-    names = sorted({p["pattern"] for p in patterns})
-    # Build labels with signal color indicator
-    options = []
-    for n in names:
-        meta = _get_meta(n)
-        signal = meta["signal"]
-        dot = "\u25B2" if signal == "bullish" else ("\u25BC" if signal == "bearish" else "\u25C6")
-        cat = meta["cat"]
-        label = f"{dot} {n}  ({cat})"
-        options.append({"label": label, "value": n})
-    # Default to TOP patterns only (multi-candle, less noise)
-    default_selected = [n for n in names if n in TOP_PATTERNS]
-    return options, default_selected
-
-
-# All / Top / None quick-select buttons for pattern checklist
-@app.callback(
-    Output("pattern-checklist", "value", allow_duplicate=True),
-    Input("select-all-patterns", "n_clicks"),
-    Input("select-top-patterns", "n_clicks"),
-    Input("select-no-patterns", "n_clicks"),
-    State("pattern-checklist", "options"),
+    Output("scan-results", "data", allow_duplicate=True),
+    Output("scan-results-summary", "children"),
+    Input("scan-sequences-btn", "n_clicks"),
+    State("preset-sequences", "value"),
+    State("custom-sequences-input", "value"),
+    State("current-data", "data"),
     prevent_initial_call=True,
 )
-def quick_select_patterns(n_all, n_top, n_none, options):
-    """Handle All / Top / None quick-select buttons."""
-    trig = callback_context.triggered_id
-    all_values = [o["value"] for o in options] if options else []
-    if trig == "select-all-patterns":
-        return all_values
-    elif trig == "select-top-patterns":
-        return [v for v in all_values if v in TOP_PATTERNS]
-    elif trig == "select-no-patterns":
-        return []
-    return dash.no_update
+def scan_sequences(n_clicks, presets, custom_text, data):
+    """Run all selected sequences against the loaded candle data."""
+    if not data:
+        return None, html.Div("No data loaded. Upload a CSV or load sample data first.",
+                              style={"color": "#ef4444", "fontWeight": "600"})
+
+    # Collect sequences from presets + custom
+    seqs: list = []
+    if presets:
+        seqs.extend(presets)
+    if custom_text:
+        for line in custom_text.strip().splitlines():
+            line = line.strip()
+            if line:
+                seqs.append(line)
+
+    if not seqs:
+        return None, html.Div("No sequences defined. Pick presets or type custom ones.",
+                              style={"color": "#f59e0b", "fontWeight": "600"})
+
+    df = pd.DataFrame(data["df"])
+    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+
+    results = []
+    total_matches = 0
+    for seq_str in seqs:
+        try:
+            occ_ends = find_sequence_occurrences(df, seq_str)
+            seq_len = sequence_length(seq_str)
+            matches = []
+            for end_idx in occ_ends:
+                start_idx = end_idx - seq_len + 1
+                if start_idx < 0:
+                    start_idx = 0
+                matches.append({
+                    "start_idx": int(start_idx),
+                    "end_idx": int(end_idx),
+                    "start_ts": str(df.iloc[start_idx]["timestamp"]),
+                    "end_ts": str(df.iloc[end_idx]["timestamp"]),
+                })
+            results.append({"seq_str": seq_str, "length": seq_len, "matches": matches})
+            total_matches += len(matches)
+        except Exception as e:
+            results.append({"seq_str": seq_str, "length": 0, "matches": [], "error": str(e)})
+
+    summary = html.Div(
+        f"Scanned {len(seqs)} sequence(s) — {total_matches} total matches found",
+        style={
+            "color": "#059669" if total_matches else "#f59e0b",
+            "fontWeight": "600", "padding": "10px",
+            "backgroundColor": "#ecfdf5" if total_matches else "#fffbeb",
+            "borderRadius": "8px", "fontSize": "0.85rem",
+        },
+    )
+    return results, summary
 
 
-# Apply filters and update chart/tables when data, date range, or pattern selection changes
+# Update chart + matches table when data or scan-results change --------
 @app.callback(
     Output("candle-chart", "figure"),
-    Output("pattern-table", "children"),
-    Output("aggregated-table", "children"),
-    Output("opp-table", "children"),
+    Output("matches-content", "children"),
     Input("current-data", "data"),
+    Input("scan-results", "data"),
     Input("date-range", "start_date"),
     Input("date-range", "end_date"),
-    Input("pattern-checklist", "value"),
     prevent_initial_call=False,
 )
-def apply_filters(data, start_date, end_date, selected_patterns):
-    """Apply filters and update all displays."""
-    logger.info(f"[CALLBACK] apply_filters called: data={'set' if data else 'None'}")
-    
-    try:
-        # If no data is present, display empty-state placeholders
-        if not data:
-            logger.warning("[CALLBACK] No data provided, returning empty state")
-            fig = go.Figure()
-            fig.add_annotation(
-                text="Upload a CSV or click 'Load Sample Data' to begin",
-                xref='paper', yref='paper', x=0.5, y=0.5, showarrow=False,
-                font=dict(size=18, color='#6366f1', family='sans-serif')
-            )
-            fig.update_layout(
-                xaxis=dict(visible=False), yaxis=dict(visible=False),
-                template='plotly_white', height=400,
-                margin=dict(l=0, r=0, t=0, b=0),
-                plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-            )
-            empty_div = html.Div(
-                [html.I(className="bi bi-inbox", style={"fontSize": "2rem", "color": "#c7d2fe"}),
-                 html.P("No data loaded", style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
-                style={"padding": "3rem", "textAlign": "center"}
-            )
-            return fig, empty_div, empty_div, empty_div
+def update_chart(data, scan_results, start_date, end_date):
+    """Draw the candlestick chart and populate the Sequence Matches tab."""
+    logger.info("[CALLBACK] update_chart called: data=%s scan=%s",
+                'set' if data else 'None', 'set' if scan_results else 'None')
 
-        # Process data
+    # ---- empty state ----
+    if not data:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Upload a CSV or click  Load Sample Data  to begin",
+            xref='paper', yref='paper', x=0.5, y=0.5, showarrow=False,
+            font=dict(size=18, color='#6366f1', family='sans-serif'),
+        )
+        fig.update_layout(
+            xaxis=dict(visible=False), yaxis=dict(visible=False),
+            template='plotly_white', height=400,
+            margin=dict(l=0, r=0, t=0, b=0),
+            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+        )
+        empty = html.Div(
+            [html.I(className="bi bi-inbox", style={"fontSize": "2rem", "color": "#c7d2fe"}),
+             html.P("No data loaded", style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+            style={"padding": "3rem", "textAlign": "center"},
+        )
+        return fig, empty
+
+    # ---- process data ----
+    try:
         df = pd.DataFrame(data["df"])
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
-        patterns = data.get("patterns", [])
 
-        # Get pattern names for filtering
-        names = sorted({p["pattern"] for p in patterns})
-        selected = selected_patterns if (selected_patterns and len(selected_patterns) > 0) else names
-        
-        # Filter by date range
         if start_date:
             df = df[df["timestamp"] >= pd.to_datetime(start_date)]
         if end_date:
             df = df[df["timestamp"] <= pd.to_datetime(end_date) + pd.Timedelta(days=1)]
 
-        # Build candlestick figure
+        # ---- candlestick ----
         fig = go.Figure(data=[go.Candlestick(
-            x=df["timestamp"], open=df["open"], high=df["high"], low=df["low"], close=df["close"],
-            name="OHLC", increasing_line_color='#10b981', decreasing_line_color='#ef4444'
+            x=df["timestamp"], open=df["open"], high=df["high"],
+            low=df["low"], close=df["close"],
+            name="OHLC",
+            increasing_line_color='#10b981', decreasing_line_color='#ef4444',
         )])
-        
-        # Add pattern markers — color-coded by signal (bullish/bearish/neutral)
-        filtered_patterns = [p for p in patterns if p["pattern"] in selected]
-        
-        # Build lookups from timestamp → high/low values
-        high_lookup = dict(zip(df["timestamp"].astype(str), df["high"]))
-        low_lookup = dict(zip(df["timestamp"].astype(str), df["low"]))
-        
-        # Group markers by signal type for color-coded traces
-        marker_groups = {"bullish": {"x": [], "y": [], "text": [], "hover": []},
-                         "bearish": {"x": [], "y": [], "text": [], "hover": []},
-                         "neutral": {"x": [], "y": [], "text": [], "hover": []}}
-        
-        for p in filtered_patterns:
-            ts_str = str(p["timestamp"])
-            high_val = high_lookup.get(ts_str)
-            low_val = low_lookup.get(ts_str)
-            if high_val is None:
-                try:
-                    ts_parsed = pd.to_datetime(p["timestamp"], utc=True)
-                    match_h = df.loc[(df["timestamp"] - ts_parsed).abs().dt.total_seconds() < 1, "high"]
-                    match_l = df.loc[(df["timestamp"] - ts_parsed).abs().dt.total_seconds() < 1, "low"]
-                    if len(match_h) > 0:
-                        high_val = match_h.iloc[0]
-                        low_val = match_l.iloc[0]
-                except Exception:
-                    pass
-            if high_val is not None:
-                meta = _get_meta(p["pattern"])
-                signal = meta["signal"]
-                # Position bearish markers below candles, bullish/neutral above
-                if signal == "bearish":
-                    y_val = low_val * 0.995 if low_val else high_val * 1.005
-                else:
-                    y_val = high_val * 1.005
-                grp = marker_groups[signal]
-                grp["x"].append(p["timestamp"])
-                grp["y"].append(y_val)
-                grp["text"].append(p["pattern"])
-                grp["hover"].append(f"<b>{p['pattern']}</b><br>{meta['desc']}<br>{meta['cat']}-candle | {signal}")
-        
-        # One trace per signal type with distinct color, shape, and legend entry
-        signal_labels = {"bullish": "Bullish", "bearish": "Bearish", "neutral": "Neutral"}
-        for signal, grp in marker_groups.items():
-            if grp["x"]:
-                fig.add_trace(go.Scatter(
-                    x=grp["x"], y=grp["y"], mode='markers',
-                    text=grp["text"],
-                    hovertext=grp["hover"],
-                    hovertemplate='%{hovertext}<extra></extra>',
-                    marker=dict(
-                        size=9, color=SIGNAL_COLORS[signal],
-                        symbol=SIGNAL_SYMBOLS[signal],
-                        line=dict(width=1, color='white'),
-                        opacity=0.9,
-                    ),
-                    name=f"{signal_labels[signal]} Patterns",
-                    showlegend=True,
-                ))
+
+        total_matches = 0
+
+        # ---- sequence match highlights ----
+        if scan_results:
+            for idx, res in enumerate(scan_results):
+                color = SEQUENCE_COLORS[idx % len(SEQUENCE_COLORS)]
+                seq_str = res["seq_str"]
+                matches = res.get("matches", [])
+                total_matches += len(matches)
+
+                # Add translucent rectangles for each match span
+                for m in matches:
+                    si, ei = m["start_idx"], m["end_idx"]
+                    if si >= len(df) or ei >= len(df):
+                        continue
+                    x0 = df.iloc[si]["timestamp"]
+                    x1 = df.iloc[ei]["timestamp"]
+                    fig.add_vrect(
+                        x0=x0, x1=x1,
+                        fillcolor=color, opacity=0.12,
+                        line_width=2, line_color=color,
+                        annotation_text=seq_str if len(matches) <= 6 else None,
+                        annotation_position="top left",
+                        annotation_font_size=9,
+                        annotation_font_color=color,
+                    )
+
+                # Also add a single invisible scatter for the legend entry
+                if matches:
+                    fig.add_trace(go.Scatter(
+                        x=[None], y=[None], mode='markers',
+                        marker=dict(size=10, color=color, symbol="square"),
+                        name=f"{seq_str} ({len(matches)})",
+                        showlegend=True,
+                    ))
+
+        title_text = f"Candlestick Chart | {len(df)} candles"
+        if scan_results:
+            title_text += f" | {total_matches} sequence matches"
 
         fig.update_layout(
-            title=dict(text=f"Candlestick Analysis | {len(filtered_patterns)} patterns detected", font=dict(size=16, color='#1f2937')),
+            title=dict(text=title_text, font=dict(size=16, color='#1f2937')),
             template='plotly_white', height=550, hovermode='x unified',
             xaxis=dict(rangeslider=dict(visible=False)),
             margin=dict(l=50, r=20, t=70, b=40),
@@ -1381,128 +1341,164 @@ def apply_filters(data, start_date, end_date, selected_patterns):
             ),
         )
 
-        # Pattern list — styled as dbc.Table with count badge
-        if filtered_patterns:
-            # Show first 100 rows with a summary header
-            display_limit = 100
-            header_text = f"Showing {min(display_limit, len(filtered_patterns))} of {len(filtered_patterns)} detected patterns"
-            list_section = html.Div([
-                html.Div(
-                    [html.I(className="bi bi-list-check me-2"), header_text],
-                    style={"padding": "0.75rem 1rem", "backgroundColor": "#f0f0ff", "borderRadius": "8px", "fontWeight": "600", "color": "#4f46e5", "marginBottom": "0.75rem"}
-                ),
-                dbc.Table(
-                    [html.Thead(html.Tr([html.Th("#"), html.Th("Timestamp"), html.Th("Pattern")])),
-                     html.Tbody([html.Tr([html.Td(str(i+1), style={"color": "#9ca3af", "width": "50px"}), html.Td(p['timestamp']), html.Td(p['pattern'])]) for i, p in enumerate(filtered_patterns[:display_limit])])],
-                    bordered=True, hover=True, responsive=True, striped=True, size="sm",
-                    className="mt-2", style={"fontSize": "0.9rem"}
-                )
-            ])
-        else:
-            list_section = html.Div("No patterns detected", style={"padding": "1rem", "color": "#6b7280"})
-
-        # Aggregated summary — styled as dbc.Table
-        summary = summarize_detections(pd.DataFrame(data["df"]), patterns)
-        if summary:
-            agg_rows = []
-            for r in summary:
-                agg_rows.append(html.Tr([
-                    html.Td(r["pattern"], style={"fontWeight": "600"}),
-                    html.Td(str(r["count"])),
-                    html.Td(f"{r['support']:.3f}"),
-                    html.Td(f"{r['avg_return']:.4f}", style={"color": "#10b981" if r['avg_return'] > 0 else "#ef4444", "fontWeight": "600"}),
-                    html.Td(f"{r['win_rate']:.2%}", style={"color": "#10b981" if r['win_rate'] > 0.5 else "#ef4444", "fontWeight": "600"})
-                ]))
-            agg_table = dbc.Table(
-                [html.Thead(html.Tr([html.Th("Pattern"), html.Th("Count"), html.Th("Support"), html.Th("Avg Return"), html.Th("Win Rate")])),
-                 html.Tbody(agg_rows)],
-                bordered=True, hover=True, responsive=True, striped=True, size="sm",
-                className="mt-3", style={"fontSize": "0.9rem"}
+        # ---- Sequence Matches tab content ----
+        if not scan_results:
+            matches_div = html.Div(
+                [html.I(className="bi bi-search", style={"fontSize": "2rem", "color": "#c7d2fe"}),
+                 html.P("Define sequences in the sidebar and click Scan to find matches.",
+                        style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+                style={"padding": "3rem", "textAlign": "center"},
             )
         else:
-            agg_table = html.Div("No summary available", style={"color": "#6b7280", "padding": "1rem"})
+            cards = []
+            for idx, res in enumerate(scan_results):
+                color = SEQUENCE_COLORS[idx % len(SEQUENCE_COLORS)]
+                seq_str = res["seq_str"]
+                matches = res.get("matches", [])
+                error = res.get("error")
 
-        # OPP patterns — styled as dbc.Table
-        top_opp = top_patterns_across_lengths(pd.DataFrame(data["df"]), min_len=3, max_len=6, min_support=0.02, top_k=5)
-        if top_opp:
-            opp_rows = [html.Tr([html.Td(str(t['length'])), html.Td(str(t['pattern'])), html.Td(str(t['count'])), html.Td(f"{t['support']:.3f}")]) for t in top_opp]
-            opp_table = dbc.Table(
-                [html.Thead(html.Tr([html.Th("Length"), html.Th("Pattern"), html.Th("Count"), html.Th("Support")])),
-                 html.Tbody(opp_rows)],
-                bordered=True, hover=True, responsive=True, striped=True, size="sm",
-                className="mt-3", style={"fontSize": "0.9rem"}
-            )
-        else:
-            opp_table = html.Div("No OPP patterns found", style={"color": "#6b7280", "padding": "1rem"})
+                if error:
+                    badge = dbc.Badge("ERROR", color="danger", className="ms-2")
+                    body = html.P(f"Parse error: {error}", style={"color": "#ef4444"})
+                elif not matches:
+                    badge = dbc.Badge("0 matches", color="warning", className="ms-2")
+                    body = html.P("No matches found in the loaded data.", style={"color": "#6b7280"})
+                else:
+                    badge = dbc.Badge(f"{len(matches)} matches", color="success", className="ms-2")
+                    rows = []
+                    for i, m in enumerate(matches[:50]):
+                        rows.append(html.Tr([
+                            html.Td(str(i + 1), style={"color": "#9ca3af", "width": "40px"}),
+                            html.Td(f"Candle {m['start_idx']} → {m['end_idx']}"),
+                            html.Td(m["start_ts"][:19]),
+                            html.Td(m["end_ts"][:19]),
+                        ]))
+                    body = dbc.Table(
+                        [html.Thead(html.Tr([html.Th("#"), html.Th("Candle Range"), html.Th("Start"), html.Th("End")])),
+                         html.Tbody(rows)],
+                        bordered=True, hover=True, responsive=True, striped=True, size="sm",
+                        style={"fontSize": "0.85rem"},
+                    )
 
-        logger.info(f"[CALLBACK] Returning: {len(filtered_patterns)} patterns")
-        return fig, list_section, agg_table, opp_table
-        
+                card = dbc.Card([
+                    dbc.CardHeader([
+                        html.Span(
+                            "\u25A0 ",
+                            style={"color": color, "fontSize": "1rem"},
+                        ),
+                        html.Strong(seq_str, style={"fontFamily": "monospace"}),
+                        badge,
+                        html.Span(f"  ({res.get('length', '?')} candles)", style={"color": "#9ca3af", "fontSize": "0.8rem", "marginLeft": "0.5rem"}),
+                    ]),
+                    dbc.CardBody(body),
+                ], className="mb-3")
+
+                cards.append(card)
+
+            matches_div = html.Div(cards)
+
+        return fig, matches_div
+
     except Exception as e:
-        logger.exception(f"[CALLBACK ERROR] apply_filters crashed: {e}")
-        error_fig = go.Figure()
-        error_fig.add_annotation(text=f"ERROR: {str(e)[:80]}", xref='paper', yref='paper', x=0.5, y=0.5, showarrow=False, font=dict(size=14, color='#ef4444'))
-        error_fig.update_layout(height=400, template='plotly_white')
-        error_div = html.Div(f"Error: {str(e)[:100]}", style={"color": "#ef4444", "padding": "1rem"})
-        return error_fig, error_div, error_div, error_div
+        logger.exception("[CALLBACK ERROR] update_chart: %s", e)
+        err_fig = go.Figure()
+        err_fig.add_annotation(text=f"ERROR: {str(e)[:80]}", xref='paper', yref='paper',
+                               x=0.5, y=0.5, showarrow=False, font=dict(size=14, color='#ef4444'))
+        err_fig.update_layout(height=400, template='plotly_white')
+        err_div = html.Div(f"Error: {str(e)[:100]}", style={"color": "#ef4444", "padding": "1rem"})
+        return err_fig, err_div
 
 
-# NOTE: handle_load_sample_trigger removed - on_load_sample_click handles the button directly
+# Auto-Discovery tab — discover common R/G sequences ------------------
+@app.callback(
+    Output("discovery-content", "children"),
+    Input("current-data", "data"),
+    prevent_initial_call=False,
+)
+def auto_discover(data):
+    """Automatically discover the most common colour sequences in the loaded data."""
+    if not data:
+        return html.Div(
+            [html.I(className="bi bi-lightbulb", style={"fontSize": "2rem", "color": "#c7d2fe"}),
+             html.P("Load data to auto-discover common candle sequences.",
+                    style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+            style={"padding": "3rem", "textAlign": "center"},
+        )
+
+    try:
+        df = pd.DataFrame(data["df"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+
+        discovered = discover_color_sequences(df, min_len=3, max_len=8, top_k=25)
+
+        if not discovered:
+            return html.Div("No recurring sequences found.", style={"color": "#6b7280", "padding": "1rem"})
+
+        rows = []
+        for i, d in enumerate(discovered):
+            rows.append(html.Tr([
+                html.Td(str(i + 1), style={"color": "#9ca3af", "width": "40px"}),
+                html.Td(
+                    html.Code(d["sequence"], style={"fontSize": "0.85rem"}),
+                ),
+                html.Td(str(d["length"])),
+                html.Td(str(d["count"]), style={"fontWeight": "700"}),
+                html.Td(f"{d['support']:.4f}"),
+            ]))
+
+        header = html.Div(
+            [html.I(className="bi bi-stars me-2"),
+             f"Top {len(discovered)} recurring colour sequences (length 3-8)"],
+            style={
+                "padding": "0.75rem 1rem", "backgroundColor": "#f0f0ff",
+                "borderRadius": "8px", "fontWeight": "600", "color": "#4f46e5",
+                "marginBottom": "0.75rem",
+            },
+        )
+
+        table = dbc.Table(
+            [html.Thead(html.Tr([html.Th("#"), html.Th("Sequence"), html.Th("Length"), html.Th("Count"), html.Th("Support")])),
+             html.Tbody(rows)],
+            bordered=True, hover=True, responsive=True, striped=True, size="sm",
+            style={"fontSize": "0.9rem"},
+        )
+
+        tip = html.Small(
+            "Tip: Copy a discovered sequence into the Custom Sequences box and click Scan to see matches on the chart.",
+            style={"color": "#9ca3af", "display": "block", "marginTop": "0.75rem"},
+        )
+
+        return html.Div([header, table, tip])
+
+    except Exception as e:
+        logger.exception("auto_discover error: %s", e)
+        return html.Div(f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"})
 
 
+# History dropdown refresh  -------------------------------------------
 @app.callback(
     Output("history-select", "options"),
     Input("upload-status", "children"),
 )
 def refresh_history(_):
-    """Refresh the history dropdown options whenever an upload occurs."""
     from candle_patterns.storage import list_uploads
-
     rows = list_uploads(limit=200)
-    opts = [{"label": f"{r['stored_at']} - {r['filename']}", "value": r["id"]} for r in rows]
-    return opts
+    return [{"label": f"{r['stored_at']} - {r['filename']}", "value": r["id"]} for r in rows]
 
 
+# Run cleanup  --------------------------------------------------------
 @app.callback(
     Output("cleanup-result", "children", allow_duplicate=True),
     Input("cleanup-btn", "n_clicks"),
     prevent_initial_call=True,
 )
 def run_cleanup(n):
-    """Run retention cleanup on-demand."""
     from candle_patterns.storage import cleanup_old_uploads
-
     removed = cleanup_old_uploads(retention_days=30)
     return f"Removed {removed} old uploads/detections"
 
 
-@app.callback(
-    Output("current-data", "data", allow_duplicate=True),
-    Output("cleanup-result", "children", allow_duplicate=True),
-    Input("run-custom-seq-btn", "n_clicks"),
-    State("custom-seq-input", "value"),
-    State("current-data", "data"),
-    prevent_initial_call=True,
-)
-def run_custom_sequence(n, seq_str, data):
-    """Run a custom sequence query and append occurrences to patterns list (best-effort)."""
-    if not data or not seq_str:
-        return data, "No sequence provided"
-    from .patterns import find_sequence_occurrences
-
-    df = pd.DataFrame(data["df"])
-    try:
-        occ = find_sequence_occurrences(df, seq_str)
-    except Exception as e:
-        return data, f"Sequence parse error: {e}"
-
-    # append occurrences as pattern name 'Custom: <seq>'
-    for i in occ:
-        data.setdefault("patterns", []).append({"index": int(i), "timestamp": str(df.iloc[int(i)]["timestamp"]), "pattern": f"Custom: {seq_str}"})
-
-    return data, f"Found {len(occ)} occurrences of custom sequence"
-
-
+# Pattern detail modal (click on chart) --------------------------------
 @app.callback(
     Output("pattern-modal", "is_open"),
     Output("pattern-modal-body", "children"),
@@ -1512,7 +1508,6 @@ def run_custom_sequence(n, seq_str, data):
     State("current-data", "data"),
 )
 def show_pattern_detail(clickData, nclose, is_open, current_data):
-    """Open modal and show details when a pattern marker is clicked."""
     ctx = callback_context
     if not ctx.triggered:
         return False, ""
@@ -1521,15 +1516,12 @@ def show_pattern_detail(clickData, nclose, is_open, current_data):
         return False, ""
     if clickData and "points" in clickData:
         pt = clickData["points"][0]
-        txt = pt.get("text") or pt.get("data", {}).get("name") or ""
         x = pt.get("x")
-        
-        body_items: list = [
-            html.H5(txt or "Pattern Detail", style={"fontWeight": "700", "color": "#4f46e5"}),
+        body_items = [
+            html.H5("Candle Detail", style={"fontWeight": "700", "color": "#4f46e5"}),
             html.P([html.I(className="bi bi-clock me-2"), f"Timestamp: {x}"], style={"color": "#6b7280"}),
         ]
         try:
-            # Build context mini-chart +/- 5 candles around clicked timestamp
             if current_data:
                 df_all = pd.DataFrame(current_data.get('df', []))
                 if len(df_all):
@@ -1537,12 +1529,12 @@ def show_pattern_detail(clickData, nclose, is_open, current_data):
                     ts = pd.to_datetime(x, utc=True)
                     idx = df_all.index[(df_all['timestamp'] - ts).abs().argsort()[:1]][0]
                     start = max(0, idx - 5)
-                    end = min(len(df_all)-1, idx + 5)
-                    window = df_all.iloc[start:end+1]
+                    end = min(len(df_all) - 1, idx + 5)
+                    window = df_all.iloc[start:end + 1]
                     mini_fig = go.Figure(data=[go.Candlestick(
-                        x=window['timestamp'], open=window['open'], 
+                        x=window['timestamp'], open=window['open'],
                         high=window['high'], low=window['low'], close=window['close'],
-                        increasing_line_color='#10b981', decreasing_line_color='#ef4444'
+                        increasing_line_color='#10b981', decreasing_line_color='#ef4444',
                     )])
                     mini_fig.update_layout(
                         margin=dict(l=40, r=10, t=10, b=30), height=250,
@@ -1552,131 +1544,111 @@ def show_pattern_detail(clickData, nclose, is_open, current_data):
                     body_items.append(dcc.Graph(figure=mini_fig, config={'displayModeBar': False}))
         except Exception as e:
             logger.debug('mini-chart build error: %s', e)
-        body = html.Div(body_items)
-        return True, body
+        return True, html.Div(body_items)
     return False, ""
 
 
+# Stats cards  ---------------------------------------------------------
 @app.callback(
     Output("stats-cards", "children"),
     Input("upload-status", "children"),
     Input("history-select", "value"),
 )
 def update_stats(_, __):
-    """Show simple statistics in small cards."""
     from candle_patterns.storage import list_uploads
-
     rows = list_uploads(limit=100)
     total_uploads = len(rows)
     last_upload = rows[0] if rows else None
-    last_upload_label = f"{last_upload['stored_at'].split(' ')[0]} - {last_upload['filename']}" if last_upload else "-"
+    last_label = f"{last_upload['stored_at'].split(' ')[0]} - {last_upload['filename']}" if last_upload else "-"
 
-    card_deck = dbc.Row(
-        [
-            dbc.Col(
-                dbc.Card(
-                    dbc.CardBody([
-                        html.H6("Total Uploads", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
-                        html.H4(str(total_uploads), style={"color": "#667eea", "fontWeight": "700"})
-                    ]),
-                    className="stat-card"
-                ),
-                width=6, lg=6
-            ),
-            dbc.Col(
-                dbc.Card(
-                    dbc.CardBody([
-                        html.H6("Last Upload", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
-                        html.P(last_upload_label, style={"color": "#495057", "fontSize": "0.85rem", "margin": "0"})
-                    ]),
-                    className="stat-card"
-                ),
-                width=6, lg=6
-            ),
-        ],
-        className="g-2 mt-3"
-    )
-    return card_deck
+    return dbc.Row([
+        dbc.Col(dbc.Card(dbc.CardBody([
+            html.H6("Total Uploads", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
+            html.H4(str(total_uploads), style={"color": "#667eea", "fontWeight": "700"}),
+        ]), className="stat-card"), width=6),
+        dbc.Col(dbc.Card(dbc.CardBody([
+            html.H6("Last Upload", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
+            html.P(last_label, style={"color": "#495057", "fontSize": "0.85rem", "margin": "0"}),
+        ]), className="stat-card"), width=6),
+    ], className="g-2 mt-3")
 
 
+# Export ---------------------------------------------------------------
 @app.callback(
     Output("download-asset", "data"),
     Input("export-detections-btn", "n_clicks"),
     Input("export-aggregated-btn", "n_clicks"),
     Input("export-chart-btn", "n_clicks"),
+    State("scan-results", "data"),
     State("current-data", "data"),
     prevent_initial_call=True,
 )
-def export_data(n_det, n_agg, n_chart, data):
-    """Unified export callback — determines which button triggered it."""
+def export_data(n_matches, n_discovery, n_chart, scan_results, data):
+    """Export matches CSV, discovery CSV, or chart PNG."""
     if not data:
         return dash.no_update
     triggered = callback_context.triggered_id
-    if triggered == "export-detections-btn":
-        df = pd.DataFrame(data.get("patterns", []))
-        return send_data_frame(df.to_csv, f"detections_{data.get('filename','upload')}.csv", index=False)
+
+    if triggered == "export-detections-btn" and scan_results:
+        rows = []
+        for res in scan_results:
+            for m in res.get("matches", []):
+                rows.append({"sequence": res["seq_str"], **m})
+        if rows:
+            return send_data_frame(pd.DataFrame(rows).to_csv, "sequence_matches.csv", index=False)
+
     elif triggered == "export-aggregated-btn":
-        summary = summarize_detections(pd.DataFrame(data["df"]), data.get("patterns", []))
-        df = pd.DataFrame(summary)
-        return send_data_frame(df.to_csv, f"aggregated_{data.get('filename','upload')}.csv", index=False)
+        df = pd.DataFrame(data["df"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+        discovered = discover_color_sequences(df, min_len=3, max_len=8, top_k=25)
+        if discovered:
+            return send_data_frame(pd.DataFrame(discovered).to_csv, "discovered_sequences.csv", index=False)
+
     elif triggered == "export-chart-btn":
         df = pd.DataFrame(data['df'])
         df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
-        fig = go.Figure(data=[go.Candlestick(x=df['timestamp'], open=df['open'], high=df['high'], low=df['low'], close=df['close'])])
+        fig = go.Figure(data=[go.Candlestick(x=df['timestamp'], open=df['open'],
+                                              high=df['high'], low=df['low'], close=df['close'])])
         try:
             img_bytes = fig.to_image(format='png', width=1200, height=600, scale=2)
-            return send_bytes(lambda: img_bytes, f"chart_{data.get('filename','upload')}.png")
+            return send_bytes(lambda: img_bytes, "chart.png")
         except Exception as e:
             logger.exception('export chart failed: %s', e)
             return dash.no_update
+
     return dash.no_update
 
 
+# Load from history  ---------------------------------------------------
 @app.callback(
     Output("current-data", "data", allow_duplicate=True),
     Output("upload-status", "children", allow_duplicate=True),
+    Output("scan-results", "data", allow_duplicate=True),
     Input("history-select", "value"),
     prevent_initial_call=True,
 )
 def load_from_history(upload_id):
-    """Load data from history when a past upload is selected."""
     if not upload_id:
-        logger.debug("No upload_id selected")
-        return None, ""
-    
-    logger.info(f"Loading from history: upload_id={upload_id}")
+        return None, "", None
     from pathlib import Path
     from candle_patterns.storage import get_upload
 
     rec = get_upload(upload_id)
     if not rec:
-        logger.warning(f"No record found for upload_id: {upload_id}")
-        return None, ""
-    
+        return None, "", None
+
     df = pd.read_csv(rec["filepath"]) if rec.get("filepath") else pd.DataFrame()
-    patterns = []
-    detections_path = rec.get("detections_path")
-    if detections_path and isinstance(detections_path, str) and Path(detections_path).exists():
-        patterns = pd.read_csv(detections_path).to_dict("records")
-    
     data = {
         "filename": rec.get("filename"),
         "upload_id": rec.get("id"),
         "df": df.to_dict("records"),
-        "patterns": patterns
     }
-    msg = f"Loaded: {rec.get('filename')}"
-    logger.info(msg)
-    return data, msg
+    return data, f"Loaded: {rec.get('filename')}", None  # reset scan
 
 
-
-
-
+# ======================================================================
 
 if __name__ == "__main__":
-
-    # Bind to all interfaces so the server is reachable from host and container scenarios
     import sys
     try:
         app.run(host="0.0.0.0", port=8050, debug=False, use_reloader=False, threaded=True)
