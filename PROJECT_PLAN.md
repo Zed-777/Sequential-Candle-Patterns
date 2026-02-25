@@ -1,8 +1,8 @@
 # Sequential Candle Pattern Analysis System — Development Plan & Progress
 
-**Last Updated**: February 24, 2026 (Phase 3 Sprint — Sequential Engine Complete)  
-**Project Status**: PHASE 3 IN PROGRESS — Sequential Pattern Engine Fully Operational  
-**Overall Progress**: MVP + Phase 2 + Phase 3 Core Features Done
+**Last Updated**: February 24, 2026 (Phase 4 Sprint — Data & Analytics Enhancement)  
+**Project Status**: PHASE 4 COMPLETE — Yahoo Finance + Advanced Analytics  
+**Overall Progress**: MVP + Phase 2 + Phase 3 + Phase 4 Done
 
 ---
 
@@ -19,7 +19,12 @@ The Candle Patterns system is a **sequential colour-based candle pattern scanner
 - ✅ **Auto-Discovery Engine** — automatically finds the most common R/G sequences in data
 - ✅ **What-Comes-Next Prediction** — after each sequence occurrence, predicts likely continuation
 - ✅ **Outcome Statistics** — win rate, avg return, max gain/loss for each sequence
-- ✅ **Interactive Dashboard** — 4 tabs: Chart, Matches, Discovery, Statistics
+- ✅ **Yahoo Finance Integration** — fetch real stock/crypto/index data directly from sidebar
+- ✅ **Reverse Pattern Finder** — discover what sequences preceded big price moves
+- ✅ **Confidence Scoring** — statistical significance (z-score, p-value) for each pattern
+- ✅ **Sequence Heatmap** — density visualisation of pattern matches across time buckets
+- ✅ **Configurable Hold Period** — adjustable 1-20 candle hold for statistics
+- ✅ **Interactive Dashboard** — 6 tabs: Chart, Matches, Discovery, Statistics, Heatmap, Reverse Finder
 - ✅ **CSV ingestion** with OHLCV validation
 - ✅ **17 rule-based traditional pattern detectors** (secondary feature)
 - ✅ **ML baseline model** (RandomForest classifier)
@@ -27,7 +32,7 @@ The Candle Patterns system is a **sequential colour-based candle pattern scanner
 - ✅ **SQLite persistence** with 30-day cleanup
 - ✅ **CLI tools** (run, cleanup, train, predict, backtest)
 - ✅ **Docker containerization** + GitHub Actions CI/CD
-- ✅ **96 tests** (96 passing, 2 skipped) — 100% pass rate
+- ✅ **127 tests** (127 passing, 4 skipped) — 100% pass rate
 
 ---
 
@@ -49,8 +54,9 @@ Statistics: win rate, avg return, predictions
 
 | Module | Purpose |
 |---|---|
-| `patterns.py` | **Core engine** — sequence parsing, matching, wildcards, discovery, predictions, outcome stats |
-| `dashboard.py` | Dash web app — 4 tabs, 12 callbacks, sequence-focused UI |
+| `patterns.py` | **Core engine** — sequence parsing, matching, wildcards, discovery, predictions, outcome stats, reverse finder, confidence scoring, heatmap data |
+| `dashboard.py` | Dash web app — 6 tabs, 17 callbacks, sequence-focused UI |
+| `data_feeds.py` | **Yahoo Finance integration** — fetch real market data (stocks, crypto, indices, forex) |
 | `detection.py` | Traditional candlestick pattern detection (17 rules) — secondary |
 | `opp_miner.py` | Ordinal pattern mining (complements discovery) |
 | `ingestion.py` | CSV validation and loading |
@@ -62,6 +68,50 @@ Statistics: win rate, avg return, predictions
 ---
 
 ## Recent Progress
+
+### Phase 4 Sprint — Data & Analytics Enhancement (Feb 24, 2026) ✅
+
+1. **Yahoo Finance Integration** (Priority 0)
+   - New `data_feeds.py` module with `fetch_yahoo_data()`, `search_symbols()`, `get_symbol_info()`
+   - Sidebar section: symbol input, popular symbol quick-picks (stocks, crypto, indices, forex, ETFs)
+   - Period selector (1d to max), interval selector (1m to 1mo)
+   - Fetch button loads real OHLCV data directly into the scanner
+   - Status: ✅ COMPLETE
+
+2. **Reverse Pattern Finder** (Priority 0)
+   - New `reverse_pattern_finder()` function in patterns.py
+   - Answers: "What colour sequences preceded big price moves?"
+   - Configurable threshold (%), direction (up/down/both), lookback depth
+   - New "Reverse Finder" dashboard tab with controls and results table
+   - Includes inline confidence scoring for each discovered pattern
+   - Status: ✅ COMPLETE
+
+3. **Statistical Confidence Scoring** (Priority 0)
+   - New `sequence_confidence()` function in patterns.py
+   - Z-score, p-value, confidence level for each sequence's edge
+   - Compares sequence returns against random baseline (1000 samples)
+   - Integrated into Statistics tab (shown per-sequence) and Reverse Finder
+   - Significance levels: Very High (p<0.01), High (p<0.05), Moderate (p<0.10), Low
+   - Status: ✅ COMPLETE
+
+4. **Sequence Heatmap** (Priority 0)
+   - New `sequence_heatmap_data()` function in patterns.py
+   - New "Heatmap" dashboard tab with Plotly heatmap visualisation
+   - Shows pattern match density across time buckets (10 candles each)
+   - Darker cells = more pattern concentration
+   - Status: ✅ COMPLETE
+
+5. **Configurable Hold Period & Lookahead** (Priority 0)
+   - Statistics tab now has sliders: Hold Period (1-20 candles), Lookahead (1-10 candles)
+   - All stats and predictions update dynamically when sliders change
+   - Status: ✅ COMPLETE
+
+6. **Test Suite Expansion** (Priority 0)
+   - Added 31 new tests for Phase 4 features (test_phase4_features.py)
+   - Covers: data_feeds constants/validation, reverse_pattern_finder, sequence_confidence,
+     sequence_heatmap_data, integration tests
+   - Total: 127 tests (127 passing, 4 skipped)
+   - Status: ✅ COMPLETE
 
 ### Phase 3 Sprint — Sequential Engine (Feb 24, 2026) ✅
 
@@ -127,18 +177,22 @@ Statistics: win rate, avg return, predictions
 
 ---
 
-## Dashboard — 4 Tabs
+## Dashboard — 6 Tabs
 
 | Tab | Purpose |
 |---|---|
 | **Candlestick Chart** | Interactive OHLCV chart with sequence match highlights (coloured rectangles + legend) |
 | **Sequence Matches** | Detailed table of every match per sequence — candle range, timestamps |
 | **Auto-Discovery** | Top 25 recurring colour sequences found automatically, with win rate + avg return |
-| **Statistics & Predictions** | Per-sequence outcome stats (win rate, return) + what-comes-next R/G/Doji predictions |
+| **Statistics & Predictions** | Per-sequence outcome stats (win rate, return, confidence) + what-comes-next predictions + configurable hold/lookahead |
+| **Heatmap** | Pattern density heatmap across time buckets — shows where patterns cluster |
+| **Reverse Finder** | Find sequences that preceded big price moves — configurable threshold, direction, lookback |
 
 ### Sidebar Features
 
 - Upload CSV / Load Sample Data (200 candles)
+- **Yahoo Finance**: fetch real data by symbol, period, interval
+- Popular symbols quick-pick: Stocks, Crypto, Indices, ETFs, Forex
 - Date range filter
 - **Sequence Scanner**: preset dropdown (15 sequences) + custom textarea + wildcard support
 - History browser (SQLite)
@@ -157,14 +211,19 @@ Statistics: win rate, avg return, predictions
 | Sequence Outcome Statistics | DONE | Win rate, avg return, max gain/loss per sequence |
 | Wildcard Matching | DONE | `*` matches any 1-3 candles in sequences |
 | 15 Preset Sequences | DONE | Common colour patterns ready in sidebar |
+| Yahoo Finance Integration | DONE | Fetch real market data (stocks, crypto, indices, forex, ETFs) |
+| Reverse Pattern Finder | DONE | Find sequences preceding big moves |
+| Confidence Scoring | DONE | Z-score, p-value, significance for each pattern |
+| Sequence Heatmap | DONE | Density visualisation across time buckets |
+| Configurable Hold Period | DONE | 1-20 candle slider in Statistics tab |
 | CSV Ingestion | DONE | OHLCV validation, multiple format support |
 | Traditional Pattern Detection | DONE | **17 patterns** (secondary feature) |
-| Dashboard | DONE | **4 tabs**, 12 callbacks, modern UI |
+| Dashboard | DONE | **6 tabs**, 17 callbacks, modern UI |
 | SQLite Persistence | DONE | 30-day auto-cleanup |
 | CLI Tools | DONE | 5 commands: run, cleanup, train, predict, backtest |
 | ML Baseline | DONE | RandomForest with feature engineering |
 | Backtesting | DONE | Sharpe ratio, drawdown, win rate, profit factor |
-| Unit Tests | DONE | **96 tests** (96 passing, 2 E2E skipped) — 100% |
+| Unit Tests | DONE | **127 tests** (127 passing, 4 skipped) — 100% |
 | Docker | DONE | Multi-stage build, CI automation |
 | Release v0.1.0 | DONE | Published and tagged |
 
@@ -193,9 +252,9 @@ Examples:
 ## Test Coverage Report
 
 ```text
-Unit Tests: 96/96 PASSING ✅ (2 E2E skipped)
+Unit Tests: 127/127 PASSING ✅ (4 skipped: 2 E2E + 2 network)
 
-├── Sequence Pattern Tests ........... 42 tests ✅  ← NEW (Phase 3)
+├── Sequence Pattern Tests ........... 42 tests ✅  (Phase 3)
 │   ├── ParseSequence ................ 6 tests
 │   ├── SequenceLength ............... 4 tests
 │   ├── RunLengthEncode .............. 5 tests
@@ -206,6 +265,14 @@ Unit Tests: 96/96 PASSING ✅ (2 E2E skipped)
 │   ├── FindWildcardSequence ......... 4 tests
 │   ├── WhatComesNext ................ 3 tests
 │   └── SequenceOutcomeStats ......... 4 tests
+├── Phase 4 Feature Tests ............ 31 tests ✅  ← NEW (Phase 4)
+│   ├── DataFeedsConstants ........... 4 tests
+│   ├── FetchYahooData ............... 4 tests (1 network skip)
+│   ├── SearchSymbols ................ 2 tests (1 network skip)
+│   ├── ReversePatternFinder ......... 7 tests
+│   ├── SequenceConfidence ........... 6 tests
+│   ├── SequenceHeatmapData .......... 7 tests
+│   └── PatternsIntegration .......... 3 tests
 ├── Detection Tests .................. 1 test  ✅
 ├── Ingestion Tests .................. 2 tests ✅
 ├── Storage Tests .................... 4 tests ✅
@@ -223,7 +290,8 @@ Unit Tests: 96/96 PASSING ✅ (2 E2E skipped)
 └── Placeholder ...................... 1 test  ✅
 
 E2E Tests: 2 skipped (documented reason)
-Execution Time: ~43-56 seconds
+Network Tests: 2 skipped (enable for integration testing)
+Execution Time: ~39 seconds
 Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 ```
 
@@ -243,15 +311,22 @@ candle-patterns/
 │   │   ├── find_wildcard_sequence()    Wildcard matching (* = any 1-3)
 │   │   ├── discover_color_sequences()  Auto-discover recurring patterns
 │   │   ├── what_comes_next()           Predict continuation after sequence
-│   │   └── sequence_outcome_stats()    Win rate, returns after sequence
+│   │   ├── sequence_outcome_stats()    Win rate, returns after sequence
+│   │   ├── reverse_pattern_finder()    Find sequences preceding big moves
+│   │   ├── sequence_confidence()       Statistical significance scoring
+│   │   └── sequence_heatmap_data()     Pattern density across time buckets
+│   ├── data_feeds.py ................... Yahoo Finance data integration
+│   │   ├── fetch_yahoo_data()          Fetch OHLCV from Yahoo Finance
+│   │   ├── search_symbols()            Symbol search/autocomplete
+│   │   └── get_symbol_info()           Symbol metadata
 │   ├── detection.py .................... Traditional pattern detectors (17)
-│   ├── dashboard.py .................... Dash web app (4 tabs, 12 callbacks)
+│   ├── dashboard.py .................... Dash web app (6 tabs, 17 callbacks)
 │   ├── opp_miner.py .................... Ordinal pattern mining
 │   ├── storage.py ...................... SQLite persistence
 │   ├── ml_baseline.py .................. ML model (RandomForest)
 │   ├── backtesting.py .................. Performance evaluation
 │   └── reporting.py .................... Report generation
-├── tests/ .............................. 96 unit tests (100% passing)
+├── tests/ .............................. 127 unit tests (100% passing)
 ├── Dockerfile .......................... Multi-stage build
 ├── .github/workflows/ .................. CI/CD (ci.yml, cleanup.yml)
 ├── data/ ............................... Sample datasets
@@ -260,18 +335,19 @@ candle-patterns/
 
 ---
 
-## System Audit (Feb 24, 2026 — Post Phase 3)
+## System Audit (Feb 24, 2026 — Post Phase 4)
 
 ✅ **Core Purpose**: Sequential colour pattern scanning — **FULLY OPERATIONAL**  
 ✅ **Code Repository**: Clean, all changes committed  
-✅ **Test Suite**: **96/96 passing** (100% of executed tests, 2 E2E skipped)  
-✅ **Dashboard**: 4 tabs — Chart, Matches, Discovery, Statistics  
-✅ **Pattern Engine**: parse, match, wildcard, discover, predict, statistics  
+✅ **Test Suite**: **127/127 passing** (100% of executed tests, 4 skipped)  
+✅ **Dashboard**: 6 tabs — Chart, Matches, Discovery, Statistics, Heatmap, Reverse Finder  
+✅ **Pattern Engine**: parse, match, wildcard, discover, predict, statistics, reverse, confidence, heatmap  
+✅ **Data Sources**: CSV upload + Yahoo Finance API (stocks, crypto, indices, forex, ETFs)  
 ✅ **Sample Data**: Auto-loads (200 candles)  
-✅ **Module Imports**: Clean (12 registered callbacks)  
+✅ **Module Imports**: Clean (17 registered callbacks)  
 ✅ **CLI**: 5 commands operational (run, cleanup, train, predict, backtest)  
 
-**Audit Status**: PASS — Phase 3 core complete, system fully operational
+**Audit Status**: PASS — Phase 4 complete, system fully operational
 
 ---
 
@@ -279,13 +355,17 @@ candle-patterns/
 
 | Metric | Value | Context |
 |---|---|---|
-| Test Suite Time | ~43-56s | All 96 tests on Windows |
-| Dashboard Callbacks | 12 | Lean, no duplicate outputs |
+| Test Suite Time | ~39s | All 127 tests on Windows |
+| Dashboard Callbacks | 17 | Lean, no duplicate outputs |
 | Dashboard Load | <2s | 200 candles + auto-discovery |
 | Sequence Scan | <500ms | 15 sequences against 200 candles |
 | Auto-Discovery | <200ms | Scan lengths 3-8, top 25 |
 | What-Comes-Next | <100ms | Per sequence prediction |
-| Outcome Stats | <100ms | Per sequence, 5-candle hold |
+| Outcome Stats | <100ms | Per sequence, configurable hold |
+| Reverse Finder | <500ms | Scan for preceding patterns |
+| Confidence Score | <200ms | Z-score + p-value calculation |
+| Heatmap Data | <200ms | Density across time buckets |
+| Yahoo Finance Fetch | 1-3s | Depends on period/interval |
 
 ---
 
@@ -318,6 +398,23 @@ candle-patterns/
 
 ---
 
+## Phase 4 Tasks — Status
+
+| ID | Task | Priority | Status | Notes |
+|---|---|---|---|---|
+| 51 | Yahoo Finance data_feeds.py module | P0 | ✅ DONE | fetch_yahoo_data, search_symbols, get_symbol_info |
+| 52 | Yahoo Finance sidebar integration | P0 | ✅ DONE | Symbol input, popular picks, period/interval |
+| 53 | Reverse Pattern Finder engine | P0 | ✅ DONE | reverse_pattern_finder() in patterns.py |
+| 54 | Reverse Finder dashboard tab | P0 | ✅ DONE | Threshold, direction, lookback controls |
+| 55 | Confidence scoring engine | P0 | ✅ DONE | sequence_confidence() with z-score, p-value |
+| 56 | Confidence in Statistics tab | P0 | ✅ DONE | Per-sequence significance display |
+| 57 | Sequence heatmap engine | P0 | ✅ DONE | sequence_heatmap_data() |
+| 58 | Heatmap dashboard tab | P0 | ✅ DONE | Plotly heatmap visualisation |
+| 59 | Configurable hold period | P0 | ✅ DONE | 1-20 candle slider |
+| 60 | Configurable lookahead | P0 | ✅ DONE | 1-10 candle slider |
+| 61 | 31 new Phase 4 tests | P0 | ✅ DONE | 127 total tests |
+| 62 | Documentation update | P0 | ✅ DONE | PROJECT_PLAN.md, PHASE_2_AUTONOMY_PLAN.md |
+
 ## Phase 3 Tasks — Status
 
 | ID | Task | Priority | Status | Notes |
@@ -338,7 +435,18 @@ candle-patterns/
 
 ## Next Steps (Future Phases)
 
-### Completed This Sprint (Phase 3 Core)
+### Completed This Sprint (Phase 4 — Data & Analytics)
+
+- [x] Yahoo Finance integration (fetch real market data from sidebar)
+- [x] Reverse Pattern Finder (find sequences preceding big moves)
+- [x] Statistical Confidence Scoring (z-score, p-value, significance)
+- [x] Sequence Heatmap (pattern density visualisation)
+- [x] Configurable hold period slider (1-20 candles)
+- [x] Configurable lookahead slider (1-10 candles)
+- [x] 31 new tests (127 total, 100% pass rate)
+- [x] Updated documentation
+
+### Completed Previously (Phase 3 — Sequential Engine)
 
 - [x] Pivot dashboard to sequential pattern scanning focus
 - [x] Add 15 preset colour sequences
@@ -348,16 +456,16 @@ candle-patterns/
 - [x] Add Statistics & Predictions tab to dashboard
 - [x] Enhance Auto-Discovery tab with inline win rate + avg return
 - [x] Add 42 new tests for sequential functions
-- [x] Total: 96 tests passing, system fully operational
 
 ### Future Roadmap
 
-- [ ] Real-time data feed integration (live candle streaming)
-- [ ] Multi-timeframe analysis (combine 1H + 4H + Daily)
-- [ ] Advanced ML: train sequence outcome predictor
-- [ ] Sequence alerts (notify when pattern matches)
+- [ ] Real-time data streaming (WebSocket live candle updates)
+- [ ] Multi-timeframe analysis (combine 1H + 4H + Daily sequences)
+- [ ] Advanced ML: train sequence outcome predictor (neural net)
+- [ ] Sequence alerts (email/webhook when pattern matches live data)
 - [ ] E2E Playwright test suite
-- [ ] Performance optimization (lazy loading, caching)
+- [ ] Performance optimization (lazy loading, caching, larger datasets)
+- [ ] User profiles and saved sequence libraries
 - [ ] GDPR/security documentation
 - [ ] Docker publish to GHCR
 
@@ -373,13 +481,22 @@ candle-patterns/
   - 17 pattern detectors (+5), dashboard overhaul, 3 ML-CLI commands
   - 54 tests (100% pass)
 
-- **v0.3.0** — Phase 3 (Feb 24, 2026) ✅ CURRENT
+- **v0.3.0** — Phase 3 (Feb 24, 2026) ✅
   - **Sequential colour pattern scanner** — PRIMARY feature
   - Wildcard matching (`*`), auto-discovery, what-comes-next predictions
   - Outcome statistics (win rate, returns, max gain/loss)
   - 4 dashboard tabs: Chart, Matches, Discovery, Statistics
   - 15 preset sequences, custom input, multi-scan
   - **96 tests** (100% pass rate)
+
+- **v0.4.0** — Phase 4 (Feb 24, 2026) ✅ CURRENT
+  - **Yahoo Finance integration** — fetch real market data directly
+  - **Reverse Pattern Finder** — find sequences preceding big moves
+  - **Confidence Scoring** — z-score, p-value, statistical significance
+  - **Sequence Heatmap** — pattern density visualisation
+  - **Configurable hold period & lookahead** sliders
+  - 6 dashboard tabs, 17 callbacks
+  - **127 tests** (100% pass rate)
 
 - **v1.0.0** (Planned)
   - Real-time feeds, multi-timeframe, advanced ML

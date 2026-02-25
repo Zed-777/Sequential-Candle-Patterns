@@ -450,3 +450,315 @@ def discover_color_sequences(
         )
 
     return results
+
+
+# ============================================================================
+# REVERSE PATTERN FINDER  —  "What sequences preceded big moves?"
+# ============================================================================
+
+def reverse_pattern_finder(
+    df: pd.DataFrame,
+    threshold_pct: float = 1.5,
+    direction: str = "up",
+    lookback: int = 5,
+    min_len: int = 3,
+    max_len: int = 6,
+    top_k: int = 15,
+) -> List[dict]:
+    """Find the most common colour sequences that *preceded* big price moves.
+
+    Instead of "does this pattern lead to gains?" this answers
+    "what patterns came before big gains/losses?"
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        OHLCV data with ``close`` and ``timestamp`` columns.
+    threshold_pct : float
+        Minimum absolute return (%) over the move candle to qualify as a
+        "big move".  Default 1.5%.
+    direction : str
+        ``"up"`` for big gains, ``"down"`` for big losses, ``"both"`` for
+        either.
+    lookback : int
+        How many candles *before* the big-move candle to inspect for patterns.
+    min_len : int
+        Minimum sequence length to consider.
+    max_len : int
+        Maximum sequence length to consider.
+    top_k : int
+        Return the top-k most common preceding sequences.
+
+    Returns
+    -------
+    list[dict]
+        Each dict: ``{"sequence": "3R -> 2G", "count": 5, "length": 5,
+        "avg_move_pct": 2.3, "direction": "up"}``
+    """
+    n = len(df)
+    if n < lookback + 2:
+        return []
+
+    syms = symbol_sequence(df)
+
+    # Identify big-move candle indices
+    big_move_indices: List[int] = []
+    for i in range(1, n):
+        prev_close = float(df.iloc[i - 1]["close"])
+        curr_close = float(df.iloc[i]["close"])
+        if prev_close == 0:
+            continue
+        ret = (curr_close - prev_close) / prev_close * 100
+
+        if direction == "up" and ret >= threshold_pct:
+            big_move_indices.append(i)
+        elif direction == "down" and ret <= -threshold_pct:
+            big_move_indices.append(i)
+        elif direction == "both" and abs(ret) >= threshold_pct:
+            big_move_indices.append(i)
+
+    if not big_move_indices:
+        return []
+
+    # For each big-move index, collect all sub-sequences in the lookback window
+    seq_counter: dict = {}  # encoded_seq -> list of move percentages
+    for move_idx in big_move_indices:
+        # lookback window ends just before the big-move candle
+        window_end = move_idx  # exclusive
+        window_start = max(0, window_end - lookback)
+        window_syms = syms[window_start:window_end]
+
+        if len(window_syms) < min_len:
+            continue
+
+        # Compute the move percentage for context
+        prev_close = float(df.iloc[move_idx - 1]["close"])
+        curr_close = float(df.iloc[move_idx]["close"])
+        move_pct = (curr_close - prev_close) / prev_close * 100
+
+        # Extract all sub-sequences from the window
+        for length in range(min_len, min(max_len + 1, len(window_syms) + 1)):
+            for start in range(len(window_syms) - length + 1):
+                sub = tuple(window_syms[start : start + length])
+                encoded = _run_length_encode(sub)
+                if encoded not in seq_counter:
+                    seq_counter[encoded] = []
+                seq_counter[encoded].append(move_pct)
+
+    if not seq_counter:
+        return []
+
+    # Sort by frequency, then by average move magnitude
+    sorted_seqs = sorted(
+        seq_counter.items(),
+        key=lambda x: (len(x[1]), abs(sum(x[1]) / len(x[1]))),
+        reverse=True,
+    )
+
+    results: List[dict] = []
+    for seq_str, moves in sorted_seqs[:top_k]:
+        avg_move = sum(moves) / len(moves)
+        results.append({
+            "sequence": seq_str,
+            "count": len(moves),
+            "length": sequence_length(seq_str),
+            "avg_move_pct": round(avg_move, 4),
+            "direction": direction,
+        })
+
+    return results
+
+
+# ============================================================================
+# SEQUENCE CONFIDENCE SCORING  —  statistical significance
+# ============================================================================
+
+def sequence_confidence(
+    df: pd.DataFrame,
+    seq_str: str,
+    hold_candles: int = 5,
+    baseline_samples: int = 1000,
+) -> dict:
+    """Compute statistical confidence metrics for a sequence's outcome.
+
+    Compares the sequence's average return against random baseline samples
+    to assess whether the pattern's edge is statistically significant.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        OHLCV data.
+    seq_str : str
+        Sequence string.
+    hold_candles : int
+        Candles to hold after each match.
+    baseline_samples : int
+        Number of random starting points for baseline comparison.
+
+    Returns
+    -------
+    dict
+        ``{"z_score": float, "p_value": float, "confidence_level": str,
+        "sequence_avg": float, "baseline_avg": float, "baseline_std": float,
+        "sample_size": int, "is_significant": bool}``
+    """
+    import math
+
+    stats = sequence_outcome_stats(df, seq_str, hold_candles=hold_candles)
+    occurrences = stats["occurrences"]
+    seq_avg = stats["avg_return_pct"]
+
+    if occurrences < 2:
+        return {
+            "z_score": 0.0,
+            "p_value": 1.0,
+            "confidence_level": "Insufficient data",
+            "sequence_avg": seq_avg,
+            "baseline_avg": 0.0,
+            "baseline_std": 0.0,
+            "sample_size": occurrences,
+            "is_significant": False,
+        }
+
+    # Compute baseline: random entry returns
+    n = len(df)
+    import random
+    random.seed(42)  # Deterministic for reproducibility
+
+    baseline_returns: List[float] = []
+    max_start = n - hold_candles - 1
+    if max_start < 1:
+        max_start = 1
+
+    for _ in range(min(baseline_samples, max_start)):
+        idx = random.randint(0, max_start)
+        entry_close = float(df.iloc[idx]["close"])
+        exit_close = float(df.iloc[min(idx + hold_candles, n - 1)]["close"])
+        if entry_close > 0:
+            ret = (exit_close - entry_close) / entry_close * 100
+            baseline_returns.append(ret)
+
+    if len(baseline_returns) < 2:
+        return {
+            "z_score": 0.0,
+            "p_value": 1.0,
+            "confidence_level": "Insufficient baseline",
+            "sequence_avg": seq_avg,
+            "baseline_avg": 0.0,
+            "baseline_std": 0.0,
+            "sample_size": occurrences,
+            "is_significant": False,
+        }
+
+    baseline_avg = sum(baseline_returns) / len(baseline_returns)
+    variance = sum((r - baseline_avg) ** 2 for r in baseline_returns) / (len(baseline_returns) - 1)
+    baseline_std = math.sqrt(variance) if variance > 0 else 0.001
+
+    # Z-score: how many standard deviations the sequence avg is from baseline
+    z_score = (seq_avg - baseline_avg) / (baseline_std / math.sqrt(occurrences))
+
+    # Approximate p-value from z-score (two-tailed)
+    # Using the complementary error function approximation
+    abs_z = abs(z_score)
+    # Abramowitz & Stegun approximation for normal CDF
+    t = 1.0 / (1.0 + 0.2316419 * abs_z)
+    d = 0.3989422804014327  # 1/sqrt(2*pi)
+    p_tail = d * math.exp(-abs_z * abs_z / 2.0) * (
+        0.319381530 * t
+        - 0.356563782 * t ** 2
+        + 1.781477937 * t ** 3
+        - 1.821255978 * t ** 4
+        + 1.330274429 * t ** 5
+    )
+    p_value = 2.0 * p_tail  # two-tailed
+
+    # Confidence level interpretation
+    if p_value < 0.01:
+        confidence_level = "Very High (p < 0.01)"
+    elif p_value < 0.05:
+        confidence_level = "High (p < 0.05)"
+    elif p_value < 0.10:
+        confidence_level = "Moderate (p < 0.10)"
+    else:
+        confidence_level = "Low (p >= 0.10)"
+
+    return {
+        "z_score": round(z_score, 4),
+        "p_value": round(p_value, 6),
+        "confidence_level": confidence_level,
+        "sequence_avg": round(seq_avg, 4),
+        "baseline_avg": round(baseline_avg, 4),
+        "baseline_std": round(baseline_std, 4),
+        "sample_size": occurrences,
+        "is_significant": p_value < 0.05,
+    }
+
+
+# ============================================================================
+# SEQUENCE HEATMAP DATA  —  density of matches over time
+# ============================================================================
+
+def sequence_heatmap_data(
+    df: pd.DataFrame,
+    seq_strs: List[str],
+    bucket_size: int = 10,
+) -> dict:
+    """Compute pattern match density over time for heatmap visualisation.
+
+    Divides the candle data into buckets and counts matches per bucket
+    per sequence.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        OHLCV data.
+    seq_strs : list[str]
+        List of sequence strings to analyse.
+    bucket_size : int
+        Number of candles per time bucket.
+
+    Returns
+    -------
+    dict
+        ``{"buckets": [...], "sequences": {"3R -> 2G": [count_per_bucket, ...], ...},
+        "timestamps": [bucket_start_timestamps]}``
+    """
+    n = len(df)
+    num_buckets = max(1, (n + bucket_size - 1) // bucket_size)
+
+    result = {
+        "buckets": list(range(num_buckets)),
+        "timestamps": [],
+        "sequences": {},
+    }
+
+    # Compute bucket start timestamps
+    for b in range(num_buckets):
+        idx = b * bucket_size
+        if idx < n:
+            result["timestamps"].append(str(df.iloc[idx]["timestamp"]))
+        else:
+            result["timestamps"].append("")
+
+    for seq_str in seq_strs:
+        counts = [0] * num_buckets
+        try:
+            if "*" in seq_str:
+                hits = find_wildcard_sequence(df, seq_str)
+                for h in hits:
+                    bucket = h["start_idx"] // bucket_size
+                    if bucket < num_buckets:
+                        counts[bucket] += 1
+            else:
+                ends = find_sequence_occurrences(df, seq_str)
+                seq_len = sequence_length(seq_str)
+                for end_idx in ends:
+                    start = end_idx - seq_len + 1
+                    bucket = max(0, start) // bucket_size
+                    if bucket < num_buckets:
+                        counts[bucket] += 1
+        except Exception:
+            pass
+        result["sequences"][seq_str] = counts
+
+    return result

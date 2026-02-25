@@ -25,6 +25,17 @@ from candle_patterns.patterns import (
     discover_color_sequences,
     what_comes_next,
     sequence_outcome_stats,
+    reverse_pattern_finder,
+    sequence_confidence,
+    sequence_heatmap_data,
+)
+
+from candle_patterns.data_feeds import (
+    fetch_yahoo_data,
+    search_symbols,
+    POPULAR_SYMBOLS,
+    VALID_INTERVALS,
+    VALID_PERIODS,
 )
 
 from candle_patterns.storage import save_upload
@@ -826,6 +837,80 @@ sidebar = dbc.Card(
                 
                 html.Hr(className="hr-style"),
                 
+                # ==========================================
+                # YAHOO FINANCE — fetch real market data
+                # ==========================================
+                html.Div([
+                    html.H6([html.I(className="bi bi-globe"), " Yahoo Finance"]),
+                    html.Small(
+                        "Fetch real stock, crypto, or index data directly.",
+                        style={"color": "#6b7280", "display": "block", "marginBottom": "0.75rem", "fontWeight": "500"}
+                    ),
+                    
+                    # Symbol input
+                    html.Label("Symbol", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
+                    dcc.Input(
+                        id="yf-symbol-input",
+                        type="text",
+                        placeholder="e.g. AAPL, BTC-USD, ^GSPC",
+                        style={"width": "100%", "marginBottom": "0.5rem"},
+                        debounce=True,
+                    ),
+                    
+                    # Popular symbols quick-pick
+                    html.Label("Quick Pick", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "marginTop": "0.25rem"}),
+                    dcc.Dropdown(
+                        id="yf-popular-dropdown",
+                        options=[
+                            {"label": f"{cat}: {', '.join(syms[:5])}...", "value": cat}
+                            for cat, syms in POPULAR_SYMBOLS.items()
+                        ],
+                        placeholder="Browse popular symbols...",
+                        style={"marginBottom": "0.5rem"},
+                    ),
+                    dcc.Dropdown(
+                        id="yf-symbol-select",
+                        placeholder="Select symbol...",
+                        style={"marginBottom": "0.75rem"},
+                    ),
+                    
+                    # Period & Interval row
+                    dbc.Row([
+                        dbc.Col([
+                            html.Label("Period", style={"fontWeight": "700", "fontSize": "0.75rem", "color": "#374151"}),
+                            dcc.Dropdown(
+                                id="yf-period",
+                                options=[{"label": p, "value": p} for p in VALID_PERIODS],
+                                value="6mo",
+                                clearable=False,
+                                style={"fontSize": "0.85rem"},
+                            ),
+                        ], width=6),
+                        dbc.Col([
+                            html.Label("Interval", style={"fontWeight": "700", "fontSize": "0.75rem", "color": "#374151"}),
+                            dcc.Dropdown(
+                                id="yf-interval",
+                                options=[{"label": i, "value": i} for i in ["1m", "5m", "15m", "30m", "1h", "1d", "1wk", "1mo"]],
+                                value="1d",
+                                clearable=False,
+                                style={"fontSize": "0.85rem"},
+                            ),
+                        ], width=6),
+                    ], className="g-2 mb-2"),
+                    
+                    # Fetch button
+                    dbc.Button(
+                        [html.I(className="bi bi-cloud-download"), " Fetch Data"],
+                        id="yf-fetch-btn",
+                        color="info",
+                        className="w-100 mt-2",
+                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem"},
+                    ),
+                    html.Div(id="yf-fetch-status", style={"marginTop": "0.5rem"}),
+                ], style={"marginBottom": "1.5rem"}),
+                
+                html.Hr(className="hr-style"),
+                
                 # Date range filter
                 html.Div([
                     html.H6([html.I(className="bi bi-calendar-range"), " Date Range Filter"]),
@@ -958,6 +1043,7 @@ sidebar = dbc.Card(
 # Stores to keep the current upload and scan results in-browser
 store_current = dcc.Store(id='current-data', data=(app.default_sample_data if app.default_sample_data is not None else None), storage_type='memory')
 store_scan = dcc.Store(id='scan-results', data=None, storage_type='memory')
+store_hold_period = dcc.Store(id='hold-period-store', data=5, storage_type='memory')
 
 # Modal for pattern detail
 pattern_modal = dbc.Modal(
@@ -1047,7 +1133,87 @@ main_content = dbc.Tabs(
             tab_id="tab-stats",
             children=[
                 dbc.Container(
-                    [dcc.Loading(html.Div(id="stats-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
+                    [
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label("Hold Period (candles)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Slider(
+                                    id="hold-period-slider",
+                                    min=1, max=20, step=1, value=5,
+                                    marks={1: "1", 3: "3", 5: "5", 10: "10", 15: "15", 20: "20"},
+                                    tooltip={"placement": "bottom", "always_visible": True},
+                                ),
+                            ], width=6),
+                            dbc.Col([
+                                html.Label("Lookahead Candles", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Slider(
+                                    id="lookahead-slider",
+                                    min=1, max=10, step=1, value=3,
+                                    marks={1: "1", 3: "3", 5: "5", 7: "7", 10: "10"},
+                                    tooltip={"placement": "bottom", "always_visible": True},
+                                ),
+                            ], width=6),
+                        ], className="g-3 mb-3", style={"marginTop": "1rem"}),
+                        dcc.Loading(html.Div(id="stats-content", style={"marginTop": "0.5rem"}), type="circle", color="#6366f1"),
+                    ],
+                    fluid=True
+                )
+            ],
+            className="p-4"
+        ),
+        dbc.Tab(
+            label="Heatmap",
+            tab_id="tab-heatmap",
+            children=[
+                dbc.Container(
+                    [dcc.Loading(html.Div(id="heatmap-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
+                    fluid=True
+                )
+            ],
+            className="p-4"
+        ),
+        dbc.Tab(
+            label="Reverse Finder",
+            tab_id="tab-reverse",
+            children=[
+                dbc.Container(
+                    [
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label("Move Threshold (%)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="reverse-threshold", type="number", value=1.5, min=0.1, max=20, step=0.1,
+                                          style={"width": "100%"}),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("Direction", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Dropdown(
+                                    id="reverse-direction",
+                                    options=[
+                                        {"label": "Big Gains (Up)", "value": "up"},
+                                        {"label": "Big Losses (Down)", "value": "down"},
+                                        {"label": "Both", "value": "both"},
+                                    ],
+                                    value="up", clearable=False,
+                                ),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("Lookback Candles", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="reverse-lookback", type="number", value=5, min=2, max=20, step=1,
+                                          style={"width": "100%"}),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
+                                dbc.Button(
+                                    [html.I(className="bi bi-search"), " Find Patterns"],
+                                    id="reverse-find-btn",
+                                    color="primary",
+                                    className="w-100",
+                                    style={"fontWeight": "700"},
+                                ),
+                            ], width=3),
+                        ], className="g-3 mb-3", style={"marginTop": "1rem"}),
+                        dcc.Loading(html.Div(id="reverse-content"), type="circle", color="#6366f1"),
+                    ],
                     fluid=True
                 )
             ],
@@ -1103,6 +1269,7 @@ app.layout = dbc.Container(
         navbar,
         store_current,
         store_scan,
+        store_hold_period,
         dcc.Location(id='url', refresh=False),  # Track page location
         html.Div(id='page-load-signal', children=1, style={'display': 'none'}),  # Trigger initial render
         dbc.Row(
@@ -1530,10 +1697,15 @@ def auto_discover(data):
     Output("stats-content", "children"),
     Input("scan-results", "data"),
     Input("current-data", "data"),
+    Input("hold-period-slider", "value"),
+    Input("lookahead-slider", "value"),
     prevent_initial_call=False,
 )
-def update_stats_tab(scan_results, data):
+def update_stats_tab(scan_results, data, hold_candles, lookahead):
     """Display outcome statistics and what-comes-next predictions for scanned sequences."""
+    hold_candles = hold_candles or 5
+    lookahead = lookahead or 3
+
     if not data:
         return html.Div(
             [html.I(className="bi bi-bar-chart-line", style={"fontSize": "2rem", "color": "#c7d2fe"}),
@@ -1566,15 +1738,21 @@ def update_stats_tab(scan_results, data):
 
             # --- Outcome statistics ---
             try:
-                stats = sequence_outcome_stats(df, seq_str, hold_candles=5)
+                stats = sequence_outcome_stats(df, seq_str, hold_candles=hold_candles)
             except Exception:
                 stats = None
 
             # --- What comes next ---
             try:
-                prediction = what_comes_next(df, seq_str, lookahead=3)
+                prediction = what_comes_next(df, seq_str, lookahead=lookahead)
             except Exception:
                 prediction = None
+
+            # --- Confidence scoring ---
+            try:
+                conf = sequence_confidence(df, seq_str, hold_candles=hold_candles)
+            except Exception:
+                conf = None
 
             # Build stats card
             stats_items = []
@@ -1587,23 +1765,55 @@ def update_stats_tab(scan_results, data):
                 stats_items.append(
                     dbc.Row([
                         dbc.Col(html.Div([
-                            html.H6("Win Rate (5-candle hold)", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
+                            html.H6(f"Win Rate ({hold_candles}-candle hold)", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
                             html.H4(f"{wr:.1f}%", style={"color": wr_color, "fontWeight": "800", "margin": "0"}),
                         ], className="stat-card"), width=3),
                         dbc.Col(html.Div([
                             html.H6("Avg Return", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
                             html.H4(f"{avg_ret:+.2f}%", style={"color": ret_color, "fontWeight": "800", "margin": "0"}),
-                        ], className="stat-card"), width=3),
+                        ], className="stat-card"), width=2),
                         dbc.Col(html.Div([
                             html.H6("Max Gain", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
                             html.H4(f"{stats['max_gain_pct']:+.2f}%", style={"color": "#10b981", "fontWeight": "800", "margin": "0"}),
-                        ], className="stat-card"), width=3),
+                        ], className="stat-card"), width=2),
                         dbc.Col(html.Div([
                             html.H6("Max Loss", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
                             html.H4(f"{stats['max_loss_pct']:+.2f}%", style={"color": "#ef4444", "fontWeight": "800", "margin": "0"}),
-                        ], className="stat-card"), width=3),
-                    ], className="g-2 mb-3")
+                        ], className="stat-card"), width=2),
+                    ], className="g-2 mb-2")
                 )
+
+                # Confidence scoring row
+                if conf:
+                    conf_color = "#10b981" if conf["is_significant"] else "#f59e0b"
+                    z_color = "#10b981" if abs(conf.get("z_score", 0)) > 1.96 else "#6b7280"
+                    stats_items.append(
+                        dbc.Row([
+                            dbc.Col(html.Div([
+                                html.H6("Confidence", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
+                                html.Span(conf["confidence_level"], style={"color": conf_color, "fontWeight": "700", "fontSize": "0.85rem"}),
+                            ], className="stat-card"), width=3),
+                            dbc.Col(html.Div([
+                                html.H6("Z-Score", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
+                                html.H4(f"{conf.get('z_score', 0):.2f}", style={"color": z_color, "fontWeight": "800", "margin": "0", "fontSize": "1.5rem"}),
+                            ], className="stat-card"), width=2),
+                            dbc.Col(html.Div([
+                                html.H6("P-Value", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
+                                html.H4(f"{conf.get('p_value', 1):.4f}", style={"color": "#374151", "fontWeight": "700", "margin": "0", "fontSize": "1.2rem"}),
+                            ], className="stat-card"), width=2),
+                            dbc.Col(html.Div([
+                                html.H6("Baseline Avg", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
+                                html.H4(f"{conf.get('baseline_avg', 0):+.2f}%", style={"color": "#6b7280", "fontWeight": "700", "margin": "0", "fontSize": "1.2rem"}),
+                            ], className="stat-card"), width=2),
+                            dbc.Col(html.Div([
+                                html.H6("Significant?", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
+                                html.H4(
+                                    "YES" if conf["is_significant"] else "NO",
+                                    style={"color": "#10b981" if conf["is_significant"] else "#ef4444", "fontWeight": "800", "margin": "0", "fontSize": "1.5rem"},
+                                ),
+                            ], className="stat-card"), width=2),
+                        ], className="g-2 mb-3")
+                    )
 
             # Build prediction table
             pred_items = []
@@ -1861,6 +2071,298 @@ def load_from_history(upload_id):
         "df": df.to_dict("records"),
     }
     return data, f"Loaded: {rec.get('filename')}", None  # reset scan
+
+
+# =========================================================================
+# YAHOO FINANCE CALLBACKS
+# =========================================================================
+
+# Populate symbol list when category is selected
+@app.callback(
+    Output("yf-symbol-select", "options"),
+    Input("yf-popular-dropdown", "value"),
+    prevent_initial_call=True,
+)
+def update_yf_symbol_list(category):
+    if not category or category not in POPULAR_SYMBOLS:
+        return []
+    return [{"label": s, "value": s} for s in POPULAR_SYMBOLS[category]]
+
+
+# Set symbol input when a popular symbol is selected
+@app.callback(
+    Output("yf-symbol-input", "value"),
+    Input("yf-symbol-select", "value"),
+    prevent_initial_call=True,
+)
+def set_yf_symbol(symbol):
+    if symbol:
+        return symbol
+    return dash.no_update
+
+
+# Fetch data from Yahoo Finance
+@app.callback(
+    Output("current-data", "data", allow_duplicate=True),
+    Output("yf-fetch-status", "children"),
+    Output("upload-status", "children", allow_duplicate=True),
+    Output("scan-results", "data", allow_duplicate=True),
+    Input("yf-fetch-btn", "n_clicks"),
+    State("yf-symbol-input", "value"),
+    State("yf-period", "value"),
+    State("yf-interval", "value"),
+    prevent_initial_call=True,
+)
+def on_yf_fetch(n_clicks, symbol, period, interval):
+    if not n_clicks or not symbol:
+        return dash.no_update, html.Div("Enter a symbol first.", style={"color": "#f59e0b", "fontWeight": "600", "fontSize": "0.85rem"}), dash.no_update, dash.no_update
+
+    try:
+        df = fetch_yahoo_data(symbol.strip(), period=period, interval=interval)
+
+        try:
+            upload_meta = save_upload(f"yf_{symbol}_{period}_{interval}", df, [])
+            upload_id = upload_meta.get("upload_id") if isinstance(upload_meta, dict) else upload_meta
+        except Exception:
+            upload_id = None
+
+        data = {
+            "filename": f"{symbol} ({period}, {interval})",
+            "upload_id": upload_id,
+            "df": df.to_dict("records"),
+        }
+
+        status = html.Div(
+            f"Fetched {len(df)} candles for {symbol} ({period}, {interval})",
+            style={
+                "color": "#059669", "fontWeight": "600", "padding": "10px",
+                "backgroundColor": "#ecfdf5", "borderRadius": "8px", "fontSize": "0.85rem",
+            },
+        )
+        upload_status = html.Div(
+            [html.I(className="bi bi-cloud-check me-1"),
+             f"Yahoo Finance: {symbol} — {len(df)} candles loaded"],
+            style={"color": "#059669", "fontWeight": "600", "padding": "12px",
+                   "backgroundColor": "#ecfdf5", "borderRadius": "6px", "marginTop": "8px"},
+        )
+        return data, status, upload_status, None  # reset scan
+
+    except (ValueError, ConnectionError) as e:
+        err = html.Div(
+            f"Error: {str(e)[:100]}",
+            style={"color": "#ef4444", "fontWeight": "600", "fontSize": "0.85rem", "padding": "8px",
+                   "backgroundColor": "#fef2f2", "borderRadius": "8px"},
+        )
+        return dash.no_update, err, dash.no_update, dash.no_update
+    except Exception as e:
+        err = html.Div(
+            f"Unexpected error: {str(e)[:100]}",
+            style={"color": "#ef4444", "fontWeight": "600", "fontSize": "0.85rem"},
+        )
+        return dash.no_update, err, dash.no_update, dash.no_update
+
+
+# =========================================================================
+# HEATMAP TAB CALLBACK
+# =========================================================================
+
+@app.callback(
+    Output("heatmap-content", "children"),
+    Input("scan-results", "data"),
+    Input("current-data", "data"),
+    prevent_initial_call=False,
+)
+def update_heatmap(scan_results, data):
+    """Render a heatmap showing sequence match density across time buckets."""
+    if not data:
+        return html.Div(
+            [html.I(className="bi bi-grid-3x3", style={"fontSize": "2rem", "color": "#c7d2fe"}),
+             html.P("Load data to see the sequence heatmap.",
+                    style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+            style={"padding": "3rem", "textAlign": "center"},
+        )
+
+    if not scan_results:
+        return html.Div(
+            [html.I(className="bi bi-grid-3x3-gap", style={"fontSize": "2rem", "color": "#c7d2fe"}),
+             html.P("Scan sequences first to see pattern density heatmap.",
+                    style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+            style={"padding": "3rem", "textAlign": "center"},
+        )
+
+    try:
+        df = pd.DataFrame(data["df"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+
+        seq_strs = [r["seq_str"] for r in scan_results if not r.get("error")]
+        if not seq_strs:
+            return html.Div("No valid sequences to heatmap.", style={"color": "#9ca3af", "padding": "1rem"})
+
+        heatmap = sequence_heatmap_data(df, seq_strs, bucket_size=10)
+
+        # Build Plotly heatmap
+        z_data = []
+        y_labels = []
+        for seq_str in seq_strs:
+            counts = heatmap["sequences"].get(seq_str, [])
+            z_data.append(counts)
+            y_labels.append(seq_str)
+
+        # X-axis: bucket timestamps (shortened)
+        x_labels = []
+        for ts in heatmap["timestamps"]:
+            if ts:
+                x_labels.append(ts[:10])  # date only
+            else:
+                x_labels.append("")
+
+        fig = go.Figure(data=go.Heatmap(
+            z=z_data,
+            x=x_labels,
+            y=y_labels,
+            colorscale=[
+                [0, "#f9fafb"],
+                [0.25, "#c7d2fe"],
+                [0.5, "#818cf8"],
+                [0.75, "#6366f1"],
+                [1, "#4338ca"],
+            ],
+            hoverongaps=False,
+            hovertemplate="Bucket: %{x}<br>Sequence: %{y}<br>Matches: %{z}<extra></extra>",
+        ))
+
+        fig.update_layout(
+            title=dict(text="Sequence Match Density Over Time", font=dict(size=16, color="#1f2937")),
+            xaxis=dict(title="Time Bucket (start date)", tickangle=-45),
+            yaxis=dict(title="Sequence", autorange="reversed"),
+            template="plotly_white",
+            height=max(300, 50 * len(y_labels) + 150),
+            margin=dict(l=150, r=20, t=60, b=80),
+        )
+
+        header = html.Div(
+            [html.I(className="bi bi-grid-3x3 me-2"),
+             f"Pattern Density Heatmap — {len(seq_strs)} sequences across {len(x_labels)} time buckets (10 candles each)"],
+            style={
+                "padding": "0.75rem 1rem", "backgroundColor": "#ede9fe",
+                "borderRadius": "8px", "fontWeight": "600", "color": "#5b21b6",
+                "marginBottom": "0.75rem",
+            },
+        )
+
+        return html.Div([
+            header,
+            dcc.Graph(figure=fig, config={"responsive": True, "displayModeBar": True, "displaylogo": False}),
+            html.Small(
+                "Each cell shows how many times a sequence matched within that 10-candle time bucket. "
+                "Darker cells indicate higher pattern concentration.",
+                style={"color": "#6b7280", "display": "block", "marginTop": "0.75rem"},
+            ),
+        ])
+
+    except Exception as e:
+        logger.exception("heatmap error: %s", e)
+        return html.Div(f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"})
+
+
+# =========================================================================
+# REVERSE PATTERN FINDER CALLBACK
+# =========================================================================
+
+@app.callback(
+    Output("reverse-content", "children"),
+    Input("reverse-find-btn", "n_clicks"),
+    State("reverse-threshold", "value"),
+    State("reverse-direction", "value"),
+    State("reverse-lookback", "value"),
+    State("current-data", "data"),
+    prevent_initial_call=True,
+)
+def update_reverse_finder(n_clicks, threshold, direction, lookback, data):
+    """Find sequences that preceded big price moves."""
+    if not data:
+        return html.Div("Load data first.", style={"color": "#f59e0b", "fontWeight": "600", "padding": "1rem"})
+
+    try:
+        df = pd.DataFrame(data["df"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+
+        threshold = float(threshold or 1.5)
+        lookback = int(lookback or 5)
+        direction = direction or "up"
+
+        results = reverse_pattern_finder(
+            df, threshold_pct=threshold, direction=direction,
+            lookback=lookback, min_len=3, max_len=6, top_k=15,
+        )
+
+        if not results:
+            dir_label = {"up": "gains", "down": "losses", "both": "moves"}.get(direction, "moves")
+            return html.Div(
+                [html.I(className="bi bi-info-circle me-2", style={"fontSize": "1.2rem"}),
+                 f"No big {dir_label} (>{threshold}%) found. Try lowering the threshold or loading more data."],
+                style={"color": "#6b7280", "padding": "2rem", "textAlign": "center", "fontWeight": "600"},
+            )
+
+        # Build confidence data for each discovered preceding sequence
+        rows = []
+        for i, r in enumerate(results):
+            avg_move_color = "#10b981" if r["avg_move_pct"] > 0 else "#ef4444"
+
+            # Quick confidence check
+            try:
+                conf = sequence_confidence(df, r["sequence"], hold_candles=5)
+                conf_badge_color = "success" if conf["is_significant"] else "warning"
+                conf_text = conf["confidence_level"]
+                p_val = f"{conf['p_value']:.4f}"
+            except Exception:
+                conf_badge_color = "secondary"
+                conf_text = "N/A"
+                p_val = "—"
+
+            rows.append(html.Tr([
+                html.Td(str(i + 1), style={"color": "#9ca3af", "width": "40px"}),
+                html.Td(html.Code(r["sequence"], style={"fontSize": "0.85rem"})),
+                html.Td(str(r["length"])),
+                html.Td(str(r["count"]), style={"fontWeight": "700"}),
+                html.Td(f"{r['avg_move_pct']:+.2f}%", style={"fontWeight": "700", "color": avg_move_color}),
+                html.Td(dbc.Badge(conf_text, color=conf_badge_color, style={"fontSize": "0.7rem"})),
+                html.Td(p_val, style={"fontSize": "0.8rem", "color": "#6b7280"}),
+            ]))
+
+        dir_label = {"up": "big gains", "down": "big losses", "both": "big moves"}.get(direction, "moves")
+        header = html.Div(
+            [html.I(className="bi bi-arrow-return-left me-2"),
+             f"Top {len(results)} sequences preceding {dir_label} (>{threshold}% threshold, {lookback}-candle lookback)"],
+            style={
+                "padding": "0.75rem 1rem", "backgroundColor": "#fef3c7",
+                "borderRadius": "8px", "fontWeight": "600", "color": "#92400e",
+                "marginBottom": "0.75rem",
+            },
+        )
+
+        table = dbc.Table(
+            [html.Thead(html.Tr([
+                html.Th("#"), html.Th("Sequence"), html.Th("Length"),
+                html.Th("Occurrences"), html.Th("Avg Move"),
+                html.Th("Confidence"), html.Th("p-value"),
+            ])),
+             html.Tbody(rows)],
+            bordered=True, hover=True, responsive=True, striped=True, size="sm",
+            style={"fontSize": "0.9rem"},
+        )
+
+        tip = html.Small(
+            "These are the most common colour sequences found in the candles immediately before big price moves. "
+            "Copy a sequence into the Custom Sequences box and scan to see it on the chart.",
+            style={"color": "#9ca3af", "display": "block", "marginTop": "0.75rem"},
+        )
+
+        return html.Div([header, table, tip])
+
+    except Exception as e:
+        logger.exception("reverse_finder error: %s", e)
+        return html.Div(f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"})
 
 
 # ======================================================================
