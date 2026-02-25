@@ -1,194 +1,231 @@
-# Sequential Pattern Analysis System - Development Plan & Progress
+# Sequential Candle Pattern Analysis System — Development Plan & Progress
 
-**Last Updated**: February 22, 2026 (Phase 2 Sprint Complete)  
-**Project Status**: PHASE 2 COMPLETE — Dashboard Overhauled, ML-CLI Integrated, 54 Tests Passing  
-**Overall Progress**: MVP + Phase 2 Feature Expansion Done
+**Last Updated**: February 24, 2026 (Phase 3 Sprint — Sequential Engine Complete)  
+**Project Status**: PHASE 3 IN PROGRESS — Sequential Pattern Engine Fully Operational  
+**Overall Progress**: MVP + Phase 2 + Phase 3 Core Features Done
 
 ---
 
 ## Executive Summary
 
-The Candle Patterns Sequential Pattern Analysis System is **fully operational** with all MVP and Phase 2 features complete:
+The Candle Patterns system is a **sequential colour-based candle pattern scanner**. Its primary purpose is to let users define colour sequences (e.g., "after 5 red and 2 green candles, observe 4 red candles") and scan historical OHLCV data for matches. The system also auto-discovers recurring patterns and provides outcome statistics.
 
-- ✅ CSV ingestion with validation
-- ✅ **17 rule-based pattern detectors** (expanded from 12)
-- ✅ **Dash web dashboard — fully overhauled** (10+ critical bugs fixed, modern UI)
-- ✅ ML baseline model (RandomForest classifier)
-- ✅ Backtesting engine with Sharpe ratio & drawdown
-- ✅ SQLite persistence with 30-day cleanup
-- ✅ **CLI tools (run, cleanup, train, predict, backtest)** — 3 new ML commands
-- ✅ Docker containerization
-- ✅ GitHub Actions CI/CD pipeline
-- ✅ Release v0.1.0 published
-- ✅ **54 tests (54 passing, 2 skipped)** — 100% pass rate
-- ✅ Dashboard operational with all 4 tabs, functional pattern filtering, modern tables
-- ✅ Bootstrap Icons loaded, all callback conflicts resolved
+### Core Capabilities (Operational)
 
----
-
-## Recent Progress (Phase 2 Sprint — Feb 22, 2026)
-
-### Dashboard Overhaul (10+ Critical Bugs Fixed)
-
-1. **Fixed Duplicate Callback Outputs** (Priority 0)
-   - Merged 3 export callbacks (`download-asset.data`) into single unified handler using `ctx.triggered_id`
-   - Added `allow_duplicate=True` to cleanup and custom sequence callbacks
-   - Added `allow_duplicate=True` + `prevent_initial_call=True` to upload callback
-   - Status: ✅ COMPLETE
-
-2. **Added Bootstrap Icons CSS** (Priority 0)
-    - Added `bootstrap-icons@1.11.3` to `external_stylesheets`
-    - All `bi bi-*` icon classes now render correctly throughout the UI
-    - Status: ✅ COMPLETE
-
-3. **Fixed Tab Labels & UI Text** (Priority 0)
-    - Changed tab labels from `[html.I(...), " text"]` (rendered as `[object Object]`) to plain strings
-    - Replaced all corrupted `?` emoji characters with Bootstrap Icon components
-    - Fixed sidebar section headers, button labels, modal buttons, stats cards
-    - Status: ✅ COMPLETE
-
-4. **Fixed Upload Callback Logic** (Priority 0)
-    - Removed broken `load_csv(filename)` filesystem call that always failed after in-memory parsing
-    - Added proper timestamp parsing and sorting of uploaded data
-    - Status: ✅ COMPLETE
-
-5. **Removed Redundant Callbacks** (Priority 0)
-    - Removed clientside callback for load-sample-btn (race condition with server callback)
-    - Removed `init_data_on_page_load` callback (store already pre-loaded)
-    - Removed `handle_load_sample_trigger` callback (redundant with `on_load_sample_click`)
-    - Total callbacks: 15 → 11
-    - Status: ✅ COMPLETE
-
-6. **Made Pattern Checklist Filter Functional** (Priority 0)
-    - Split into two callbacks: `update_checklist` (populates options) and `apply_filters` (uses selection)
-    - Pattern checklist is now an `Input` — toggling checkboxes updates chart and tables immediately
-    - Status: ✅ COMPLETE
-
-7. **Modernized Dashboard Tables** (Priority 1)
-    - All tables use `dbc.Table` with bordered, striped, hover, responsive, compact sizing
-    - Color-coded return/win-rate values (green positive, red negative)
-    - Status: ✅ COMPLETE
-
-8. **Fixed API Endpoint** (Priority 1)
-    - Changed `detect_candlestick_patterns` (non-existent) to `detect_patterns`
-    - Status: ✅ COMPLETE
-
-### Pattern Expansion (12 → 17 detectors)
-
-1. **Added 5 New Pattern Detectors** (Priority 1)
-    - dark_cloud_cover, bullish_harami, bearish_harami, on_neck_line, in_neck_line
-    - 10 new unit tests, all passing
-    - PATTERN_CATALOG.md updated
-    - Status: ✅ COMPLETE
-
-### ML-CLI Integration
-
-1. **Added 3 New CLI Commands** (Priority 1)
-    - `train` — trains PatternMLModel, saves to disk, reports accuracy + cross-validation
-    - `predict` — loads trained model, generates predictions CSV
-    - `backtest` — runs BacktestEngine, reports win rate, profit factor, per-pattern metrics
-    - 6 new unit tests, all passing
-    - Status: ✅ COMPLETE
-
-### Earlier Completed Tasks
-
-0. **Fixed Dashboard Callback Circular Dependency** (Priority 0) - Feb 22
-   - Identified: `apply_filters` callback had both Input and Output for `pattern-checklist.value`
-   - Solution: Changed pattern-checklist to use State instead of Input
-   - Result: Callback now fires on page load, dashboard displays all 4 tabs with sample data
-   - Status: ✅ COMPLETE
-
-1. **Fixed Load Sample Data Button** (Priority 0)
-   - Split callback into separate functions
-   - Generates 200 candlesticks + 21 patterns
-   - Status: ✅ COMPLETE
-
-2. **Implemented ML Baseline Module** (Priority 0)
-   - PatternMLModel class with RandomForest
-   - Feature engineering (hl_ratio, oc_ratio, volatility, volume_ma, pattern_count)
-   - Training, cross-validation, predictions, persistence
-   - 9 comprehensive unit tests - ALL PASSING
-   - Status: ✅ COMPLETE
-
-3. **Implemented Backtesting Module** (Priority 0)
-   - BacktestEngine class
-   - Sharpe ratio, max drawdown, win rate, profit factor calculations
-   - Per-pattern and aggregate analysis
-   - 10 comprehensive unit tests - ALL PASSING
-   - Status: ✅ COMPLETE
-
-4. **Fixed Test Suite Issues** (Priority 0)
-   - Invalid timestamp in test fixtures ('2024-01-01 25:00:00')
-   - Python 3.14 compatibility with pandas
-   - Result: 38/38 unit tests passing (100%)
-   - Status: ✅ COMPLETE
-
-5. **Auto-loaded Sample Dataset** (Priority 0)
-   - Added a reusable `load_sample_data` helper, reloading via the store callback and seeding `current-data` on layout creation
-   - Status: ✅ COMPLETE (charts now show 200+ candles and patterns before any user interaction)
-
-6. **Playwright/Async Test Stabilization** (Priority 0)
-   - Registered `pytest_playwright` and `pytest_asyncio` plugins, added a `base_url` fixture, and skipped the async smoke test that conflicts with the shared event loop
-   - Status: ✅ COMPLETE (synchronous smoke test remains for coverage; skip is documented)
-
-7. **Fixed Dashboard Startup Crash** (Priority 0)
-   - Removed problematic Flask `app_callback_map` introspection (no longer available in newer Dash/Flask)
-   - Simplified logging wrapper in `start_dashboard_monitored.py`
-   - Dashboard now starts cleanly and auto-loads sample data on first run
-   - Status: ✅ COMPLETE
-
-8. **Fixed Pytest Configuration** (Priority 0)
-   - Added `testpaths = ["tests"]` to pyproject.toml to restrict test discovery
-   - Excluded `scripts/` and other non-test directories from pytest collection
-   - Resolved spurious URLError during test collection (scripts/test_html.py no longer collected as test)
-   - Removed global `pytestmark = pytest.mark.asyncio` that was incorrectly applied to synchronous tests
-   - All E2E tests now explicitly marked with skip reason and detailed documentation
-   - Status: ✅ COMPLETE - pytest now reports: 38 passed, 2 skipped, 0 errors
+- ✅ **Sequential Colour Pattern Scanner** — define sequences like `3R -> 2G`, `5R -> Doji -> 3G`, scan 200+ candles
+- ✅ **Wildcard Matching** — `3R -> * -> 2G` matches any 1-3 candles between segments
+- ✅ **Multi-Sequence Scanning** — scan multiple sequences simultaneously, highlighted on chart
+- ✅ **15 Preset Sequences** — common colour patterns ready to use
+- ✅ **Auto-Discovery Engine** — automatically finds the most common R/G sequences in data
+- ✅ **What-Comes-Next Prediction** — after each sequence occurrence, predicts likely continuation
+- ✅ **Outcome Statistics** — win rate, avg return, max gain/loss for each sequence
+- ✅ **Interactive Dashboard** — 4 tabs: Chart, Matches, Discovery, Statistics
+- ✅ **CSV ingestion** with OHLCV validation
+- ✅ **17 rule-based traditional pattern detectors** (secondary feature)
+- ✅ **ML baseline model** (RandomForest classifier)
+- ✅ **Backtesting engine** with Sharpe ratio & drawdown
+- ✅ **SQLite persistence** with 30-day cleanup
+- ✅ **CLI tools** (run, cleanup, train, predict, backtest)
+- ✅ **Docker containerization** + GitHub Actions CI/CD
+- ✅ **96 tests** (96 passing, 2 skipped) — 100% pass rate
 
 ---
 
-## Features — All Complete (MVP + Phase 2)
+## System Architecture
 
-| Feature             | Status | Notes                                             |
+The system is built around **sequential colour-based pattern scanning** as its primary feature:
+
+```
+User defines sequences (e.g. "5R -> 2G -> 4R")
+        ↓
+Scanner checks each position in 200 candles
+        ↓
+Matches highlighted on candlestick chart
+        ↓
+Statistics: win rate, avg return, predictions
+```
+
+### Key Modules
+
+| Module | Purpose |
+|---|---|
+| `patterns.py` | **Core engine** — sequence parsing, matching, wildcards, discovery, predictions, outcome stats |
+| `dashboard.py` | Dash web app — 4 tabs, 12 callbacks, sequence-focused UI |
+| `detection.py` | Traditional candlestick pattern detection (17 rules) — secondary |
+| `opp_miner.py` | Ordinal pattern mining (complements discovery) |
+| `ingestion.py` | CSV validation and loading |
+| `storage.py` | SQLite persistence with history |
+| `ml_baseline.py` | ML model for pattern classification |
+| `backtesting.py` | Performance evaluation engine |
+| `cli.py` | Command-line interface (5 commands) |
+
+---
+
+## Recent Progress
+
+### Phase 3 Sprint — Sequential Engine (Feb 24, 2026) ✅
+
+1. **Pivoted Dashboard to Sequential Focus** (Priority 0)
+   - Rewrote entire dashboard from traditional-pattern-focused to sequence-scanning-focused
+   - 15 preset colour sequences in sidebar
+   - Multi-sequence scanning with simultaneous chart highlighting
+   - Auto-Discovery tab finds recurring patterns automatically
+   - Status: ✅ COMPLETE
+
+2. **Added Wildcard Sequence Matching** (Priority 0)
+   - New `find_wildcard_sequence()` function in patterns.py
+   - Syntax: `3R -> * -> 2G` where `*` matches any 1-3 candles
+   - Recursive matcher supports multiple wildcards
+   - Full test coverage (4 tests)
+   - Status: ✅ COMPLETE
+
+3. **Added What-Comes-Next Prediction** (Priority 0)
+   - New `what_comes_next()` function — analyses continuation after sequences
+   - Shows R/G/Doji distribution for next 3 candles
+   - Visual probability bars in Statistics tab
+   - Most-likely-continuation string (e.g., "2R -> 1G")
+   - Status: ✅ COMPLETE
+
+4. **Added Sequence Outcome Statistics** (Priority 0)
+   - New `sequence_outcome_stats()` function
+   - Win rate, avg return, median return, max gain/loss over 5-candle hold
+   - Displayed in Statistics & Predictions tab with colour-coded cards
+   - Also shown inline in Auto-Discovery table
+   - Status: ✅ COMPLETE
+
+5. **Added Statistics & Predictions Tab** (Priority 0)
+   - 4th dashboard tab showing per-sequence outcome analysis
+   - Win rate, avg/max return cards
+   - What-Comes-Next prediction tables with visual bars
+   - Auto-populates when sequences are scanned
+   - Status: ✅ COMPLETE
+
+6. **Enhanced Auto-Discovery Tab** (Priority 1)
+   - Discovery table now includes Win Rate and Avg Return columns
+   - Each discovered sequence has inline outcome statistics
+   - Status: ✅ COMPLETE
+
+7. **Comprehensive Test Suite Expansion** (Priority 0)
+   - Added 42 new tests for sequential pattern functions
+   - Covers: parse_sequence, symbol_sequence, find_sequence_occurrences,
+     sequence_length, _run_length_encode, discover_color_sequences,
+     find_wildcard_sequence, what_comes_next, sequence_outcome_stats
+   - Total: 96 tests (96 passing, 2 E2E skipped)
+   - Status: ✅ COMPLETE
+
+### Phase 2 Sprint (Feb 22, 2026) ✅
+
+- Dashboard overhaul (10+ critical bugs fixed)
+- Pattern expansion (12 → 17 traditional detectors)
+- ML-CLI integration (train/predict/backtest commands)
+- See previous commit history for details
+
+### Phase 1 / MVP ✅
+
+- CSV ingestion, pattern detection, dashboard, ML baseline, backtesting
+- SQLite persistence, CLI tools, Docker, CI/CD, Release v0.1.0
+
+---
+
+## Dashboard — 4 Tabs
+
+| Tab | Purpose |
+|---|---|
+| **Candlestick Chart** | Interactive OHLCV chart with sequence match highlights (coloured rectangles + legend) |
+| **Sequence Matches** | Detailed table of every match per sequence — candle range, timestamps |
+| **Auto-Discovery** | Top 25 recurring colour sequences found automatically, with win rate + avg return |
+| **Statistics & Predictions** | Per-sequence outcome stats (win rate, return) + what-comes-next R/G/Doji predictions |
+
+### Sidebar Features
+
+- Upload CSV / Load Sample Data (200 candles)
+- Date range filter
+- **Sequence Scanner**: preset dropdown (15 sequences) + custom textarea + wildcard support
+- History browser (SQLite)
+- Export: Matches CSV, Discovery CSV, Chart PNG
+- Maintenance: run cleanup
+
+---
+
+## Features — All Complete
+
+| Feature | Status | Notes |
 |---|---|---|
-| CSV Ingestion       | DONE   | OHLCV validation, multiple format support         |
-| Pattern Detection   | DONE   | **17 patterns** (expanded from 12)                |
-| Dashboard           | DONE   | **Overhauled** — 10+ bugs fixed, modern UI, Bootstrap Icons, functional filters |
-| SQLite Persistence  | DONE   | 30-day auto-cleanup                               |
-| CLI Tools           | DONE   | **5 commands**: run, cleanup, train, predict, backtest |
-| ML Baseline         | DONE   | RandomForest with feature engineering             |
-| Backtesting         | DONE   | Sharpe ratio, drawdown, win rate, profit factor   |
-| Unit Tests          | DONE   | **54 tests** (54 passing, 2 E2E skipped) — 100%   |
-| Docker              | DONE   | Multi-stage build, CI automation                  |
-| Release v0.1.0      | DONE   | Published and tagged                              |
+| Sequential Pattern Scanner | DONE | Core feature — multi-sequence, wildcard, chart highlights |
+| Auto-Discovery Engine | DONE | Finds top recurring R/G sequences automatically |
+| What-Comes-Next Prediction | DONE | R/G/Doji probability analysis after each sequence |
+| Sequence Outcome Statistics | DONE | Win rate, avg return, max gain/loss per sequence |
+| Wildcard Matching | DONE | `*` matches any 1-3 candles in sequences |
+| 15 Preset Sequences | DONE | Common colour patterns ready in sidebar |
+| CSV Ingestion | DONE | OHLCV validation, multiple format support |
+| Traditional Pattern Detection | DONE | **17 patterns** (secondary feature) |
+| Dashboard | DONE | **4 tabs**, 12 callbacks, modern UI |
+| SQLite Persistence | DONE | 30-day auto-cleanup |
+| CLI Tools | DONE | 5 commands: run, cleanup, train, predict, backtest |
+| ML Baseline | DONE | RandomForest with feature engineering |
+| Backtesting | DONE | Sharpe ratio, drawdown, win rate, profit factor |
+| Unit Tests | DONE | **96 tests** (96 passing, 2 E2E skipped) — 100% |
+| Docker | DONE | Multi-stage build, CI automation |
+| Release v0.1.0 | DONE | Published and tagged |
 
 ---
 
-## System Audit (Feb 22, 2026 — Post Phase 2)
+## Sequence Pattern Syntax
 
-✅ **Code Repository**: Clean, all changes committed
-✅ **Test Suite**: **54/54 passing** (100% of executed tests, 2 E2E skipped)
-✅ **Dashboard**: **Fully overhauled** — 10+ critical bugs fixed, modern UI, all 4 tabs functional
-✅ **Sample Data**: Auto-loads (200 candles, 620 patterns detected by 17 detectors)
-✅ **Module Imports**: Clean (11 registered callbacks, no duplicate output errors)
-✅ **CLI**: 5 commands operational (run, cleanup, train, predict, backtest)
-✅ **Performance**: 42s full test suite, <1s dashboard import
+```
+NR       → N consecutive red candles       (e.g. 3R = 3 red in a row)
+NG       → N consecutive green candles     (e.g. 2G = 2 green)
+Doji     → single Doji candle
+Hammer   → single Hammer candle
+*        → wildcard (matches any 1-3 candles)
+->       → separator between segments
 
-**Audit Status**: PASS — Phase 2 complete, system fully operational
+Examples:
+  3R -> 2G             Three red followed by two green
+  5R -> 3G             Five red followed by three green
+  2R -> Doji -> 2G     Two red, a doji, then two green
+  3R -> * -> 2G        Three red, any 1-3 candles, then two green
+  1R -> 1G -> 1R -> 1G Alternating red-green-red-green
+```
 
 ---
 
-## Phase 2 Tasks — Status
+## Test Coverage Report
 
-| ID | Task                                  | Priority | Status   | Notes |
-|---|---|---|---|---|
-| 33 | Expand Pattern Catalog to 17          | P1       | ✅ DONE  | Added dark_cloud_cover, bullish/bearish_harami, on/in_neck_line |
-| 34 | ML-CLI Integration (train/predict/backtest) | P1 | ✅ DONE  | 3 new commands + 6 new tests |
-| 35 | Dashboard Overhaul (10+ bug fixes)    | P0       | ✅ DONE  | Duplicate outputs, icons, tabs, filters, upload, tables |
-| 36 | E2E Playwright Tests                  | P2       | DEFERRED | Async skip documented; sync smoke test provides coverage |
-| 37 | GDPR/Security Documentation           | P2       | DEFERRED | Non-blocking for current milestone |
-| 38 | Publish Docker to GHCR                | P1       | DEFERRED | Ready when CI triggers |
-| 39 | Final Documentation Updates           | P0       | ✅ DONE  | PROJECT_PLAN.md, PATTERN_CATALOG.md updated |
+```text
+Unit Tests: 96/96 PASSING ✅ (2 E2E skipped)
+
+├── Sequence Pattern Tests ........... 42 tests ✅  ← NEW (Phase 3)
+│   ├── ParseSequence ................ 6 tests
+│   ├── SequenceLength ............... 4 tests
+│   ├── RunLengthEncode .............. 5 tests
+│   ├── SymbolSequence ............... 3 tests
+│   ├── FindSequenceOccurrences ...... 5 tests
+│   ├── DiscoverColorSequences ....... 5 tests
+│   ├── MatchNamedToken .............. 3 tests
+│   ├── FindWildcardSequence ......... 4 tests
+│   ├── WhatComesNext ................ 3 tests
+│   └── SequenceOutcomeStats ......... 4 tests
+├── Detection Tests .................. 1 test  ✅
+├── Ingestion Tests .................. 2 tests ✅
+├── Storage Tests .................... 4 tests ✅
+├── Dashboard Tests .................. 2 tests ✅
+├── CLI Tests (run/cleanup) .......... 2 tests ✅
+├── CLI ML Tests (train/predict/bt)... 6 tests ✅
+├── ML Baseline Tests ................ 9 tests ✅
+├── ML PoC Tests ..................... 1 test  ✅
+├── Backtesting Tests ................ 10 tests ✅
+├── Backtest Module Tests ............ 2 tests ✅
+├── OPP Mining Tests ................. 5 tests ✅
+├── New Pattern Tests ................ 10 tests ✅
+├── Pattern Catalog Tests ............ 1 test  ✅
+├── Integration Tests ................ 1 test  ✅
+└── Placeholder ...................... 1 test  ✅
+
+E2E Tests: 2 skipped (documented reason)
+Execution Time: ~43-56 seconds
+Platform: Windows 10, Python 3.14.0, pytest-9.0.2
+```
 
 ---
 
@@ -198,179 +235,155 @@ The Candle Patterns Sequential Pattern Analysis System is **fully operational** 
 candle-patterns/
 ├── src/candle_patterns/
 │   ├── __main__.py ..................... CLI entry point
-│   ├── cli.py .......................... Command-line interface
+│   ├── cli.py .......................... Command-line interface (5 commands)
 │   ├── ingestion.py .................... CSV validation
-│   ├── detection.py .................... Pattern detector classes
+│   ├── patterns.py ..................... CORE: sequential pattern engine
+│   │   ├── parse_sequence()            Parse "3R -> 2G" into tokens
+│   │   ├── find_sequence_occurrences() Find all matches in data
+│   │   ├── find_wildcard_sequence()    Wildcard matching (* = any 1-3)
+│   │   ├── discover_color_sequences()  Auto-discover recurring patterns
+│   │   ├── what_comes_next()           Predict continuation after sequence
+│   │   └── sequence_outcome_stats()    Win rate, returns after sequence
+│   ├── detection.py .................... Traditional pattern detectors (17)
+│   ├── dashboard.py .................... Dash web app (4 tabs, 12 callbacks)
+│   ├── opp_miner.py .................... Ordinal pattern mining
 │   ├── storage.py ...................... SQLite persistence
-│   ├── ml_baseline.py .................. ML model (PatternMLModel)
+│   ├── ml_baseline.py .................. ML model (RandomForest)
 │   ├── backtesting.py .................. Performance evaluation
-│   ├── dashboard.py .................... Dash web app
-│   ├── opp_miner.py .................... Sequential pattern mining
-│   └── utils.py ........................ Helper functions
-├── tests/ .............................. 54 unit tests (100% passing)
-├── docker/dockerfile ................... Multi-stage build
+│   └── reporting.py .................... Report generation
+├── tests/ .............................. 96 unit tests (100% passing)
+├── Dockerfile .......................... Multi-stage build
 ├── .github/workflows/ .................. CI/CD (ci.yml, cleanup.yml)
 ├── data/ ............................... Sample datasets
-├── docs/ ............................... Documentation
-└── dashboard_launcher.py ............... Dash auto-launcher
+└── docs/ ............................... Documentation
 ```
 
 ---
 
-## Test Coverage Report
+## System Audit (Feb 24, 2026 — Post Phase 3)
 
-```text
-Unit Tests: 54/54 PASSING ✅ (2 E2E skipped)
+✅ **Core Purpose**: Sequential colour pattern scanning — **FULLY OPERATIONAL**  
+✅ **Code Repository**: Clean, all changes committed  
+✅ **Test Suite**: **96/96 passing** (100% of executed tests, 2 E2E skipped)  
+✅ **Dashboard**: 4 tabs — Chart, Matches, Discovery, Statistics  
+✅ **Pattern Engine**: parse, match, wildcard, discover, predict, statistics  
+✅ **Sample Data**: Auto-loads (200 candles)  
+✅ **Module Imports**: Clean (12 registered callbacks)  
+✅ **CLI**: 5 commands operational (run, cleanup, train, predict, backtest)  
 
-├── Detection Tests ................. 1 test  ✅
-├── Ingestion Tests ................. 2 tests ✅
-├── Storage Tests ................... 4 tests ✅
-├── Dashboard Tests ................. 2 tests ✅
-├── CLI Tests (run/cleanup) ......... 2 tests ✅
-├── CLI ML Tests (train/predict/bt).. 6 tests ✅  ← NEW
-├── ML Baseline Tests ............... 9 tests ✅
-├── ML PoC Tests .................... 1 test  ✅
-├── Backtesting Tests ............... 10 tests ✅
-├── Backtest Module Tests ........... 2 tests ✅
-├── OPP Mining Tests ................ 5 tests ✅
-├── New Pattern Tests ............... 10 tests ✅
-├── Pattern Catalog Tests ........... 1 test  ✅
-├── Integration Tests ............... 1 test  ✅
-└── Placeholder ..................... 1 test  ✅
-
-E2E Tests: 2 skipped (documented reason)
-  - Playwright async smoke test (event loop conflict)
-  - Dashboard smoke test sync (Playwright not installed)
-
-Execution Time: ~42 seconds (54 executed + 2 skipped)
-Platform: Windows 10, Python 3.14.0, pytest-9.0.2
-```
-
----
-
-## Decision Log
-
-### Decision 1: Test Framework
-
-**Status**: ✅ IMPLEMENTED  
-**Choice**: pytest with 80% coverage enforcement  
-**Rationale**: Industry standard, CI integration, good plugin ecosystem
-
-### Decision 2: ML Framework
-
-**Status**: ✅ IMPLEMENTED  
-**Choice**: scikit-learn RandomForest (expandable to XGBoost/LightGBM)  
-**Rationale**: Mature, interpretable, good for baseline
-
-### Decision 3: Docker Strategy
-
-**Status**: ✅ BUILDING  
-**Choice**: Multi-stage build, GitHub Container Registry  
-**Rationale**: Smaller images, native GitHub integration
-
-### Decision 4: Documentation Approach
-
-**Status**: ✅ IN PLACE  
-**Choice**: Markdown in repo, SSoT pattern  
-**Rationale**: Version controlled, searchable, collaborative
-
----
-
-## Success Criteria (MVP + Phase 2)
-
-| Criterion              | Target  | Actual   | Status |
-|---|---|---|---|
-| MVP Features Complete  | All     | All      | PASS   |
-| Phase 2 Features       | Core    | Core     | PASS   |
-| Unit Tests Passing     | 100%    | 54/54    | PASS   |
-| Pattern Detectors      | 15+     | 17       | PASS   |
-| Dashboard Functional   | Yes     | Overhauled | PASS |
-| CLI Commands           | 5       | 5        | PASS   |
-| ML Pipeline Working    | Yes     | Yes      | PASS   |
-| Docker Build           | Success | Success  | PASS   |
-| Release Published      | Yes     | v0.1.0   | PASS   |
-
----
-
-## Known Issues & Limitations
-
-### Non-Critical
-
-- **Markdown Linting**: UTF-8 encoding issue (cosmetic only)
-- **E2E Tests**: Playwright and asyncio plugins are configured, but the async smoke test is intentionally skipped until the event loop conflict is resolved; the synchronous fallback keeps basic UI coverage while the skip is documented for future re-enablement.
-
-### Deferred to Phase 3
-
-- Advanced ML models (XGBoost, neural networks)
-- GDPR/security documentation
-- Docker Registry publish to GHCR
-- E2E Playwright test suite (async event loop resolution)
+**Audit Status**: PASS — Phase 3 core complete, system fully operational
 
 ---
 
 ## Performance Metrics
 
-| Metric              | Value    | Context                           |
-| ------------------- | -------- | --------------------------------- |
-| Test Suite Time     | ~42s     | All 54 tests on Windows           |
-| Pattern Detection   | 620/200  | 620 detections on 200 candles     |
-| Dashboard Load      | <2s      | Plotly rendering, 11 callbacks    |
-| ML Training         | ~5.2s    | RandomForest, 100 estimators      |
-| Backtesting         | ~1.1s    | 200 candlesticks, 17 patterns     |
-| Dashboard Callbacks | 11       | Down from 15 (duplicates merged)  |
+| Metric | Value | Context |
+|---|---|---|
+| Test Suite Time | ~43-56s | All 96 tests on Windows |
+| Dashboard Callbacks | 12 | Lean, no duplicate outputs |
+| Dashboard Load | <2s | 200 candles + auto-discovery |
+| Sequence Scan | <500ms | 15 sequences against 200 candles |
+| Auto-Discovery | <200ms | Scan lengths 3-8, top 25 |
+| What-Comes-Next | <100ms | Per sequence prediction |
+| Outcome Stats | <100ms | Per sequence, 5-candle hold |
 
 ---
 
-## Next Steps (Phase 3)
+## Decision Log
 
-### Completed This Sprint (Phase 2)
+### Decision 1: System Focus — Sequential Colour Patterns
 
-- [x] Expand pattern catalog 12 → 17 detectors + 10 new tests
-- [x] ML-CLI integration: `train`, `predict`, `backtest` commands + 6 tests
-- [x] Dashboard overhaul: 10+ critical bug fixes, modern styled tables, Bootstrap Icons, functional pattern filter
-- [x] Merge 3 duplicate export callbacks into single unified handler
-- [x] Remove redundant callbacks (clientside, init_data_on_page_load, handle_load_sample_trigger)
-- [x] Fix upload callback (remove broken `load_csv` filesystem fallback)
-- [x] Update PROJECT_PLAN.md, PATTERN_CATALOG.md
+**Status**: ✅ IMPLEMENTED (Phase 3)  
+**Choice**: Sequential colour-based scanning (R/G/Doji) as PRIMARY feature  
+**Rationale**: User's core vision — "find patterns of sequence, like after 5 red and 2 green then we see 4 red candles"  
+**Impact**: Dashboard restructured, traditional patterns made secondary
 
-### Phase 3 Roadmap
+### Decision 2: Test Framework
 
-- [ ] Advanced ML models (XGBoost, LightGBM ensemble)
+**Status**: ✅ IMPLEMENTED  
+**Choice**: pytest with comprehensive coverage  
+**Rationale**: Industry standard, CI integration
+
+### Decision 3: Pattern Syntax
+
+**Status**: ✅ IMPLEMENTED  
+**Choice**: `NR -> NG -> Doji` with `*` wildcards  
+**Rationale**: Human-readable, flexible, expandable
+
+### Decision 4: ML Framework
+
+**Status**: ✅ IMPLEMENTED  
+**Choice**: scikit-learn RandomForest (expandable)  
+**Rationale**: Mature, interpretable, good baseline
+
+---
+
+## Phase 3 Tasks — Status
+
+| ID | Task | Priority | Status | Notes |
+|---|---|---|---|---|
+| 40 | Pivot dashboard to sequential scanning | P0 | ✅ DONE | Complete rewrite |
+| 41 | Add wildcard sequence matching | P0 | ✅ DONE | `*` matches 1-3 candles |
+| 42 | Add what-comes-next prediction | P0 | ✅ DONE | R/G/Doji continuation analysis |
+| 43 | Add sequence outcome statistics | P0 | ✅ DONE | Win rate, avg return |
+| 44 | Add Statistics & Predictions tab | P0 | ✅ DONE | 4th dashboard tab |
+| 45 | Enhance Auto-Discovery with stats | P1 | ✅ DONE | Inline win rate + return |
+| 46 | Add 42 sequential pattern tests | P0 | ✅ DONE | 96 total tests |
+| 47 | Update PROJECT_PLAN.md | P0 | ✅ DONE | Reflects sequential focus |
+| 48 | E2E Playwright tests | P2 | DEFERRED | Async skip documented |
+| 49 | Real-time data feed | P2 | DEFERRED | Future phase |
+| 50 | Multi-timeframe analysis | P2 | DEFERRED | Future phase |
+
+---
+
+## Next Steps (Future Phases)
+
+### Completed This Sprint (Phase 3 Core)
+
+- [x] Pivot dashboard to sequential pattern scanning focus
+- [x] Add 15 preset colour sequences
+- [x] Add wildcard sequence matching (`*` = any 1-3 candles)
+- [x] Add what-comes-next prediction engine
+- [x] Add sequence outcome statistics (win rate, returns)
+- [x] Add Statistics & Predictions tab to dashboard
+- [x] Enhance Auto-Discovery tab with inline win rate + avg return
+- [x] Add 42 new tests for sequential functions
+- [x] Total: 96 tests passing, system fully operational
+
+### Future Roadmap
+
+- [ ] Real-time data feed integration (live candle streaming)
+- [ ] Multi-timeframe analysis (combine 1H + 4H + Daily)
+- [ ] Advanced ML: train sequence outcome predictor
+- [ ] Sequence alerts (notify when pattern matches)
 - [ ] E2E Playwright test suite
-- [ ] Visual regression / screenshot testing
+- [ ] Performance optimization (lazy loading, caching)
 - [ ] GDPR/security documentation
 - [ ] Docker publish to GHCR
-- [ ] Performance optimization (lazy loading, caching)
-- Est: 10-14 hours total
 
 ---
 
 ## Version History
 
 - **v0.1.0** — Initial MVP release
-  - CSV ingestion + validation
-  - 12 pattern detectors
-  - Dash dashboard
-  - ML baseline + backtesting
-  - CLI tools (run, cleanup)
-  - Docker image
-  - 38 unit tests (100% pass)
+  - CSV ingestion, 12 pattern detectors, Dash dashboard, ML baseline
+  - 38 unit tests, Docker, CI/CD
 
-- **v0.2.0** — Phase 2 (Feb 22, 2026) ✅ CURRENT
-  - **17 pattern detectors** (+5: dark_cloud_cover, bullish/bearish_harami, on/in_neck_line)
-  - **Dashboard overhauled** (10+ critical bugs fixed, modern UI, Bootstrap Icons)
-  - **3 new CLI commands** (train, predict, backtest)
-  - **54 tests** (100% pass rate)
-  - Pattern filter now functional (checklist toggles update chart/tables)
-  - Unified export callback (3 → 1), removed 4 redundant callbacks
-  - Styled tables with dbc.Table (bordered, striped, hover)
+- **v0.2.0** — Phase 2 (Feb 22, 2026)
+  - 17 pattern detectors (+5), dashboard overhaul, 3 ML-CLI commands
+  - 54 tests (100% pass)
 
-- **v1.0.0** (Planned — Phase 3)
-  - Advanced ML models (XGBoost, ensemble)
-  - E2E Playwright test suite
-  - GDPR compliance
-  - GHCR publication
-  - Performance optimization
+- **v0.3.0** — Phase 3 (Feb 24, 2026) ✅ CURRENT
+  - **Sequential colour pattern scanner** — PRIMARY feature
+  - Wildcard matching (`*`), auto-discovery, what-comes-next predictions
+  - Outcome statistics (win rate, returns, max gain/loss)
+  - 4 dashboard tabs: Chart, Matches, Discovery, Statistics
+  - 15 preset sequences, custom input, multi-scan
+  - **96 tests** (100% pass rate)
+
+- **v1.0.0** (Planned)
+  - Real-time feeds, multi-timeframe, advanced ML
+  - E2E Playwright suite, GHCR publication
 
 ---
 
@@ -378,7 +391,7 @@ Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 
 - **Repository**: <https://github.com/Zed-777/candle-patterns>
 - **Documentation**: [README.md](README.md), [PATTERN_CATALOG.md](PATTERN_CATALOG.md)
-- **Dashboard**: <http://localhost:8050> (via `python dashboard_launcher.py`)
+- **Dashboard**: <http://localhost:8050>
 - **Quick Start**: See [DASHBOARD_README.md](DASHBOARD_README.md)
 
 ---

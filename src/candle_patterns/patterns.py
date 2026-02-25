@@ -152,6 +152,233 @@ def find_sequence_occurrences(df: pd.DataFrame, seq_str: str) -> List[int]:
     return results
 
 
+# ============================================================================
+# WILDCARD SEQUENCE MATCHING  —  "3R -> * -> 2G"
+# ============================================================================
+
+def find_wildcard_sequence(
+    df: pd.DataFrame,
+    seq_str: str,
+    wildcard_min: int = 1,
+    wildcard_max: int = 3,
+) -> List[dict]:
+    """Match a sequence containing ``*`` wildcards that span 1-N candles.
+
+    A ``*`` in the sequence matches *any* ``wildcard_min`` to ``wildcard_max``
+    candles regardless of colour/type.
+
+    Returns a list of dicts::
+
+        [{"start_idx": 2, "end_idx": 9, "wildcard_span": 2}, ...]
+    """
+    parts = re.split(r"\s*(?:→|->|>|-)\s*", seq_str)
+
+    # Split into segments separated by wildcards
+    segments: List = []  # Each is either ("tokens", [...]) or ("wild",)
+    for p in parts:
+        p = p.strip()
+        if p == "*":
+            segments.append(("wild",))
+        else:
+            m = re.match(r"^(\d+)([RG])$", p, re.IGNORECASE)
+            if m:
+                segments.append(("tokens", [(int(m.group(1)), m.group(2).upper())]))
+            else:
+                segments.append(("tokens", [(1, p)]))
+
+    syms = symbol_sequence(df)
+    n = len(syms)
+    results: List[dict] = []
+
+    def _match_from(pos: int, seg_idx: int) -> List[dict]:
+        """Recursive matcher that yields list of match dicts."""
+        if seg_idx >= len(segments):
+            return [{"end": pos - 1, "wild_span": 0}]
+        seg = segments[seg_idx]
+        if seg[0] == "wild":
+            hits: List[dict] = []
+            for span in range(wildcard_min, wildcard_max + 1):
+                if pos + span > n:
+                    break
+                sub = _match_from(pos + span, seg_idx + 1)
+                for h in sub:
+                    hits.append({"end": h["end"], "wild_span": h["wild_span"] + span})
+            return hits
+        else:
+            # token segment — must match exactly
+            i = pos
+            for cnt, tok in seg[1]:
+                if tok in ("R", "G"):
+                    for k in range(cnt):
+                        if i + k >= n or syms[i + k] != tok:
+                            return []
+                    i += cnt
+                else:
+                    if i >= n or not match_named_token(df, i, tok):
+                        return []
+                    i += 1
+            return _match_from(i, seg_idx + 1)
+
+    for start in range(n):
+        hits = _match_from(start, 0)
+        for h in hits:
+            results.append({
+                "start_idx": start,
+                "end_idx": h["end"],
+                "wildcard_span": h["wild_span"],
+            })
+
+    return results
+
+
+# ============================================================================
+# WHAT-COMES-NEXT PREDICTION
+# ============================================================================
+
+def what_comes_next(
+    df: pd.DataFrame,
+    seq_str: str,
+    lookahead: int = 3,
+) -> dict:
+    """After every occurrence of *seq_str*, collect the next *lookahead* candle
+    colours and tally the distribution.
+
+    Returns::
+
+        {
+            "total_occurrences": 8,
+            "lookahead": 3,
+            "distribution": [
+                {"position": 1, "R": 5, "G": 2, "Doji": 1, "R_pct": 0.625, "G_pct": 0.25, "Doji_pct": 0.125},
+                ...
+            ],
+            "most_likely_next": "3R"   # run-length encoded most-common continuation
+        }
+    """
+    ends = find_sequence_occurrences(df, seq_str)
+    syms = symbol_sequence(df)
+    n = len(syms)
+
+    dist: List[dict] = []
+    continuations: List[tuple] = []
+
+    for pos in range(lookahead):
+        counter: dict = {"R": 0, "G": 0, "Doji": 0}
+        for end_idx in ends:
+            nxt = end_idx + 1 + pos
+            if nxt < n:
+                s = syms[nxt]
+                counter[s] = counter.get(s, 0) + 1
+        total = sum(counter.values())
+        entry = {"position": pos + 1}
+        for k in ("R", "G", "Doji"):
+            entry[k] = counter.get(k, 0)
+            entry[f"{k}_pct"] = round(counter.get(k, 0) / max(1, total), 4)
+        dist.append(entry)
+
+    # Build most-likely continuation string
+    likely: List[str] = []
+    for d in dist:
+        best = max(("R", "G", "Doji"), key=lambda k: d.get(k, 0))
+        if d.get(best, 0) > 0:
+            likely.append(best)
+    most_likely = _run_length_encode(tuple(likely)) if likely else ""
+
+    return {
+        "total_occurrences": len(ends),
+        "lookahead": lookahead,
+        "distribution": dist,
+        "most_likely_next": most_likely,
+    }
+
+
+# ============================================================================
+# SEQUENCE OUTCOME STATISTICS  —  price movement after matches
+# ============================================================================
+
+def sequence_outcome_stats(
+    df: pd.DataFrame,
+    seq_str: str,
+    hold_candles: int = 5,
+) -> dict:
+    """Compute price statistics for *hold_candles* after each occurrence of seq_str.
+
+    Returns::
+
+        {
+            "sequence": "3R -> 2G",
+            "occurrences": 6,
+            "avg_return_pct": 0.45,
+            "median_return_pct": 0.32,
+            "win_rate": 0.667,
+            "max_gain_pct": 2.1,
+            "max_loss_pct": -1.3,
+            "avg_high_pct": 1.2,
+            "avg_low_pct": -0.8,
+        }
+    """
+    ends = find_sequence_occurrences(df, seq_str)
+    n = len(df)
+
+    returns: List[float] = []
+    highs: List[float] = []
+    lows: List[float] = []
+
+    for end_idx in ends:
+        entry_idx = end_idx + 1
+        if entry_idx >= n:
+            continue
+        entry_close = float(df.iloc[entry_idx]["close"])
+        exit_idx = min(entry_idx + hold_candles, n - 1)
+        if exit_idx <= entry_idx:
+            continue
+
+        # Hold period metrics
+        window = df.iloc[entry_idx : exit_idx + 1]
+        exit_close = float(window.iloc[-1]["close"])
+        ret_pct = (exit_close - entry_close) / entry_close * 100
+
+        max_high = float(window["high"].max())
+        min_low = float(window["low"].min())
+        high_pct = (max_high - entry_close) / entry_close * 100
+        low_pct = (min_low - entry_close) / entry_close * 100
+
+        returns.append(round(ret_pct, 4))
+        highs.append(round(high_pct, 4))
+        lows.append(round(low_pct, 4))
+
+    if not returns:
+        return {
+            "sequence": seq_str,
+            "occurrences": len(ends),
+            "avg_return_pct": 0,
+            "median_return_pct": 0,
+            "win_rate": 0,
+            "max_gain_pct": 0,
+            "max_loss_pct": 0,
+            "avg_high_pct": 0,
+            "avg_low_pct": 0,
+        }
+
+    sorted_rets = sorted(returns)
+    mid = len(sorted_rets) // 2
+    median = sorted_rets[mid] if len(sorted_rets) % 2 else (sorted_rets[mid - 1] + sorted_rets[mid]) / 2
+
+    wins = sum(1 for r in returns if r > 0)
+
+    return {
+        "sequence": seq_str,
+        "occurrences": len(ends),
+        "avg_return_pct": round(sum(returns) / len(returns), 4),
+        "median_return_pct": round(median, 4),
+        "win_rate": round(wins / len(returns), 4),
+        "max_gain_pct": round(max(returns), 4),
+        "max_loss_pct": round(min(returns), 4),
+        "avg_high_pct": round(sum(highs) / len(highs), 4),
+        "avg_low_pct": round(sum(lows) / len(lows), 4),
+    }
+
+
 def sequence_length(seq_str: str) -> int:
     """Return the total number of candles consumed by a sequence string."""
     tokens = parse_sequence(seq_str)

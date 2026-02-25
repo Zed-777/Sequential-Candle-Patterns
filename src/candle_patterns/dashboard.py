@@ -19,9 +19,12 @@ from candle_patterns.ingestion import load_csv
 
 from candle_patterns.patterns import (
     find_sequence_occurrences,
+    find_wildcard_sequence,
     parse_sequence,
     sequence_length,
     discover_color_sequences,
+    what_comes_next,
+    sequence_outcome_stats,
 )
 
 from candle_patterns.storage import save_upload
@@ -861,7 +864,7 @@ sidebar = dbc.Card(
                     html.Label("Custom Sequences (one per line)", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "marginTop": "0.25rem"}),
                     dcc.Textarea(
                         id="custom-sequences-input",
-                        placeholder="5R -> 3G\n2R -> Doji -> 1G\n4G -> 2R",
+                        placeholder="5R -> 3G\n2R -> Doji -> 1G\n3R -> * -> 2G",
                         style={
                             "width": "100%", "height": "80px", "borderRadius": "10px",
                             "padding": "0.75rem", "border": "1.5px solid #e5e7eb",
@@ -869,7 +872,7 @@ sidebar = dbc.Card(
                         },
                     ),
                     html.Small(
-                        "Syntax: NR = N red, NG = N green, Doji, Hammer. Arrow separators: ->",
+                        "Syntax: NR = N red, NG = N green, Doji, Hammer. Arrow separators: ->. Wildcard: * (matches 1-3 candles)",
                         style={"color": "#9ca3af", "display": "block", "marginTop": "4px", "fontSize": "0.7rem"},
                     ),
                     
@@ -1039,6 +1042,17 @@ main_content = dbc.Tabs(
             ],
             className="p-4"
         ),
+        dbc.Tab(
+            label="Statistics & Predictions",
+            tab_id="tab-stats",
+            children=[
+                dbc.Container(
+                    [dcc.Loading(html.Div(id="stats-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
+                    fluid=True
+                )
+            ],
+            className="p-4"
+        ),
     ],
     id="tabs",
     active_tab="tab-chart",
@@ -1179,7 +1193,10 @@ def on_load_sample_click(n_clicks):
     prevent_initial_call=True,
 )
 def scan_sequences(n_clicks, presets, custom_text, data):
-    """Run all selected sequences against the loaded candle data."""
+    """Run all selected sequences against the loaded candle data.
+    
+    Supports wildcard sequences containing '*' (e.g. '3R -> * -> 2G').
+    """
     if not data:
         return None, html.Div("No data loaded. Upload a CSV or load sample data first.",
                               style={"color": "#ef4444", "fontWeight": "600"})
@@ -1205,19 +1222,33 @@ def scan_sequences(n_clicks, presets, custom_text, data):
     total_matches = 0
     for seq_str in seqs:
         try:
-            occ_ends = find_sequence_occurrences(df, seq_str)
-            seq_len = sequence_length(seq_str)
-            matches = []
-            for end_idx in occ_ends:
-                start_idx = end_idx - seq_len + 1
-                if start_idx < 0:
-                    start_idx = 0
-                matches.append({
-                    "start_idx": int(start_idx),
-                    "end_idx": int(end_idx),
-                    "start_ts": str(df.iloc[start_idx]["timestamp"]),
-                    "end_ts": str(df.iloc[end_idx]["timestamp"]),
-                })
+            # Use wildcard matcher if '*' is present
+            if "*" in seq_str:
+                wild_hits = find_wildcard_sequence(df, seq_str, wildcard_min=1, wildcard_max=3)
+                matches = []
+                for h in wild_hits:
+                    si, ei = h["start_idx"], h["end_idx"]
+                    matches.append({
+                        "start_idx": si,
+                        "end_idx": ei,
+                        "start_ts": str(df.iloc[si]["timestamp"]),
+                        "end_ts": str(df.iloc[ei]["timestamp"]),
+                    })
+                seq_len = sequence_length(seq_str.replace("*", "1R"))  # approx
+            else:
+                occ_ends = find_sequence_occurrences(df, seq_str)
+                seq_len = sequence_length(seq_str)
+                matches = []
+                for end_idx in occ_ends:
+                    start_idx = end_idx - seq_len + 1
+                    if start_idx < 0:
+                        start_idx = 0
+                    matches.append({
+                        "start_idx": int(start_idx),
+                        "end_idx": int(end_idx),
+                        "start_ts": str(df.iloc[start_idx]["timestamp"]),
+                        "end_ts": str(df.iloc[end_idx]["timestamp"]),
+                    })
             results.append({"seq_str": seq_str, "length": seq_len, "matches": matches})
             total_matches += len(matches)
         except Exception as e:
@@ -1436,6 +1467,19 @@ def auto_discover(data):
 
         rows = []
         for i, d in enumerate(discovered):
+            # Quick-stats for each discovered sequence
+            try:
+                stats = sequence_outcome_stats(df, d["sequence"], hold_candles=5)
+                wr = f"{stats['win_rate']*100:.0f}%"
+                avg_ret = f"{stats['avg_return_pct']:+.2f}%"
+                wr_color = "#10b981" if stats["win_rate"] >= 0.5 else "#ef4444"
+                ret_color = "#10b981" if stats["avg_return_pct"] >= 0 else "#ef4444"
+            except Exception:
+                wr = "—"
+                avg_ret = "—"
+                wr_color = "#9ca3af"
+                ret_color = "#9ca3af"
+
             rows.append(html.Tr([
                 html.Td(str(i + 1), style={"color": "#9ca3af", "width": "40px"}),
                 html.Td(
@@ -1444,6 +1488,8 @@ def auto_discover(data):
                 html.Td(str(d["length"])),
                 html.Td(str(d["count"]), style={"fontWeight": "700"}),
                 html.Td(f"{d['support']:.4f}"),
+                html.Td(wr, style={"fontWeight": "700", "color": wr_color}),
+                html.Td(avg_ret, style={"fontWeight": "700", "color": ret_color}),
             ]))
 
         header = html.Div(
@@ -1457,21 +1503,192 @@ def auto_discover(data):
         )
 
         table = dbc.Table(
-            [html.Thead(html.Tr([html.Th("#"), html.Th("Sequence"), html.Th("Length"), html.Th("Count"), html.Th("Support")])),
+            [html.Thead(html.Tr([html.Th("#"), html.Th("Sequence"), html.Th("Length"), html.Th("Count"), html.Th("Support"), html.Th("Win Rate"), html.Th("Avg Return")])),
              html.Tbody(rows)],
             bordered=True, hover=True, responsive=True, striped=True, size="sm",
             style={"fontSize": "0.9rem"},
         )
 
         tip = html.Small(
-            "Tip: Copy a discovered sequence into the Custom Sequences box and click Scan to see matches on the chart.",
+            "Tip: Copy a discovered sequence into the Custom Sequences box and click Scan to see chart highlights and full statistics.",
             style={"color": "#9ca3af", "display": "block", "marginTop": "0.75rem"},
         )
 
-        return html.Div([header, table, tip])
+        legend = html.Div([
+            html.Small("Win Rate & Avg Return are calculated over a 5-candle hold period following each occurrence.", style={"color": "#6b7280", "display": "block", "marginTop": "0.25rem"}),
+        ])
+
+        return html.Div([header, table, tip, legend])
 
     except Exception as e:
         logger.exception("auto_discover error: %s", e)
+        return html.Div(f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"})
+
+
+# Statistics & Predictions tab -----------------------------------------
+@app.callback(
+    Output("stats-content", "children"),
+    Input("scan-results", "data"),
+    Input("current-data", "data"),
+    prevent_initial_call=False,
+)
+def update_stats_tab(scan_results, data):
+    """Display outcome statistics and what-comes-next predictions for scanned sequences."""
+    if not data:
+        return html.Div(
+            [html.I(className="bi bi-bar-chart-line", style={"fontSize": "2rem", "color": "#c7d2fe"}),
+             html.P("Load data to see sequence statistics.",
+                    style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+            style={"padding": "3rem", "textAlign": "center"},
+        )
+
+    if not scan_results:
+        return html.Div(
+            [html.I(className="bi bi-graph-up-arrow", style={"fontSize": "2rem", "color": "#c7d2fe"}),
+             html.P("Scan sequences first to see statistics and predictions.",
+                    style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+            style={"padding": "3rem", "textAlign": "center"},
+        )
+
+    try:
+        df = pd.DataFrame(data["df"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+
+        sections = []
+
+        for idx, res in enumerate(scan_results):
+            seq_str = res["seq_str"]
+            color = SEQUENCE_COLORS[idx % len(SEQUENCE_COLORS)]
+            matches = res.get("matches", [])
+
+            if res.get("error") or not matches:
+                continue
+
+            # --- Outcome statistics ---
+            try:
+                stats = sequence_outcome_stats(df, seq_str, hold_candles=5)
+            except Exception:
+                stats = None
+
+            # --- What comes next ---
+            try:
+                prediction = what_comes_next(df, seq_str, lookahead=3)
+            except Exception:
+                prediction = None
+
+            # Build stats card
+            stats_items = []
+            if stats and stats["occurrences"] > 0:
+                wr = stats["win_rate"] * 100
+                wr_color = "#10b981" if wr >= 50 else "#ef4444"
+                avg_ret = stats["avg_return_pct"]
+                ret_color = "#10b981" if avg_ret >= 0 else "#ef4444"
+
+                stats_items.append(
+                    dbc.Row([
+                        dbc.Col(html.Div([
+                            html.H6("Win Rate (5-candle hold)", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
+                            html.H4(f"{wr:.1f}%", style={"color": wr_color, "fontWeight": "800", "margin": "0"}),
+                        ], className="stat-card"), width=3),
+                        dbc.Col(html.Div([
+                            html.H6("Avg Return", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
+                            html.H4(f"{avg_ret:+.2f}%", style={"color": ret_color, "fontWeight": "800", "margin": "0"}),
+                        ], className="stat-card"), width=3),
+                        dbc.Col(html.Div([
+                            html.H6("Max Gain", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
+                            html.H4(f"{stats['max_gain_pct']:+.2f}%", style={"color": "#10b981", "fontWeight": "800", "margin": "0"}),
+                        ], className="stat-card"), width=3),
+                        dbc.Col(html.Div([
+                            html.H6("Max Loss", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
+                            html.H4(f"{stats['max_loss_pct']:+.2f}%", style={"color": "#ef4444", "fontWeight": "800", "margin": "0"}),
+                        ], className="stat-card"), width=3),
+                    ], className="g-2 mb-3")
+                )
+
+            # Build prediction table
+            pred_items = []
+            if prediction and prediction["total_occurrences"] > 0:
+                pred_rows = []
+                for d in prediction["distribution"]:
+                    r_pct = d.get("R_pct", 0) * 100
+                    g_pct = d.get("G_pct", 0) * 100
+                    doji_pct = d.get("Doji_pct", 0) * 100
+                    best = max(("R", "G", "Doji"), key=lambda k: d.get(f"{k}_pct", 0))
+                    pred_rows.append(html.Tr([
+                        html.Td(f"+{d['position']}", style={"fontWeight": "700"}),
+                        html.Td(
+                            html.Div(
+                                style={"display": "flex", "gap": "4px", "alignItems": "center"},
+                                children=[
+                                    html.Div(style={"width": f"{r_pct}%", "minWidth": "2px" if r_pct > 0 else "0", "height": "18px", "background": "#ef4444", "borderRadius": "4px"}),
+                                    html.Div(style={"width": f"{g_pct}%", "minWidth": "2px" if g_pct > 0 else "0", "height": "18px", "background": "#10b981", "borderRadius": "4px"}),
+                                    html.Div(style={"width": f"{doji_pct}%", "minWidth": "2px" if doji_pct > 0 else "0", "height": "18px", "background": "#6366f1", "borderRadius": "4px"}),
+                                ]
+                            )
+                        ),
+                        html.Td(f"{r_pct:.0f}%", style={"color": "#ef4444", "fontWeight": "600"}),
+                        html.Td(f"{g_pct:.0f}%", style={"color": "#10b981", "fontWeight": "600"}),
+                        html.Td(f"{doji_pct:.0f}%", style={"color": "#6366f1", "fontWeight": "600"}),
+                        html.Td(html.Strong(best), style={"color": "#1f2937"}),
+                    ]))
+
+                pred_items.append(
+                    html.Div([
+                        html.H6([
+                            html.I(className="bi bi-lightning-fill me-1"),
+                            f"What Comes Next? (predicted from {prediction['total_occurrences']} occurrences)"
+                        ], style={"fontWeight": "700", "color": "#4f46e5", "marginBottom": "0.5rem"}),
+                        html.P([
+                            "Most likely continuation: ",
+                            html.Code(prediction["most_likely_next"] or "—", style={"fontSize": "0.9rem"}),
+                        ], style={"marginBottom": "0.5rem", "color": "#374151"}),
+                        dbc.Table(
+                            [html.Thead(html.Tr([
+                                html.Th("Candle"), html.Th("Distribution"),
+                                html.Th("Red"), html.Th("Green"), html.Th("Doji"), html.Th("Likely"),
+                            ])),
+                             html.Tbody(pred_rows)],
+                            bordered=True, hover=True, responsive=True, striped=True, size="sm",
+                            style={"fontSize": "0.85rem"},
+                        ),
+                    ], style={"marginTop": "0.75rem"})
+                )
+
+            card = dbc.Card([
+                dbc.CardHeader([
+                    html.Span("\u25A0 ", style={"color": color, "fontSize": "1rem"}),
+                    html.Strong(seq_str, style={"fontFamily": "monospace"}),
+                    dbc.Badge(f"{len(matches)} matches", color="success", className="ms-2"),
+                ]),
+                dbc.CardBody(stats_items + pred_items if (stats_items or pred_items) else [
+                    html.P("Not enough data for analysis.", style={"color": "#9ca3af"})
+                ]),
+            ], className="mb-3")
+
+            sections.append(card)
+
+        if not sections:
+            return html.Div(
+                [html.I(className="bi bi-exclamation-circle", style={"fontSize": "1.5rem", "color": "#f59e0b"}),
+                 html.P("No matched sequences to analyze. Try scanning for sequences with at least 1 match.",
+                        style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+                style={"padding": "3rem", "textAlign": "center"},
+            )
+
+        header = html.Div(
+            [html.I(className="bi bi-bar-chart-line me-2"),
+             "Sequence Outcome Statistics & Predictions"],
+            style={
+                "padding": "0.75rem 1rem", "backgroundColor": "#fefce8",
+                "borderRadius": "8px", "fontWeight": "600", "color": "#854d0e",
+                "marginBottom": "0.75rem",
+            },
+        )
+
+        return html.Div([header] + sections)
+
+    except Exception as e:
+        logger.exception("update_stats_tab error: %s", e)
         return html.Div(f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"})
 
 
