@@ -5,15 +5,74 @@ real market data for sequential colour patterns instead of relying solely on
 CSV uploads.
 
 Supports stocks, ETFs, crypto, indices, and forex.
+Includes an in-memory LRU cache (keyed by symbol+period+interval) to avoid
+redundant network round-trips within the same session.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
+import time
+from collections import OrderedDict
 from typing import Optional
 
 import pandas as pd
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# In-memory LRU cache for fetched data
+# ---------------------------------------------------------------------------
+_CACHE_MAX_SIZE = 50  # max cached responses
+_CACHE_TTL = 300  # seconds before a cached entry is stale (5 min)
+
+# OrderedDict preserves insertion order; we move-to-end on access (LRU)
+_cache: OrderedDict = OrderedDict()
+
+
+def _cache_key(symbol: str, period: str, interval: str, start: Optional[str], end: Optional[str]) -> str:
+    raw = f"{symbol}|{period}|{interval}|{start}|{end}"
+    return hashlib.md5(raw.encode()).hexdigest()  # nosec B324 — not security-critical
+
+
+def cache_get(key: str) -> Optional[pd.DataFrame]:
+    """Return cached DataFrame if key exists and is not stale."""
+    if key not in _cache:
+        return None
+    entry = _cache[key]
+    if time.time() - entry["ts"] > _CACHE_TTL:
+        del _cache[key]
+        return None
+    _cache.move_to_end(key)
+    logger.debug("Cache hit for key %s", key)
+    return entry["df"].copy()
+
+
+def cache_put(key: str, df: pd.DataFrame) -> None:
+    """Store a DataFrame in the LRU cache."""
+    if key in _cache:
+        _cache.move_to_end(key)
+        _cache[key] = {"df": df.copy(), "ts": time.time()}
+    else:
+        _cache[key] = {"df": df.copy(), "ts": time.time()}
+        if len(_cache) > _CACHE_MAX_SIZE:
+            _cache.popitem(last=False)  # evict oldest
+
+
+def cache_clear() -> int:
+    """Clear all cached data. Returns number of entries removed."""
+    count = len(_cache)
+    _cache.clear()
+    return count
+
+
+def cache_stats() -> dict:
+    """Return cache statistics."""
+    return {
+        "size": len(_cache),
+        "max_size": _CACHE_MAX_SIZE,
+        "ttl_seconds": _CACHE_TTL,
+    }
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -104,6 +163,13 @@ def fetch_yahoo_data(
     if period not in VALID_PERIODS and start is None:
         raise ValueError(f"Invalid period '{period}'. Must be one of: {VALID_PERIODS}")
 
+    # --- Check cache ---
+    ck = _cache_key(symbol, period, interval, start, end)
+    cached = cache_get(ck)
+    if cached is not None:
+        logger.info("Returning cached data for %s (%s/%s) — %d candles", symbol, period, interval, len(cached))
+        return cached
+
     logger.info("Fetching %s data: symbol=%s period=%s interval=%s", symbol, symbol, period, interval)
 
     try:
@@ -163,6 +229,10 @@ def fetch_yahoo_data(
     df = df.dropna(subset=["open", "high", "low", "close"])
 
     logger.info("Fetched %d candles for %s (%s, %s)", len(df), symbol, period, interval)
+
+    # --- Store in cache ---
+    cache_put(ck, df)
+
     return df
 
 

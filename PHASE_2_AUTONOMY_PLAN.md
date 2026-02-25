@@ -1,9 +1,9 @@
 # Development Autonomy Plan — Sequential Pattern Engine
 
-**Status**: Phase 4 Complete, System Fully Operational  
+**Status**: Phase 5 Complete, System Fully Operational  
 **Date**: February 24, 2026  
 **Objective**: Build a complete sequential colour-based candle pattern scanning system  
-**Current State**: All core + advanced features implemented and tested (127 tests passing)
+**Current State**: All core + advanced features implemented and tested (169 tests passing)
 
 ---
 
@@ -57,6 +57,19 @@
 - [x] 127 tests passing (100% pass rate)
 - [x] 6 dashboard tabs, 17 callbacks
 
+### Phase 5 — Multi-TF, Backtesting, Watchlist & Tokens (Complete)
+
+- [x] Multi-Timeframe Analysis module (multi_timeframe.py)
+- [x] Multi-TF dashboard tab (symbol, timeframe picker, alignment table)
+- [x] Backtesting dashboard tab (equity curve, Sharpe, drawdown, profit factor)
+- [x] Sequence Watchlist module (watchlist.py) with JSON persistence
+- [x] Watchlist dashboard tab (save/load/display entries)
+- [x] Extended named tokens: Engulfing, BullEngulfing, BearEngulfing, MorningStar, EveningStar, ShootingStar, SpinningTop
+- [x] Data feed caching (LRU, 50 entries, 5-min TTL)
+- [x] 42 new Phase 5 tests
+- [x] 169 tests passing (100% pass rate)
+- [x] 9 dashboard tabs, 21 callbacks
+
 ---
 
 ## Current System Capabilities
@@ -72,12 +85,17 @@ Syntax Examples:
   1R -> 1G -> 1R -> 1G Alternating pattern
 ```
 
-### Dashboard (4 Tabs)
+### Dashboard (9 Tabs)
 
 1. **Candlestick Chart** — OHLCV with coloured highlight rectangles for matches
 2. **Sequence Matches** — detailed table per sequence with candle ranges
 3. **Auto-Discovery** — top 25 recurring sequences with win rate + avg return
 4. **Statistics & Predictions** — outcome stats + what-comes-next analysis
+5. **Heatmap** — pattern density across time buckets
+6. **Reverse Finder** — find sequences preceding big moves
+7. **Backtesting** — equity curve, Sharpe, drawdown, profit factor
+8. **Multi-TF** — cross-timeframe scanning + alignment
+9. **Watchlist** — saved sequence libraries
 
 ### Engine Functions (patterns.py)
 
@@ -92,6 +110,7 @@ Syntax Examples:
 | `reverse_pattern_finder()` | Find sequences preceding big price moves |
 | `sequence_confidence()` | Statistical significance (z-score, p-value) |
 | `sequence_heatmap_data()` | Pattern density across time buckets |
+| `match_named_token()` | 9 token types: Doji, Hammer, Engulfing, MorningStar, EveningStar, ShootingStar, SpinningTop |
 | `symbol_sequence()` | Convert candle data to R/G/Doji list |
 | `_run_length_encode()` | Compress symbol tuples to human-readable |
 
@@ -127,9 +146,9 @@ Syntax Examples:
 
 **Tasks**:
 
-- [ ] Allow loading multiple CSVs for different timeframes
-- [ ] Cross-timeframe sequence alignment
-- [ ] Dashboard section showing confluence signals
+- [x] Multi-Timeframe module (fetch, scan, alignment)
+- [x] Cross-timeframe sequence alignment
+- [x] Dashboard tab showing confluence signals
 
 ### Tier 4: E2E Testing (Est. 2-3 hours)
 
@@ -147,8 +166,9 @@ Syntax Examples:
 ## Test Suite Status
 
 ```
-127 tests passing, 4 skipped (2 E2E, 2 network)
+169 tests passing, 4 skipped (2 E2E, 2 network)
 ├── 42 sequential pattern tests (core engine)
+├── 42 Phase 5 feature tests (multi-TF, watchlist, cache, tokens, backtest)
 ├── 31 Phase 4 feature tests (data feeds, reverse finder, confidence, heatmap)
 ├── 10 new pattern detector tests
 ├── 10 backtesting tests
@@ -197,4 +217,4 @@ git push
 ---
 
 **Status**: ✅ System fully operational, all core + advanced features implemented  
-**Next Priority**: Real-time streaming, multi-timeframe analysis, or ML on sequences
+**Next Priority**: Real-time streaming, sequence alerts, or advanced ML on sequences

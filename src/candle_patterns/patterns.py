@@ -72,11 +72,12 @@ def symbol_sequence(df: pd.DataFrame) -> List[str]:
 
 
 def match_named_token(df: pd.DataFrame, idx: int, token: str) -> bool:
-    """Check if token matches candle at idx. Token may be 'Doji','Hammer', etc."""
+    """Check if token matches candle at idx. Token may be 'Doji','Hammer',
+    'Engulfing', 'MorningStar', 'EveningStar', etc."""
 
     # import helpers here to avoid circular imports
 
-    from .detection import is_doji, is_hammer
+    from .detection import is_doji, is_hammer, candle_color
 
     token_low = token.lower()
 
@@ -88,6 +89,64 @@ def match_named_token(df: pd.DataFrame, idx: int, token: str) -> bool:
     if token_low == "hammer":  # nosec B105
 
         return bool(is_hammer(df.iloc[idx : idx + 1]))
+
+    # --- Engulfing patterns (need current + previous candle) ---
+    if token_low == "engulfing" and idx >= 1:
+        prev = df.iloc[idx - 1]
+        curr = df.iloc[idx]
+        bull = (prev["close"] < prev["open"]
+                and curr["close"] > curr["open"]
+                and (curr["close"] - curr["open"]) >= (prev["open"] - prev["close"]))
+        bear = (prev["close"] > prev["open"]
+                and curr["close"] < curr["open"]
+                and (curr["open"] - curr["close"]) >= (prev["close"] - prev["open"]))
+        return bool(bull or bear)
+
+    if token_low == "bullengulfing" and idx >= 1:
+        prev = df.iloc[idx - 1]
+        curr = df.iloc[idx]
+        return bool(prev["close"] < prev["open"]
+                     and curr["close"] > curr["open"]
+                     and (curr["close"] - curr["open"]) >= (prev["open"] - prev["close"]))
+
+    if token_low == "bearengulfing" and idx >= 1:
+        prev = df.iloc[idx - 1]
+        curr = df.iloc[idx]
+        return bool(prev["close"] > prev["open"]
+                     and curr["close"] < curr["open"]
+                     and (curr["open"] - curr["close"]) >= (prev["close"] - prev["open"]))
+
+    # --- Morning Star (need idx-2, idx-1, idx) ---
+    if token_low == "morningstar" and idx >= 2:
+        c0, c1, c2 = df.iloc[idx - 2], df.iloc[idx - 1], df.iloc[idx]
+        return bool(
+            c0["close"] < c0["open"]  # bearish
+            and abs(c1["close"] - c1["open"]) <= 0.25 * (c1["high"] - c1["low"])  # small body
+            and c2["close"] > c2["open"]  # bullish
+        )
+
+    # --- Evening Star ---
+    if token_low == "eveningstar" and idx >= 2:
+        c0, c1, c2 = df.iloc[idx - 2], df.iloc[idx - 1], df.iloc[idx]
+        return bool(
+            c0["close"] > c0["open"]
+            and abs(c1["close"] - c1["open"]) <= 0.25 * (c1["high"] - c1["low"])
+            and c2["close"] < c2["open"]
+        )
+
+    # --- Shooting Star ---
+    if token_low == "shootingstar":
+        row = df.iloc[idx]
+        body = abs(row["close"] - row["open"])
+        upper_wick = row["high"] - max(row["open"], row["close"])
+        return bool(body > 0 and upper_wick >= 2 * body)
+
+    # --- Spinning Top ---
+    if token_low == "spinningtop":
+        row = df.iloc[idx]
+        body = abs(row["close"] - row["open"])
+        rng = row["high"] - row["low"]
+        return bool(rng > 0 and body <= 0.2 * rng)
 
     # fallback to direction tokens handled elsewhere
 

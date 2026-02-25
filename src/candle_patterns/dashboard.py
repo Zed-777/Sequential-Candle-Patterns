@@ -36,7 +36,26 @@ from candle_patterns.data_feeds import (
     POPULAR_SYMBOLS,
     VALID_INTERVALS,
     VALID_PERIODS,
+    cache_clear,
+    cache_stats,
 )
+
+from candle_patterns.multi_timeframe import (
+    multi_timeframe_summary,
+    TIMEFRAME_ORDER,
+)
+
+from candle_patterns.watchlist import (
+    list_watchlist,
+    add_to_watchlist,
+    remove_from_watchlist,
+    update_last_used,
+    clear_watchlist,
+    export_watchlist,
+    import_watchlist,
+)
+
+from candle_patterns.backtesting import BacktestEngine
 
 from candle_patterns.storage import save_upload
 
@@ -1219,6 +1238,138 @@ main_content = dbc.Tabs(
             ],
             className="p-4"
         ),
+        # ==========================================
+        # BACKTESTING TAB
+        # ==========================================
+        dbc.Tab(
+            label="Backtesting",
+            tab_id="tab-backtest",
+            children=[
+                dbc.Container(
+                    [
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label("Hold Period (candles)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Slider(id="bt-hold-slider", min=1, max=20, step=1, value=5,
+                                           marks={i: str(i) for i in [1, 5, 10, 15, 20]}),
+                            ], width=4),
+                            dbc.Col([
+                                html.Label("Initial Capital ($)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="bt-capital", type="number", value=10000, min=100, step=100,
+                                          style={"width": "100%"}),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
+                                dbc.Button(
+                                    [html.I(className="bi bi-calculator"), " Run Backtest"],
+                                    id="bt-run-btn",
+                                    color="success",
+                                    className="w-100",
+                                    style={"fontWeight": "700"},
+                                ),
+                            ], width=3),
+                        ], className="g-3 mb-3", style={"marginTop": "1rem"}),
+                        dcc.Loading(html.Div(id="backtest-content"), type="circle", color="#10b981"),
+                    ],
+                    fluid=True,
+                )
+            ],
+            className="p-4",
+        ),
+        # ==========================================
+        # MULTI-TIMEFRAME TAB
+        # ==========================================
+        dbc.Tab(
+            label="Multi-TF",
+            tab_id="tab-multi-tf",
+            children=[
+                dbc.Container(
+                    [
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label("Symbol", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="mtf-symbol", type="text", placeholder="AAPL",
+                                          style={"width": "100%"}),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("Timeframes", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Dropdown(
+                                    id="mtf-intervals",
+                                    options=[{"label": iv, "value": iv} for iv in ["1h", "4h", "1d", "1wk"]],
+                                    value=["1h", "1d"],
+                                    multi=True,
+                                    placeholder="Select timeframes...",
+                                ),
+                            ], width=4),
+                            dbc.Col([
+                                html.Label("Lookback (recent candles)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="mtf-lookback", type="number", value=5, min=1, max=50, step=1,
+                                          style={"width": "100%"}),
+                            ], width=2),
+                            dbc.Col([
+                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
+                                dbc.Button(
+                                    [html.I(className="bi bi-layers"), " Analyse"],
+                                    id="mtf-run-btn",
+                                    color="primary",
+                                    className="w-100",
+                                    style={"fontWeight": "700"},
+                                ),
+                            ], width=3),
+                        ], className="g-3 mb-3", style={"marginTop": "1rem"}),
+                        dcc.Loading(html.Div(id="mtf-content"), type="circle", color="#6366f1"),
+                    ],
+                    fluid=True,
+                )
+            ],
+            className="p-4",
+        ),
+        # ==========================================
+        # WATCHLIST TAB
+        # ==========================================
+        dbc.Tab(
+            label="Watchlist",
+            tab_id="tab-watchlist",
+            children=[
+                dbc.Container(
+                    [
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label("Label", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="wl-label", type="text", placeholder="My Bull Setup",
+                                          style={"width": "100%"}),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("Sequences (comma-separated)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="wl-sequences", type="text",
+                                          placeholder="3R -> 2G, 5R -> 3G",
+                                          style={"width": "100%"}),
+                            ], width=4),
+                            dbc.Col([
+                                html.Label("Symbol (optional)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="wl-symbol", type="text", placeholder="AAPL",
+                                          style={"width": "100%"}),
+                            ], width=2),
+                            dbc.Col([
+                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
+                                dbc.Button(
+                                    [html.I(className="bi bi-bookmark-plus"), " Save"],
+                                    id="wl-add-btn",
+                                    color="success",
+                                    className="w-100",
+                                    style={"fontWeight": "700"},
+                                ),
+                            ], width=3),
+                        ], className="g-3 mb-3", style={"marginTop": "1rem"}),
+                        html.Div(id="wl-status", style={"marginBottom": "0.75rem"}),
+                        dcc.Loading(html.Div(id="wl-content"), type="circle", color="#f59e0b"),
+                        dcc.Store(id="wl-refresh-trigger", data=0),
+                    ],
+                    fluid=True,
+                )
+            ],
+            className="p-4",
+        ),
     ],
     id="tabs",
     active_tab="tab-chart",
@@ -2366,6 +2517,323 @@ def update_reverse_finder(n_clicks, threshold, direction, lookback, data):
 
 
 # ======================================================================
+# CALLBACK 18: BACKTESTING TAB
+# ======================================================================
+
+@app.callback(
+    Output("backtest-content", "children"),
+    Input("bt-run-btn", "n_clicks"),
+    State("bt-hold-slider", "value"),
+    State("bt-capital", "value"),
+    State("scan-results", "data"),
+    State("current-data", "data"),
+    prevent_initial_call=True,
+)
+def run_backtest(n_clicks, hold_periods, initial_capital, scan_results, data):
+    """Backtest each scanned sequence: equity curve, Sharpe, drawdown."""
+    if not n_clicks or not data or not scan_results:
+        return html.Div("Load data and scan sequences first.", style={"color": "#6b7280", "padding": "1rem"})
+
+    try:
+        df = pd.DataFrame(data)
+        hold_periods = int(hold_periods or 5)
+        initial_capital = float(initial_capital or 10000)
+        engine = BacktestEngine()
+        cards: list = []
+
+        for seq_str, matches_info in scan_results.items():
+            # matches_info is a list of end-indices
+            if isinstance(matches_info, list):
+                indices = [m if isinstance(m, int) else m.get("end_idx", 0) for m in matches_info]
+            else:
+                continue
+            if not indices:
+                continue
+
+            trades = engine.calculate_returns(df, indices, hold_periods)
+            if trades.empty:
+                continue
+
+            returns = trades["return"]
+            win_rate, n_wins, n_losses = engine.calculate_win_rate(trades)
+            sharpe = engine.calculate_sharpe_ratio(returns)
+            max_dd = engine.calculate_max_drawdown(returns)
+            pf = engine.calculate_profit_factor(trades)
+            eq = engine.calculate_equity_curve(trades, initial_capital)
+
+            # Mini equity curve
+            eq_fig = go.Figure()
+            eq_fig.add_trace(go.Scatter(
+                y=eq.values, mode="lines+markers",
+                line=dict(color="#6366f1", width=2),
+                marker=dict(size=4),
+                name="Equity",
+            ))
+            eq_fig.update_layout(
+                height=180, margin=dict(l=30, r=10, t=10, b=20),
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#f9fafb",
+                yaxis=dict(title="$", gridcolor="#e5e7eb"),
+                xaxis=dict(title="Trade #", gridcolor="#e5e7eb"),
+                showlegend=False,
+            )
+
+            wr_color = "#10b981" if win_rate > 0.5 else "#ef4444"
+            sh_color = "#10b981" if sharpe > 0 else "#ef4444"
+
+            card = dbc.Card(
+                dbc.CardBody([
+                    html.H6(html.Code(seq_str), className="mb-2"),
+                    dbc.Row([
+                        dbc.Col(html.Div([
+                            html.Small("Trades", style={"color": "#6b7280"}),
+                            html.H5(str(len(trades)), style={"fontWeight": "700"}),
+                        ]), width=2),
+                        dbc.Col(html.Div([
+                            html.Small("Win Rate", style={"color": "#6b7280"}),
+                            html.H5(f"{win_rate:.1%}", style={"fontWeight": "700", "color": wr_color}),
+                        ]), width=2),
+                        dbc.Col(html.Div([
+                            html.Small("Sharpe", style={"color": "#6b7280"}),
+                            html.H5(f"{sharpe:.2f}", style={"fontWeight": "700", "color": sh_color}),
+                        ]), width=2),
+                        dbc.Col(html.Div([
+                            html.Small("Max DD", style={"color": "#6b7280"}),
+                            html.H5(f"{max_dd:.1%}", style={"fontWeight": "700", "color": "#ef4444"}),
+                        ]), width=2),
+                        dbc.Col(html.Div([
+                            html.Small("Profit Factor", style={"color": "#6b7280"}),
+                            html.H5(f"{pf:.2f}" if pf != float("inf") else "∞",
+                                    style={"fontWeight": "700", "color": "#6366f1"}),
+                        ]), width=2),
+                        dbc.Col(html.Div([
+                            html.Small("Final Equity", style={"color": "#6b7280"}),
+                            html.H5(f"${eq.iloc[-1]:,.0f}", style={"fontWeight": "700"}),
+                        ]), width=2),
+                    ]),
+                    dcc.Graph(figure=eq_fig, config={"displayModeBar": False},
+                              style={"marginTop": "0.5rem"}),
+                ]),
+                className="mb-3",
+                style={"border": "1px solid #e5e7eb", "borderRadius": "12px"},
+            )
+            cards.append(card)
+
+        if not cards:
+            return html.Div("No trades generated from scanned sequences. Try scanning first.",
+                            style={"color": "#6b7280", "padding": "1rem"})
+
+        header = html.Div(
+            [html.I(className="bi bi-calculator me-2"),
+             f"Backtest Results — {hold_periods}-candle hold, ${initial_capital:,.0f} capital"],
+            style={
+                "padding": "0.75rem 1rem", "backgroundColor": "#dcfce7",
+                "borderRadius": "8px", "fontWeight": "600", "color": "#166534",
+                "marginBottom": "1rem",
+            },
+        )
+        return html.Div([header] + cards)
+
+    except Exception as e:
+        logger.exception("backtest error: %s", e)
+        return html.Div(f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"})
+
+
+# ======================================================================
+# CALLBACK 19: MULTI-TIMEFRAME ANALYSIS
+# ======================================================================
+
+@app.callback(
+    Output("mtf-content", "children"),
+    Input("mtf-run-btn", "n_clicks"),
+    State("mtf-symbol", "value"),
+    State("mtf-intervals", "value"),
+    State("mtf-lookback", "value"),
+    State("scan-results", "data"),
+    prevent_initial_call=True,
+)
+def run_multi_timeframe(n_clicks, symbol, intervals, lookback, scan_results):
+    """Cross-timeframe sequence alignment analysis."""
+    if not n_clicks:
+        return html.Div()
+    if not symbol or not symbol.strip():
+        return html.Div("Enter a symbol (e.g. AAPL, BTC-USD).", style={"color": "#ef4444", "padding": "1rem"})
+    if not intervals:
+        return html.Div("Select at least one timeframe.", style={"color": "#ef4444", "padding": "1rem"})
+
+    # Gather sequences from scan results
+    sequences = list(scan_results.keys()) if scan_results else []
+    if not sequences:
+        return html.Div("Scan sequences first so we know what to look for across timeframes.",
+                        style={"color": "#6b7280", "padding": "1rem"})
+
+    try:
+        lookback = int(lookback or 5)
+        # Map common aliases for yfinance
+        interval_map = {"4h": "60m"}  # yfinance 4h workaround
+        yf_intervals = [interval_map.get(iv, iv) for iv in intervals]
+
+        result = multi_timeframe_summary(
+            symbol=symbol.strip(),
+            intervals=yf_intervals,
+            sequences=sequences,
+            lookback=lookback,
+        )
+
+        # Per-timeframe stats table
+        tf_rows = []
+        for iv, stats in result["per_timeframe_stats"].items():
+            tf_rows.append(html.Tr([
+                html.Td(html.Code(iv), style={"fontWeight": "700"}),
+                html.Td(str(stats["candle_count"])),
+                html.Td(str(stats["total_matches"]), style={"fontWeight": "700"}),
+                html.Td(str(stats["sequences_found"])),
+            ]))
+
+        tf_table = dbc.Table(
+            [html.Thead(html.Tr([
+                html.Th("Timeframe"), html.Th("Candles"), html.Th("Total Matches"), html.Th("Sequences Found"),
+            ])),
+             html.Tbody(tf_rows)],
+            bordered=True, hover=True, responsive=True, striped=True, size="sm",
+        )
+
+        # Alignment table
+        align_rows = []
+        for a in result["alignment"]:
+            count = a["alignment_count"]
+            total = a["total_timeframes"]
+            pct = (count / total * 100) if total else 0
+            color = "#10b981" if pct >= 50 else ("#f59e0b" if pct >= 25 else "#ef4444")
+            align_rows.append(html.Tr([
+                html.Td(html.Code(a["sequence"], style={"fontSize": "0.85rem"})),
+                html.Td(", ".join(a["aligned_timeframes"]) if a["aligned_timeframes"] else "—",
+                         style={"fontSize": "0.85rem"}),
+                html.Td(f"{count}/{total}", style={"fontWeight": "700"}),
+                html.Td(f"{pct:.0f}%", style={"fontWeight": "700", "color": color}),
+            ]))
+
+        align_table = dbc.Table(
+            [html.Thead(html.Tr([
+                html.Th("Sequence"), html.Th("Aligned TFs"), html.Th("Count"), html.Th("Alignment %"),
+            ])),
+             html.Tbody(align_rows)],
+            bordered=True, hover=True, responsive=True, striped=True, size="sm",
+        )
+
+        header = html.Div(
+            [html.I(className="bi bi-layers me-2"),
+             f"Multi-Timeframe Analysis: {symbol.upper()} — {', '.join(intervals)}"],
+            style={
+                "padding": "0.75rem 1rem", "backgroundColor": "#dbeafe",
+                "borderRadius": "8px", "fontWeight": "600", "color": "#1e40af",
+                "marginBottom": "1rem",
+            },
+        )
+
+        return html.Div([
+            header,
+            html.H6("Per-Timeframe Summary", className="mt-3 mb-2"),
+            tf_table,
+            html.H6("Sequence Alignment (recent matches)", className="mt-4 mb-2"),
+            html.Small(
+                f"A sequence is 'aligned' if it matched within the last {lookback} candles of a timeframe.",
+                style={"color": "#6b7280", "display": "block", "marginBottom": "0.5rem"},
+            ),
+            align_table,
+        ])
+
+    except Exception as e:
+        logger.exception("mtf error: %s", e)
+        return html.Div(f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"})
+
+
+# ======================================================================
+# CALLBACK 20 & 21: WATCHLIST — Save / Display
+# ======================================================================
+
+@app.callback(
+    Output("wl-status", "children"),
+    Output("wl-refresh-trigger", "data"),
+    Input("wl-add-btn", "n_clicks"),
+    State("wl-label", "value"),
+    State("wl-sequences", "value"),
+    State("wl-symbol", "value"),
+    State("wl-refresh-trigger", "data"),
+    prevent_initial_call=True,
+)
+def save_watchlist_entry(n_clicks, label, sequences_str, symbol, trigger):
+    """Save a new entry to the watchlist."""
+    if not n_clicks:
+        return "", trigger
+    if not label or not label.strip():
+        return html.Div("Label is required.", style={"color": "#ef4444"}), trigger
+    if not sequences_str or not sequences_str.strip():
+        return html.Div("Enter at least one sequence.", style={"color": "#ef4444"}), trigger
+
+    seqs = [s.strip() for s in sequences_str.split(",") if s.strip()]
+    try:
+        entry = add_to_watchlist(label=label, sequences=seqs, symbol=symbol or "")
+        msg = html.Div(
+            [html.I(className="bi bi-check-circle me-1"), f"Saved '{label}' ({len(seqs)} sequences)"],
+            style={"color": "#10b981", "fontWeight": "600"},
+        )
+        return msg, (trigger or 0) + 1
+    except Exception as e:
+        return html.Div(f"Error: {e}", style={"color": "#ef4444"}), trigger
+
+
+@app.callback(
+    Output("wl-content", "children"),
+    Input("wl-refresh-trigger", "data"),
+    Input("tabs", "active_tab"),
+)
+def display_watchlist(trigger, active_tab):
+    """Render the watchlist table whenever the tab is shown or an entry is added."""
+    if active_tab != "tab-watchlist":
+        return html.Div()
+
+    try:
+        entries = list_watchlist()
+    except Exception:
+        entries = []
+
+    if not entries:
+        return html.Div(
+            [html.I(className="bi bi-bookmark"), " No saved sequences yet. Add one above!"],
+            style={"color": "#6b7280", "padding": "1rem", "textAlign": "center"},
+        )
+
+    rows = []
+    for e in entries:
+        import datetime
+        created = datetime.datetime.fromtimestamp(e.get("created_at", 0)).strftime("%Y-%m-%d %H:%M")
+        seqs_str = ", ".join(e.get("sequences", []))
+        rows.append(html.Tr([
+            html.Td(e.get("label", ""), style={"fontWeight": "700"}),
+            html.Td(html.Code(seqs_str, style={"fontSize": "0.8rem"})),
+            html.Td(e.get("symbol", "") or "—"),
+            html.Td(created, style={"fontSize": "0.8rem", "color": "#6b7280"}),
+        ]))
+
+    table = dbc.Table(
+        [html.Thead(html.Tr([
+            html.Th("Label"), html.Th("Sequences"), html.Th("Symbol"), html.Th("Created"),
+        ])),
+         html.Tbody(rows)],
+        bordered=True, hover=True, responsive=True, striped=True, size="sm",
+        style={"fontSize": "0.9rem"},
+    )
+
+    header = html.Div(
+        [html.I(className="bi bi-bookmarks me-2"), f"{len(entries)} Saved Sequence{'s' if len(entries) != 1 else ''}"],
+        style={
+            "padding": "0.75rem 1rem", "backgroundColor": "#fef3c7",
+            "borderRadius": "8px", "fontWeight": "600", "color": "#92400e",
+            "marginBottom": "0.75rem",
+        },
+    )
+
+    return html.Div([header, table])
 
 if __name__ == "__main__":
     import sys
