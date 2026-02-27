@@ -1,4 +1,4 @@
-## **Example Sequential Patterns the System Must Detect**
+# Example Sequential Patterns the System Must Detect
 
 The system must be capable of identifying **any type of sequential pattern** in candlestick data, including but not limited to the examples below. Patterns may involve candle direction, size, wicks, volatility, or multiÔÇæfactor combinations.
 

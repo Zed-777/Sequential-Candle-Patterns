@@ -100,7 +100,7 @@ app = dash.Dash(
     external_scripts=external_scripts
 )
 
-server = app.server
+server = app.server  # type: ignore[assignment]
 
 
 def load_sample_data(trigger_data=None):
@@ -158,12 +158,12 @@ print("\n" + "="*80)
 print("AUTO-LOADING SAMPLE DATA ON STARTUP...")
 print("="*80 + "\n")
 
-app.default_sample_data = None
+app.default_sample_data = None  # type: ignore[attr-defined]
 
 try:
     data, _ = load_sample_data()
     if data:
-        app.default_sample_data = data
+        app.default_sample_data = data  # type: ignore[attr-defined]
         logger.info("[OK] Sample auto-loaded for layout")
         try:
             print(f"\n[OK] LOADED: {len(data['df'])} candles\n")
@@ -1060,7 +1060,7 @@ sidebar = dbc.Card(
 )
 
 # Stores to keep the current upload and scan results in-browser
-store_current = dcc.Store(id='current-data', data=(app.default_sample_data if app.default_sample_data is not None else None), storage_type='memory')
+store_current = dcc.Store(id='current-data', data=(app.default_sample_data if app.default_sample_data is not None else None), storage_type='memory')  # type: ignore[attr-defined]
 store_scan = dcc.Store(id='scan-results', data=None, storage_type='memory')
 store_hold_period = dcc.Store(id='hold-period-store', data=5, storage_type='memory')
 
@@ -1373,11 +1373,11 @@ main_content = dbc.Tabs(
     ],
     id="tabs",
     active_tab="tab-chart",
-    className="mt-4"
+    className="mt-2"
 )
 
 # Flask API endpoint for loading sample data
-@server.route('/api/load-sample')
+@server.route('/api/load-sample')  # type: ignore[union-attr]
 def api_load_sample():
     """API endpoint to load sample data directly."""
     import json
@@ -1408,33 +1408,69 @@ def api_load_sample():
             "message": f"[OK] Loaded sample: {len(patterns)} patterns detected",
             "patterns": len(patterns),
             "rows": len(df),
-            "upload_id": upload_info.get('upload_id')
+            "upload_id": upload_info
         })
     except Exception as e:
         logger.exception('API load sample failed: %s', e)
         return jsonify({"error": str(e)}), 500
 
 # Main layout
-app.layout = dbc.Container(
+app.layout = html.Div(
     [
         navbar,
         store_current,
         store_scan,
         store_hold_period,
-        dcc.Location(id='url', refresh=False),  # Track page location
-        html.Div(id='page-load-signal', children=1, style={'display': 'none'}),  # Trigger initial render
-        dbc.Row(
+        dcc.Location(id='url', refresh=False),
+        html.Div(id='page-load-signal', children=1, style={'display': 'none'}),
+        # Main body: sidebar LEFT + content RIGHT, each independently scrollable
+        html.Div(
             [
-                dbc.Col(sidebar, width=12, lg=3, className="mb-4 mb-lg-0", style={"paddingRight": "1.5rem"}),
-                dbc.Col(main_content, width=12, lg=9, style={"paddingLeft": "0.5rem"}),
+                # LEFT panel — config sidebar (fixed-width, scrollable)
+                html.Div(
+                    sidebar,
+                    style={
+                        "width": "340px",
+                        "minWidth": "340px",
+                        "overflowY": "auto",
+                        "height": "calc(100vh - 80px)",
+                        "padding": "1rem 1rem 2rem 1rem",
+                        "borderRight": "1px solid #e5e7eb",
+                        "background": "#ffffff",
+                    },
+                ),
+                # RIGHT panel — chart + tabs (fills remaining width, scrollable)
+                html.Div(
+                    main_content,
+                    style={
+                        "flex": "1",
+                        "overflowY": "auto",
+                        "height": "calc(100vh - 80px)",
+                        "padding": "0.75rem 1rem 2rem 1rem",
+                        "margin": "0.5rem 0.5rem 0.5rem 0",
+                        "border": "1px solid #e5e7eb",
+                        "borderRadius": "12px",
+                        "background": "#ffffff",
+                        "boxShadow": "0 1px 3px rgba(0,0,0,0.04)",
+                    },
+                ),
             ],
-            className="mt-4 g-0",
-            style={"gap": "2rem"}
+            style={
+                "display": "flex",
+                "flexDirection": "row",
+                "height": "calc(100vh - 80px)",
+                "overflow": "hidden",
+            },
         ),
-        pattern_modal
+        pattern_modal,
     ],
-    fluid=True,
-    style={"background": "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)", "minHeight": "100vh", "paddingBottom": "3rem", "paddingTop": "0"}
+    style={
+        "background": "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)",
+        "height": "100vh",
+        "overflow": "hidden",
+        "margin": "0",
+        "padding": "0",
+    },
 )
 
 # =========================================================================
@@ -2669,8 +2705,8 @@ def run_multi_timeframe(n_clicks, symbol, intervals, lookback, scan_results):
     try:
         lookback = int(lookback or 5)
         # Map common aliases for yfinance
-        interval_map = {"4h": "60m"}  # yfinance 4h workaround
-        yf_intervals = [interval_map.get(iv, iv) for iv in intervals]
+        interval_map: dict[str, str] = {"4h": "60m"}  # yfinance 4h workaround
+        yf_intervals = [interval_map.get(str(iv), str(iv)) for iv in intervals if iv is not None]
 
         result = multi_timeframe_summary(
             symbol=symbol.strip(),
@@ -2838,7 +2874,7 @@ def display_watchlist(trigger, active_tab):
 if __name__ == "__main__":
     import sys
     try:
-        app.run(host="0.0.0.0", port=8050, debug=False, use_reloader=False, threaded=True)
+        app.run(host="0.0.0.0", port="8050", debug=False, use_reloader=False, threaded=True)
     except KeyboardInterrupt:
         print("\nShutdown requested.")
         sys.exit(0)

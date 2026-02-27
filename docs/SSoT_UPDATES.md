@@ -1,4 +1,4 @@
-Recent automated updates (summary)
+# Recent Automated Updates (Summary)
 
 - Expanded rule-based detectors: Spinning Top, Shooting Star, Hanging Man, Piercing Line, Morning Star, Evening Star (heuristic implementations + unit tests).
 - Added OPP miner variable-length top-K summarization, demo script (`demos/opp_demo.py`), and unit tests.
@@ -7,6 +7,7 @@ Recent automated updates (summary)
 - Tracker updated (`progress_tracker.csv`) to reflect these changes.
 
 Notes:
+
 - The expanded detectors use conservative heuristics for synthetic validation; parameters will be refined with more data and calibration.
 - Branch `feature/mvp-next-clean` contains the clean PR candidate with these changes.
 

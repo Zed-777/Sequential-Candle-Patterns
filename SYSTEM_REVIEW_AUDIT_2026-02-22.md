@@ -24,7 +24,7 @@
 
 ### 2. Test Suite Verification
 
-```
+```text
 [RESULT] ✅ ALL TESTS PASSING
 
 Total: 40 items
@@ -54,7 +54,7 @@ Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 
 ### 3. Dashboard Module Audit
 
-```
+```text
 [RESULT] ✅ DASHBOARD OPERATIONAL
 
 Module Import: SUCCESS
@@ -102,7 +102,7 @@ State("pattern-checklist", "value"),  # Only reads, doesn't trigger
 
 ### 5. Code Structure Verification
 
-```
+```text
 candle-patterns/
 ├── src/candle_patterns/
 │   ├── __init__.py ........................ Package init

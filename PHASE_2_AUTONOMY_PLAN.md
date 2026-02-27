@@ -76,7 +76,7 @@
 
 ### Core Feature: Sequential Pattern Scanner
 
-```
+```text
 Syntax Examples:
   3R -> 2G             Three red followed by two green
   5R -> 3G             Five red then three green
@@ -165,7 +165,7 @@ Syntax Examples:
 
 ## Test Suite Status
 
-```
+```text
 169 tests passing, 4 skipped (2 E2E, 2 network)
 ├── 42 sequential pattern tests (core engine)
 ├── 42 Phase 5 feature tests (multi-TF, watchlist, cache, tokens, backtest)

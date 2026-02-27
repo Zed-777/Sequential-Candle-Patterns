@@ -37,4 +37,4 @@ logger.info("🌐 Visit: http://127.0.0.1:8050")
 logger.info("📢 Watch this console for errors when you click 'Load Sample Data'")
 logger.info("=" * 80 + "\n")
 
-app.run(debug=False, host='127.0.0.1', port=8050, use_reloader=False)
+app.run(debug=False, host='127.0.0.1', port='8050', use_reloader=False)

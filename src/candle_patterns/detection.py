@@ -16,7 +16,7 @@ def candle_color(row: pd.Series) -> str:
     return "green" if row["close"] >= row["open"] else "red"
 
 
-def is_doji(window: pd.DataFrame, tol: float = 0.25) -> bool:
+def is_doji(window: pd.DataFrame, tol: float = 0.05) -> bool:
 
     row = window.iloc[-1]
 

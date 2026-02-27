@@ -208,13 +208,13 @@ dbc.ModalHeader(dbc.ModalTitle("📊 Pattern Detail Analysis"), closeButton=True
 
 **Documented in PROJECT_PLAN.md**:
 
-```
+```text
 ✅ 38/38 unit tests passing (100% pass rate)
 ```
 
 **Actual Test Results**:
 
-```
+```text
 37 PASSED
 1 FAILED  (test_dashboard_smoke.py::test_dashboard_app_importable)
 2 ERRORS  (E2E tests - Playwright fixtures missing)

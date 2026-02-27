@@ -45,7 +45,7 @@ The Candle Patterns system is a **sequential colour-based candle pattern scanner
 
 The system is built around **sequential colour-based pattern scanning** as its primary feature:
 
-```
+```text
 User defines sequences (e.g. "5R -> 2G -> 4R")
         ↓
 Scanner checks each position in 200 candles
@@ -201,7 +201,7 @@ Statistics: win rate, avg return, predictions
 7. **Comprehensive Test Suite Expansion** (Priority 0)
    - Added 42 new tests for sequential pattern functions
    - Covers: parse_sequence, symbol_sequence, find_sequence_occurrences,
-     sequence_length, _run_length_encode, discover_color_sequences,
+     sequence_length, \_run\_length\_encode, discover_color_sequences,
      find_wildcard_sequence, what_comes_next, sequence_outcome_stats
    - Total: 96 tests (96 passing, 2 E2E skipped)
    - Status: ✅ COMPLETE
@@ -282,7 +282,7 @@ Statistics: win rate, avg return, predictions
 
 ## Sequence Pattern Syntax
 
-```
+```text
 NR       → N consecutive red candles       (e.g. 3R = 3 red in a row)
 NG       → N consecutive green candles     (e.g. 2G = 2 green)
 Doji     → single Doji candle

@@ -237,6 +237,7 @@ class TestWatchlist:
             assert e["last_used"] is None
             assert update_last_used(e["id"], path=path) is True
             updated = get_watchlist_entry(e["id"], path=path)
+            assert updated is not None
             assert updated["last_used"] is not None
         finally:
             if os.path.exists(path):
@@ -288,6 +289,7 @@ class TestWatchlist:
             e = add_to_watchlist("Original", ["1R"], path=path)
             assert update_watchlist_entry(e["id"], label="Updated", path=path) is True
             updated = get_watchlist_entry(e["id"], path=path)
+            assert updated is not None
             assert updated["label"] == "Updated"
         finally:
             if os.path.exists(path):
@@ -343,8 +345,10 @@ class TestDataFeedCache:
         df = pd.DataFrame({"x": [10, 20, 30]})
         cache_put("copy-test", df)
         result = cache_get("copy-test")
+        assert result is not None
         result["x"] = [99, 99, 99]  # mutate
         result2 = cache_get("copy-test")
+        assert result2 is not None
         assert list(result2["x"]) == [10, 20, 30]  # original preserved
         cache_clear()
 
