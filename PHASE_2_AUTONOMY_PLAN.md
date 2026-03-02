@@ -192,7 +192,7 @@ Syntax Examples:
 
 ```bash
 # 1. Verify current state
-cd "C:\Users\zmgdi\OneDrive\Desktop\CANDLE PATTERNS"
+cd "C:\Dev\candle-patterns"
 .\.venv\Scripts\python.exe -m pytest tests/ -v --tb=short
 
 # 2. Start dashboard

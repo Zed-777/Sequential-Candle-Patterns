@@ -112,7 +112,7 @@
 ### Launch Dashboard
 
 ```bash
-cd "c:\Users\zmgdi\OneDrive\Desktop\CANDLE PATTERNS"
+cd "C:\Dev\candle-patterns"
 .venv\Scripts\python.exe dashboard_launcher.py
 ```
 

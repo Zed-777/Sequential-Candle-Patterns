@@ -302,7 +302,7 @@ candle-patterns/
 
 ```bash
 # Install
-cd "c:\Users\zmgdi\OneDrive\Desktop\CANDLE PATTERNS"
+cd "C:\Dev\candle-patterns"
 python dashboard_launcher.py
 
 # Dashboard opens at http://localhost:8050
