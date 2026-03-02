@@ -9,6 +9,7 @@ env/
 venv/
 ENV/
 .pytest_cache/
+.ruff_cache/
 .vscode/
 .ipynb_checkpoints/
 .DS_Store
@@ -16,7 +17,11 @@ data/
 models/
 *.db
 .env
+.env.*
+*.pem
+*.key
 coverage.xml
 htmlcov/
 artifacts/
 *.egg-info/
+requirements-frozen.txt

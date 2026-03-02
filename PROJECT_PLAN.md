@@ -618,6 +618,15 @@ candle-patterns/
 
 ---
 
+## Project Location
+
+**Current Path**: `C:\Dev\candle-patterns`  
+**Previous Path**: `C:\Users\zmgdi\OneDrive\Desktop\CANDLE PATTERNS` (moved March 2, 2026)  
+**Reason**: OneDrive unlinked — project relocated to local-only path for safety  
+**Security Audit**: No secrets or credentials found in project files or git history. No credentials to rotate.
+
+---
+
 ## Resources
 
 - **Repository**: <https://github.com/Zed-777/candle-patterns>
