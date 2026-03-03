@@ -1,8 +1,8 @@
 # Sequential Candle Pattern Analysis System — Development Plan & Progress
 
-**Last Updated**: March 3, 2026 (Phase 7 Sprint — Extended Tokens, Email Alerts, Docs & CI Polish)  
-**Project Status**: PHASE 7 COMPLETE — v1.1.0 — 15 Named Tokens + Email Alerts + Full Documentation + Multi-Python CI  
-**Overall Progress**: MVP + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 + Phase 7 Done
+**Last Updated**: March 3, 2026 (Phase 8 Sprint — REST API, Portfolio Scanner, CI Modernisation)  
+**Project Status**: PHASE 8 COMPLETE — v1.2.0 — REST API + Portfolio Scanner + 15 Named Tokens + Email Alerts  
+**Overall Progress**: MVP + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 + Phase 7 + Phase 8 Done
 
 ---
 
@@ -34,6 +34,9 @@ The Candle Patterns system is a **sequential colour-based candle pattern scanner
 - ✅ **Advanced ML Predictor** — GradientBoosting sequence outcome predictor, 17 engineered features, calibrated probabilities, feature importance
 - ✅ **User Preferences** — JSON-backed user profiles with theme, defaults, recents, export/import
 - ✅ **Live Refresh** — configurable auto-refresh interval (dcc.Interval) for real-time scanning
+- ✅ **Email Alert Channel** — SMTP/TLS email alerts alongside webhooks
+- ✅ **REST API** — JSON endpoints for scan, discover, portfolio scan, symbol search
+- ✅ **Portfolio Scanner** — scan patterns across multiple symbols simultaneously, ranking & summary
 - ✅ **Interactive Dashboard** — 12 tabs: Chart, Matches, Discovery, Statistics, Heatmap, Reverse Finder, Backtesting, Multi-TF, Watchlist, Alerts, ML Predict, Settings
 - ✅ **CSV ingestion** with OHLCV validation
 - ✅ **17 rule-based traditional pattern detectors** (secondary feature)
@@ -43,7 +46,7 @@ The Candle Patterns system is a **sequential colour-based candle pattern scanner
 - ✅ **SQLite persistence** with 30-day cleanup
 - ✅ **CLI tools** (run, cleanup, train, predict, backtest)
 - ✅ **Docker containerization** + GitHub Actions CI/CD
-- ✅ **252 tests** (252 passing, 4 skipped) — 100% pass rate
+- ✅ **279 tests** (279 passing, 4 skipped) — 100% pass rate
 
 ---
 
@@ -85,6 +88,39 @@ Statistics: win rate, avg return, predictions
 ---
 
 ## Recent Progress
+
+### Phase 8 Sprint — REST API, Portfolio Scanner & CI Modernisation (Mar 3, 2026) ✅
+
+1. **Portfolio Scanner Module** (Priority 0)
+   - New `portfolio.py` module: `scan_symbol()`, `scan_portfolio()`, `rank_symbols()`, `portfolio_summary()`
+   - Threaded multi-symbol scanning with `ThreadPoolExecutor` (configurable `max_workers`)
+   - Outcome stats per symbol per sequence (win rate, avg return, max gain/loss)
+   - Ranking by total matches, avg win rate, or avg return
+   - Aggregate summary (best symbol, best sequence, total matches)
+   - Status: ✅ COMPLETE
+
+2. **REST API Module** (Priority 0)
+   - New `api.py` module with `register_api_routes()` mounted on Dash's Flask server
+   - `GET /api/health` — liveness check with version
+   - `GET /api/scan` — scan one symbol for sequences
+   - `GET /api/discover` — auto-discover patterns for a symbol
+   - `POST /api/portfolio/scan` — scan up to 50 symbols with ranking & summary
+   - `GET /api/symbols/search` — search for ticker symbols
+   - Auto-registered when dashboard imports
+   - Status: ✅ COMPLETE
+
+3. **CI Workflow Modernisation** (Priority 1)
+   - `e2e.yml` updated to Python 3.12 + `actions/setup-python@v5`
+   - `cleanup.yml` updated to Python 3.12 + `actions/setup-python@v5`
+   - `publish.yml` updated to latest action versions (qemu@v3, login@v3, build-push@v6)
+   - Status: ✅ COMPLETE
+
+4. **27 New Phase 8 Tests** (Priority 0)
+   - Portfolio: scan_symbol (3), scan_portfolio (2), rank_symbols (4), portfolio_summary (2)
+   - API: health (1), scan (3), discover (3), portfolio/scan (3), symbols/search (3)
+   - CI workflows: content verification (3)
+   - Total: **279 tests** (279 passing, 4 skipped)
+   - Status: ✅ COMPLETE
 
 ### Phase 7 Sprint — Extended Tokens, Email Alerts, Docs & CI Polish (Mar 3, 2026) ✅
 
@@ -386,8 +422,10 @@ Statistics: win rate, avg return, predictions
 | Email Alert Channel | DONE | SMTP-based email notifications, runtime config, TLS support |
 | User Preferences | DONE | JSON-backed profiles, defaults, recents, export/import |
 | Live Refresh | DONE | Configurable auto-refresh interval for real-time scanning |
+| REST API | DONE | JSON endpoints: /api/health, /api/scan, /api/discover, /api/portfolio/scan, /api/symbols/search |
+| Portfolio Scanner | DONE | Multi-symbol threaded scanning, ranking, summary |
 | Backtesting | DONE | Sharpe ratio, drawdown, win rate, profit factor |
-| Unit Tests | DONE | **252 tests** (252 passing, 4 skipped) — 100% |
+| Unit Tests | DONE | **279 tests** (279 passing, 4 skipped) — 100% |
 | Docker | DONE | Multi-stage build (Python 3.12), CI automation |
 | CI/CD | DONE | GitHub Actions: Python 3.10/3.12/3.14 matrix, lint, test, security, Docker |
 | SECURITY.md | DONE | GDPR/security documentation, data handling policy |
@@ -434,7 +472,7 @@ Examples:
 ## Test Coverage Report
 
 ```text
-Unit Tests: 252/252 PASSING ✅ (4 skipped: 2 E2E + 2 network)
+Unit Tests: 279/279 PASSING ✅ (4 skipped: 2 E2E + 2 network)
 
 ├── Sequence Pattern Tests ........... 42 tests ✅  (Phase 3)
 │   ├── ParseSequence ................ 6 tests
@@ -482,7 +520,7 @@ Unit Tests: 252/252 PASSING ✅ (4 skipped: 2 E2E + 2 network)
 │   ├── PreferencesRecents ........... 4 tests
 │   ├── PreferencesExportImport ...... 3 tests
 │   └── DashboardPhase6 .............. 3 tests
-├── Phase 7 Feature Tests ............ 27 tests ✅  ← NEW (Phase 7)
+├── Phase 7 Feature Tests ............ 27 tests ✅  (Phase 7)
 │   ├── InvertedHammer ............... 2 tests
 │   ├── Marubozu ..................... 6 tests
 │   ├── ThreeWhiteSoldiers ........... 4 tests
@@ -491,6 +529,17 @@ Unit Tests: 252/252 PASSING ✅ (4 skipped: 2 E2E + 2 network)
 │   ├── ConfigureEmail ............... 2 tests
 │   ├── SendEmail .................... 5 tests
 │   └── AlertRuleEmailTo ............. 3 tests
+├── Phase 8 Feature Tests ............ 27 tests ✅  ← NEW (Phase 8)
+│   ├── ScanSymbol ................... 3 tests
+│   ├── ScanPortfolio ................ 2 tests
+│   ├── RankSymbols .................. 4 tests
+│   ├── PortfolioSummary ............. 2 tests
+│   ├── ApiHealth .................... 1 test
+│   ├── ApiScan ...................... 3 tests
+│   ├── ApiDiscover .................. 3 tests
+│   ├── ApiPortfolioScan ............. 3 tests
+│   ├── ApiSymbolSearch .............. 3 tests
+│   └── WorkflowFiles ............... 3 tests
 ├── Detection Tests .................. 1 test  ✅
 ├── Ingestion Tests .................. 2 tests ✅
 ├── Storage Tests .................... 4 tests ✅
@@ -573,29 +622,42 @@ candle-patterns/
 │   │   ├── remove/update/clear()       CRUD operations
 │   │   └── export/import_watchlist()   JSON export/import
 │   ├── detection.py .................... Traditional pattern detectors (17)
+│   ├── portfolio.py .................... Multi-symbol portfolio scanning
+│   │   ├── scan_symbol()               Fetch & scan one symbol
+│   │   ├── scan_portfolio()            Threaded multi-symbol scanning
+│   │   ├── rank_symbols()              Rank by matches/win_rate/return
+│   │   └── portfolio_summary()         Aggregate stats across symbols
+│   ├── api.py .......................... REST API endpoints (Flask)
+│   │   ├── /api/health                 Liveness check
+│   │   ├── /api/scan                   Scan one symbol
+│   │   ├── /api/discover               Auto-discover patterns
+│   │   ├── /api/portfolio/scan         Multi-symbol portfolio scan
+│   │   └── /api/symbols/search         Ticker symbol search
 │   ├── dashboard.py .................... Dash web app (12 tabs, ~31 callbacks)
 │   ├── opp_miner.py .................... Ordinal pattern mining
 │   ├── storage.py ...................... SQLite persistence
 │   ├── ml_baseline.py .................. ML model (RandomForest)
 │   ├── backtesting.py .................. Performance evaluation (Sharpe, equity curve)
 │   └── reporting.py .................... Report generation
-├── tests/ .............................. 252 unit tests (100% passing)
-├── Dockerfile .......................... Multi-stage build
-├── .github/workflows/ .................. CI/CD (ci.yml, cleanup.yml)
+├── tests/ .............................. 279 unit tests (100% passing)
+├── Dockerfile .......................... Multi-stage build (Python 3.12)
+├── .github/workflows/ .................. CI/CD (ci.yml, e2e.yml, cleanup.yml, publish.yml)
 ├── data/ ............................... Sample datasets + watchlist.json
 └── docs/ ............................... Documentation
 ```
 
 ---
 
-## System Audit (Mar 3, 2026 — Post Phase 7)
+## System Audit (Mar 3, 2026 — Post Phase 8)
 
 ✅ **Core Purpose**: Sequential colour pattern scanning — **FULLY OPERATIONAL**  
 ✅ **Code Repository**: Clean, all changes committed  
-✅ **Test Suite**: **252/252 passing** (100% of executed tests, 4 skipped)  
+✅ **Test Suite**: **279/279 passing** (100% of executed tests, 4 skipped)  
 ✅ **Dashboard**: 12 tabs — Chart, Matches, Discovery, Statistics, Heatmap, Reverse Finder, Backtesting, Multi-TF, Watchlist, Alerts, ML Predict, Settings  
 ✅ **Pattern Engine**: parse, match, wildcard, discover, predict, statistics, reverse, confidence, heatmap, 15 named tokens  
 ✅ **Data Sources**: CSV upload + Yahoo Finance API (cached, stocks, crypto, indices, forex, ETFs)  
+✅ **REST API**: 5 JSON endpoints (/api/health, /api/scan, /api/discover, /api/portfolio/scan, /api/symbols/search)  
+✅ **Portfolio Scanner**: Threaded multi-symbol scanning, ranking, aggregated summary  
 ✅ **Multi-Timeframe**: Cross-interval scanning + alignment detection  
 ✅ **Backtesting**: Equity curve, Sharpe ratio, drawdown, profit factor per sequence  
 ✅ **Watchlist**: Save/load/export/import sequence libraries  
@@ -607,11 +669,11 @@ candle-patterns/
 ✅ **Sample Data**: Auto-loads (200 candles)  
 ✅ **Module Imports**: Clean (~31 registered callbacks)  
 ✅ **CLI**: 5 commands operational (run, cleanup, train, predict, backtest)  
-✅ **CI/CD**: GitHub Actions (Python 3.10/3.12/3.14 matrix) + Docker (3.12-slim)  
+✅ **CI/CD**: GitHub Actions (Python 3.10/3.12/3.14 matrix) + Docker (3.12-slim) + GHCR publish  
 ✅ **Security**: SECURITY.md — GDPR analysis, credential handling, data deletion  
 ✅ **Documentation**: README.md (comprehensive), SECURITY.md, PATTERN_CATALOG.md  
 
-**Audit Status**: PASS — Phase 7 complete, system fully operational, v1.1.0 released
+**Audit Status**: PASS — Phase 8 complete, system fully operational, v1.2.0 released
 
 ---
 
@@ -619,7 +681,7 @@ candle-patterns/
 
 | Metric | Value | Context |
 |---|---|---|
-| Test Suite Time | ~153s | All 252 tests on Windows |
+| Test Suite Time | ~153s | All 279 tests on Windows |
 | Dashboard Callbacks | ~31 | Lean, no duplicate outputs |
 | Dashboard Load | <2s | 200 candles + auto-discovery |
 | Sequence Scan | <500ms | 15 sequences against 200 candles |
@@ -669,6 +731,17 @@ candle-patterns/
 **Rationale**: Mature, interpretable, good baseline
 
 ---
+
+## Phase 8 Tasks — Status
+
+| ID | Task | Priority | Status | Notes |
+|---|---|---|---|---|
+| 90 | Portfolio scanner module | P0 | ✅ DONE | portfolio.py: scan_symbol, scan_portfolio (threaded), rank_symbols, portfolio_summary |
+| 91 | REST API module | P0 | ✅ DONE | api.py: /api/health, /api/scan, /api/discover, /api/portfolio/scan, /api/symbols/search |
+| 92 | API auto-registration | P1 | ✅ DONE | register_api_routes() called in dashboard.py on app startup |
+| 93 | CI workflow modernisation | P1 | ✅ DONE | e2e.yml, cleanup.yml → Python 3.12 + v5; publish.yml → latest actions |
+| 94 | 27 new Phase 8 tests | P0 | ✅ DONE | 279 total tests, 0 failures |
+| 95 | Documentation update | P0 | ✅ DONE | PROJECT_PLAN.md, PROGRESS_SUMMARY.md |
 
 ## Phase 7 Tasks — Status
 
@@ -749,7 +822,16 @@ candle-patterns/
 
 ## Next Steps (Future Phases)
 
-### Completed This Sprint (Phase 7 — Extended Tokens, Email Alerts, Docs & CI)
+### Completed This Sprint (Phase 8 — REST API, Portfolio Scanner & CI)
+
+- [x] Portfolio scanner module (portfolio.py: threaded multi-symbol scanning, ranking, summary)
+- [x] REST API module (api.py: 5 JSON endpoints, mounted on Dash's Flask server)
+- [x] API auto-registration in dashboard (register_api_routes on app startup)
+- [x] CI workflow modernisation (e2e/cleanup → Python 3.12, publish → latest actions)
+- [x] 27 new tests (279 total, 100% pass rate)
+- [x] Updated documentation (PROJECT_PLAN.md, PROGRESS_SUMMARY.md)
+
+### Completed Previously (Phase 7 — Extended Tokens, Email Alerts, Docs & CI)
 
 - [x] 6 new named tokens (InvertedHammer, Marubozu, BullMarubozu, BearMarubozu, ThreeWhiteSoldiers, ThreeBlackCrows)
 - [x] Email alert channel (configure_email, send_email, SMTP/TLS, integrated with check_and_trigger)
@@ -803,12 +885,11 @@ candle-patterns/
 ### Future Roadmap
 
 - [ ] E2E Playwright test suite
-- [ ] Docker publish to GHCR
 - [ ] WebSocket live candle streaming (real-time market data)
 - [ ] Neural network sequence predictor (deep learning upgrade)
 - [ ] Multi-user support with authentication
-- [ ] API REST endpoint for headless integrations
-- [ ] Portfolio-level multi-symbol scanning
+- [ ] Portfolio dashboard tab (multi-symbol scanning UI)
+- [ ] Rate limiting / API key authentication for REST endpoints
 
 ---
 
@@ -839,7 +920,15 @@ candle-patterns/
   - 6 dashboard tabs, 17 callbacks
   - **127 tests** (100% pass rate)
 
-- **v1.1.0** — Phase 7 (Mar 3, 2026) ✅ CURRENT
+- **v1.2.0** — Phase 8 (Mar 3, 2026) ✅ CURRENT
+  - **REST API** — 5 JSON endpoints: health, scan, discover, portfolio/scan, symbols/search
+  - **Portfolio Scanner** — threaded multi-symbol scanning, ranking by matches/win_rate/return, aggregate summary
+  - **API auto-registration** — routes mounted on Dash's Flask server at startup
+  - **CI modernisation** — all workflows updated to latest actions (setup-python@v5, build-push@v6)
+  - 12 dashboard tabs, ~31 callbacks, 5 API endpoints
+  - **279 tests** (100% pass rate)
+
+- **v1.1.0** — Phase 7 (Mar 3, 2026) ✅
   - **Extended named tokens** — 6 new: InvertedHammer, Marubozu, BullMarubozu, BearMarubozu, ThreeWhiteSoldiers, ThreeBlackCrows (15 total)
   - **Email alert channel** — SMTP/TLS, configurable credentials, integrated with check_and_trigger
   - **README.md rewrite** — comprehensive features, quickstart, syntax reference, project structure

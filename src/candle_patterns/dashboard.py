@@ -132,6 +132,13 @@ app = dash.Dash(
 
 server = app.server  # type: ignore[assignment]
 
+# Register REST API endpoints on the Flask server
+try:
+    from candle_patterns.api import register_api_routes
+    register_api_routes(server)
+except Exception as _api_err:
+    logger.warning("Could not register API routes: %s", _api_err)
+
 
 def load_sample_data(trigger_data=None):
     """Load the built-in sample dataset and return the payload + status message."""

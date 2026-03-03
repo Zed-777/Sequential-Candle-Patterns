@@ -1,16 +1,56 @@
 # Candle Patterns - Development Progress Summary
 
 **Last Updated**: March 3, 2026  
-**System Status**: v1.1.0 — Phase 7 Complete — All Features Operational  
-**Test Coverage**: 252/252 unit tests passing (100%); 4 skipped (2 E2E + 2 network)
+**System Status**: v1.2.0 — Phase 8 Complete — All Features Operational  
+**Test Coverage**: 279/279 unit tests passing (100%); 4 skipped (2 E2E + 2 network)
 
 ---
 
 ## Executive Summary
 
-Candle Patterns is a **complete, tested, and production-ready** sequential colour-based candle pattern analysis system. The system includes CSV ingestion, Yahoo Finance integration, sequential pattern scanning with wildcards and 15 named tokens, auto-discovery, what-comes-next prediction, outcome statistics, confidence scoring, reverse pattern finder, sequence heatmap, backtesting, multi-timeframe analysis, sequence watchlist, sequence alerts with webhooks and email, advanced ML prediction (GradientBoosting), user preferences, and performance optimization for large datasets.
+Candle Patterns is a **complete, tested, and production-ready** sequential colour-based candle pattern analysis system. The system includes CSV ingestion, Yahoo Finance integration, sequential pattern scanning with wildcards and 15 named tokens, auto-discovery, what-comes-next prediction, outcome statistics, confidence scoring, reverse pattern finder, sequence heatmap, backtesting, multi-timeframe analysis, sequence watchlist, sequence alerts with webhooks and email, advanced ML prediction (GradientBoosting), user preferences, performance optimization for large datasets, a REST API for headless integrations, and a portfolio scanner for multi-symbol analysis.
 
-**Phase 7 Achievements**: Extended named tokens to 15 types (+6: InvertedHammer, Marubozu, BullMarubozu, BearMarubozu, ThreeWhiteSoldiers, ThreeBlackCrows), added email alert channel (SMTP/TLS), rewrote README.md comprehensively, created SECURITY.md (GDPR/security), modernised CI to Python 3.10/3.12/3.14 matrix, updated Docker to Python 3.12-slim, added 27 new tests for a total of 252 (100% pass rate), and bumped version to v1.1.0.
+**Phase 8 Achievements**: Added REST API module with 5 JSON endpoints (health, scan, discover, portfolio/scan, symbols/search), portfolio scanner module with threaded multi-symbol scanning, ranking, and aggregated summary, modernised all CI workflows to latest action versions, added 27 new tests for a total of 279 (100% pass rate), and bumped version to v1.2.0.
+
+---
+
+## Phase 8 — REST API, Portfolio Scanner & CI Modernisation (Mar 3, 2026) ✅
+
+### New Modules
+
+| Module | Purpose | Key Functions |
+|---|---|---|
+| `portfolio.py` | Multi-symbol portfolio scanning | `scan_symbol()`, `scan_portfolio()` (ThreadPoolExecutor), `rank_symbols()`, `portfolio_summary()` |
+| `api.py` | REST API for headless integrations | `register_api_routes()` → 5 endpoints on Dash's Flask server |
+
+### REST API Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/health` | GET | Liveness check with version |
+| `/api/scan` | GET | Scan one symbol for sequences (params: symbol, sequences, period, interval, hold) |
+| `/api/discover` | GET | Auto-discover patterns for a symbol (params: symbol, min_len, max_len, top_n) |
+| `/api/portfolio/scan` | POST | Scan up to 50 symbols with ranking & summary (JSON body) |
+| `/api/symbols/search` | GET | Search for ticker symbols (params: q) |
+
+### Portfolio Scanner
+
+- Threaded multi-symbol scanning with configurable `max_workers` (default 4)
+- Outcome stats per symbol per sequence (win rate, avg return, max gain/loss)
+- Ranking by `total_matches`, `avg_win_rate`, or `avg_return`
+- Aggregate summary (best symbol, best sequence, total matches across portfolio)
+
+### CI Modernisation
+
+- `e2e.yml` → Python 3.12, `actions/setup-python@v5`
+- `cleanup.yml` → Python 3.12, `actions/setup-python@v5`
+- `publish.yml` → `docker/setup-qemu-action@v3`, `docker/login-action@v3`, `docker/build-push-action@v6`
+
+### Test Suite
+
+- **27 new tests** added in `test_phase8_features.py`
+- **279 total tests** (279 passing, 4 skipped)
+- Zero regressions from existing 252 tests
 
 ---
 

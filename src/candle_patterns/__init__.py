@@ -13,5 +13,7 @@ __all__ = [
     "ml_sequence",
     "preferences",
     "performance",
+    "portfolio",
+    "api",
 ]
-__version__ = "1.1.0"
+__version__ = "1.2.0"
