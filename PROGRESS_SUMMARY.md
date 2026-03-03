@@ -1,16 +1,51 @@
 # Candle Patterns - Development Progress Summary
 
 **Last Updated**: March 3, 2026  
-**System Status**: v1.0.0 — Phase 6 Complete — All Features Operational  
-**Test Coverage**: 225/225 unit tests passing (100%); 4 skipped (2 E2E + 2 network)
+**System Status**: v1.1.0 — Phase 7 Complete — All Features Operational  
+**Test Coverage**: 252/252 unit tests passing (100%); 4 skipped (2 E2E + 2 network)
 
 ---
 
 ## Executive Summary
 
-Candle Patterns is a **complete, tested, and production-ready** sequential colour-based candle pattern analysis system. The system includes CSV ingestion, Yahoo Finance integration, sequential pattern scanning with wildcards and named tokens, auto-discovery, what-comes-next prediction, outcome statistics, confidence scoring, reverse pattern finder, sequence heatmap, backtesting, multi-timeframe analysis, sequence watchlist, sequence alerts with webhooks, advanced ML prediction (GradientBoosting), user preferences, and performance optimization for large datasets.
+Candle Patterns is a **complete, tested, and production-ready** sequential colour-based candle pattern analysis system. The system includes CSV ingestion, Yahoo Finance integration, sequential pattern scanning with wildcards and 15 named tokens, auto-discovery, what-comes-next prediction, outcome statistics, confidence scoring, reverse pattern finder, sequence heatmap, backtesting, multi-timeframe analysis, sequence watchlist, sequence alerts with webhooks and email, advanced ML prediction (GradientBoosting), user preferences, and performance optimization for large datasets.
 
-**Phase 6 Achievements**: Added 4 new modules (performance.py, alerts.py, ml_sequence.py, preferences.py), expanded dashboard from 9 to 12 tabs with live refresh capability, added 56 new tests for a total of 225 (100% pass rate), and bumped version to v1.0.0.
+**Phase 7 Achievements**: Extended named tokens to 15 types (+6: InvertedHammer, Marubozu, BullMarubozu, BearMarubozu, ThreeWhiteSoldiers, ThreeBlackCrows), added email alert channel (SMTP/TLS), rewrote README.md comprehensively, created SECURITY.md (GDPR/security), modernised CI to Python 3.10/3.12/3.14 matrix, updated Docker to Python 3.12-slim, added 27 new tests for a total of 252 (100% pass rate), and bumped version to v1.1.0.
+
+---
+
+## Phase 7 — Extended Tokens, Email Alerts, Docs & CI Polish (Mar 3, 2026) ✅
+
+### New Named Tokens (15 total, +6 new)
+
+| Token | Description |
+|---|---|
+| `InvertedHammer` | Long upper wick, small body, tiny lower wick |
+| `Marubozu` | Full-body candle (body ≥ 90% of range) |
+| `BullMarubozu` | Bullish Marubozu (green full-body) |
+| `BearMarubozu` | Bearish Marubozu (red full-body) |
+| `ThreeWhiteSoldiers` | 3 consecutive bullish candles with rising closes |
+| `ThreeBlackCrows` | 3 consecutive bearish candles with falling closes |
+
+### Email Alert Channel
+
+- `configure_email()` — set SMTP host/port/user/password/from/TLS (in-memory only)
+- `send_email()` — send via SMTP with optional TLS and authentication
+- Integrated with `check_and_trigger()` — fires email alongside webhooks when `email_to` is set on a rule
+- `email_to` column added to `alert_rules` SQLite schema
+
+### Documentation & CI
+
+- **README.md** — comprehensive rewrite: features, quickstart, syntax reference, project structure
+- **SECURITY.md** — GDPR analysis, credential handling, data deletion, network communication
+- **CI** — Python 3.10/3.12/3.14 matrix with `fail-fast: false`, separated Docker job
+- **Dockerfile** — updated from Python 3.10 → 3.12-slim
+
+### Test Suite
+
+- **27 new tests** added in `test_phase7_features.py`
+- **252 total tests** (252 passing, 4 skipped)
+- Zero regressions from existing 225 tests
 
 ---
 

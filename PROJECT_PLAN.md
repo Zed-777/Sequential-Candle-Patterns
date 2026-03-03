@@ -1,8 +1,8 @@
 # Sequential Candle Pattern Analysis System — Development Plan & Progress
 
-**Last Updated**: March 3, 2026 (Phase 6 Sprint — Performance, Alerts, ML Predictor, Preferences & Live Refresh)  
-**Project Status**: PHASE 6 COMPLETE — v1.0.0 — Performance + Alerts + ML Predictor + Preferences + Live Scanning  
-**Overall Progress**: MVP + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 Done
+**Last Updated**: March 3, 2026 (Phase 7 Sprint — Extended Tokens, Email Alerts, Docs & CI Polish)  
+**Project Status**: PHASE 7 COMPLETE — v1.1.0 — 15 Named Tokens + Email Alerts + Full Documentation + Multi-Python CI  
+**Overall Progress**: MVP + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 + Phase 7 Done
 
 ---
 
@@ -27,7 +27,7 @@ The Candle Patterns system is a **sequential colour-based candle pattern scanner
 - ✅ **Backtesting Tab** — equity curve, Sharpe ratio, max drawdown, profit factor per sequence
 - ✅ **Multi-Timeframe Analysis** — scan the same symbol across 1H/4H/Daily/Weekly, detect alignment
 - ✅ **Sequence Watchlist** — save/load/export/import sequence libraries with JSON persistence
-- ✅ **Extended Named Tokens** — Engulfing, BullEngulfing, BearEngulfing, MorningStar, EveningStar, ShootingStar, SpinningTop in sequences
+- ✅ **15 Named Tokens** — Doji, Hammer, InvertedHammer, Engulfing, BullEngulfing, BearEngulfing, MorningStar, EveningStar, ShootingStar, SpinningTop, Marubozu, BullMarubozu, BearMarubozu, ThreeWhiteSoldiers, ThreeBlackCrows
 - ✅ **Data Feed Caching** — LRU cache with 5-min TTL for Yahoo Finance fetches
 - ✅ **Performance Optimization** — vectorized numpy sequence scanning (~50-100x faster), chunked processing for 10K+ datasets, OHLCV-aware downsampling, CandleCache memoization
 - ✅ **Sequence Alerts** — SQLite-backed alert rules CRUD, webhook dispatch, alert history, in-dashboard notification panel
@@ -43,7 +43,7 @@ The Candle Patterns system is a **sequential colour-based candle pattern scanner
 - ✅ **SQLite persistence** with 30-day cleanup
 - ✅ **CLI tools** (run, cleanup, train, predict, backtest)
 - ✅ **Docker containerization** + GitHub Actions CI/CD
-- ✅ **225 tests** (225 passing, 4 skipped) — 100% pass rate
+- ✅ **252 tests** (252 passing, 4 skipped) — 100% pass rate
 
 ---
 
@@ -85,6 +85,47 @@ Statistics: win rate, avg return, predictions
 ---
 
 ## Recent Progress
+
+### Phase 7 Sprint — Extended Tokens, Email Alerts, Docs & CI Polish (Mar 3, 2026) ✅
+
+1. **6 New Named Tokens** (Priority 0)
+   - Added to `match_named_token()` in patterns.py: InvertedHammer, Marubozu, BullMarubozu, BearMarubozu, ThreeWhiteSoldiers, ThreeBlackCrows
+   - Total named tokens: 15 (up from 9)
+   - Usable in sequence syntax: `2R -> ThreeWhiteSoldiers`, `3R -> Marubozu`
+   - Status: ✅ COMPLETE
+
+2. **Email Alert Channel** (Priority 0)
+   - Added `send_email()` function to alerts.py (SMTP-based via `smtplib`)
+   - Added `configure_email()` for runtime SMTP configuration (host, port, user, password, TLS)
+   - SMTP credentials stored in process memory only — never persisted to disk
+   - Alert rules now support `email_to` field alongside `webhook_url`
+   - `check_and_trigger()` dispatches to both webhook and email when configured
+   - Status: ✅ COMPLETE
+
+3. **Comprehensive README.md** (Priority 0)
+   - Complete rewrite reflecting v1.1.0 with all features, 12 tabs, 15 named tokens
+   - Quickstart guide, Docker instructions, pattern syntax reference, project structure
+   - Status: ✅ COMPLETE
+
+4. **SECURITY.md — GDPR/Security Documentation** (Priority 0)
+   - Data handling policy, persistence inventory, credential management
+   - Network communication audit (outbound/inbound)
+   - GDPR applicability analysis, data deletion instructions
+   - Status: ✅ COMPLETE
+
+5. **CI/CD Modernization** (Priority 0)
+   - CI matrix expanded to Python 3.10 + 3.12 + 3.14 (with `allow-prereleases`)
+   - Updated to `actions/setup-python@v5`
+   - Separated Docker build into its own job (runs after tests pass)
+   - Lint/format/security scans run once on Python 3.12
+   - Dockerfile updated from Python 3.10 to 3.12
+   - Status: ✅ COMPLETE
+
+6. **27 New Phase 7 Tests** (Priority 0)
+   - Named tokens: InvertedHammer (2), Marubozu (6), ThreeWhiteSoldiers (4), ThreeBlackCrows (3), sequence integration (2)
+   - Email alerts: configure_email (2), send_email (5), alert rule email_to (3)
+   - Total: **252 tests** (252 passing, 4 skipped)
+   - Status: ✅ COMPLETE
 
 ### Phase 6 Sprint — Performance, Alerts, ML Predictor, Preferences & Live Refresh (Mar 3, 2026) ✅
 
@@ -331,7 +372,7 @@ Statistics: win rate, avg return, predictions
 | Backtesting Tab | DONE | Equity curve, Sharpe, drawdown, profit factor per sequence |
 | Multi-Timeframe Analysis | DONE | Cross-interval scanning + alignment detection |
 | Sequence Watchlist | DONE | Save/load/export/import sequence libraries |
-| Extended Named Tokens | DONE | 9 types: Doji, Hammer, Engulfing, BullEngulfing, BearEngulfing, MorningStar, EveningStar, ShootingStar, SpinningTop |
+| Extended Named Tokens | DONE | **15 types**: Doji, Hammer, InvertedHammer, Engulfing, BullEngulfing, BearEngulfing, MorningStar, EveningStar, ShootingStar, SpinningTop, Marubozu, BullMarubozu, BearMarubozu, ThreeWhiteSoldiers, ThreeBlackCrows |
 | Data Feed Caching | DONE | LRU cache with 5-min TTL for Yahoo Finance |
 | CSV Ingestion | DONE | OHLCV validation, multiple format support |
 | Traditional Pattern Detection | DONE | **17 patterns** (secondary feature) |
@@ -341,12 +382,15 @@ Statistics: win rate, avg return, predictions
 | ML Baseline | DONE | RandomForest with feature engineering |
 | ML Sequence Predictor | DONE | GradientBoosting, 17 features, calibrated probabilities |
 | Performance Optimization | DONE | Vectorized numpy scanning, chunked processing, downsampling, cache |
-| Sequence Alerts | DONE | SQLite rules CRUD, webhook dispatch, history, dashboard tab |
+| Sequence Alerts | DONE | SQLite rules CRUD, webhook + email dispatch, history, dashboard tab |
+| Email Alert Channel | DONE | SMTP-based email notifications, runtime config, TLS support |
 | User Preferences | DONE | JSON-backed profiles, defaults, recents, export/import |
 | Live Refresh | DONE | Configurable auto-refresh interval for real-time scanning |
 | Backtesting | DONE | Sharpe ratio, drawdown, win rate, profit factor |
-| Unit Tests | DONE | **225 tests** (225 passing, 4 skipped) — 100% |
-| Docker | DONE | Multi-stage build, CI automation |
+| Unit Tests | DONE | **252 tests** (252 passing, 4 skipped) — 100% |
+| Docker | DONE | Multi-stage build (Python 3.12), CI automation |
+| CI/CD | DONE | GitHub Actions: Python 3.10/3.12/3.14 matrix, lint, test, security, Docker |
+| SECURITY.md | DONE | GDPR/security documentation, data handling policy |
 | Release v0.1.0 | DONE | Published and tagged |
 
 ---
@@ -358,6 +402,7 @@ NR       → N consecutive red candles       (e.g. 3R = 3 red in a row)
 NG       → N consecutive green candles     (e.g. 2G = 2 green)
 Doji     → single Doji candle
 Hammer   → single Hammer candle
+InvertedHammer → Inverted Hammer
 Engulfing      → Engulfing (bullish or bearish)
 BullEngulfing  → Bullish Engulfing only
 BearEngulfing  → Bearish Engulfing only
@@ -365,6 +410,11 @@ MorningStar    → Morning Star reversal (3-candle)
 EveningStar    → Evening Star reversal (3-candle)
 ShootingStar   → Shooting Star
 SpinningTop    → Spinning Top
+Marubozu       → Full-body candle (bull or bear, body ≥ 90% of range)
+BullMarubozu   → Bullish full-body candle
+BearMarubozu   → Bearish full-body candle
+ThreeWhiteSoldiers → Three consecutive bullish candles (rising closes)
+ThreeBlackCrows    → Three consecutive bearish candles (falling closes)
 *        → wildcard (matches any 1-3 candles)
 ->       → separator between segments
 
@@ -375,6 +425,7 @@ Examples:
   3R -> * -> 2G             Three red, any 1-3 candles, then two green
   2R -> Engulfing           Two red then an engulfing pattern
   3R -> MorningStar         Three red then a morning star reversal
+  2R -> ThreeWhiteSoldiers  Two red then three white soldiers
   1R -> 1G -> 1R -> 1G     Alternating red-green-red-green
 ```
 
@@ -383,7 +434,7 @@ Examples:
 ## Test Coverage Report
 
 ```text
-Unit Tests: 225/225 PASSING ✅ (4 skipped: 2 E2E + 2 network)
+Unit Tests: 252/252 PASSING ✅ (4 skipped: 2 E2E + 2 network)
 
 ├── Sequence Pattern Tests ........... 42 tests ✅  (Phase 3)
 │   ├── ParseSequence ................ 6 tests
@@ -411,7 +462,7 @@ Unit Tests: 225/225 PASSING ✅ (4 skipped: 2 E2E + 2 network)
 │   ├── NamedTokens .................. 10 tests
 │   ├── BacktestIntegration .......... 6 tests
 │   └── NamedTokenSequenceScanning ... 2 tests
-├── Phase 6 Feature Tests ............ 56 tests ✅  ← NEW (Phase 6)
+├── Phase 6 Feature Tests ............ 56 tests ✅  (Phase 6)
 │   ├── VectorizedSymbolSequence ..... 4 tests
 │   ├── VectorizedFindSequence ....... 3 tests
 │   ├── DownsampleOhlcv .............. 3 tests
@@ -431,6 +482,15 @@ Unit Tests: 225/225 PASSING ✅ (4 skipped: 2 E2E + 2 network)
 │   ├── PreferencesRecents ........... 4 tests
 │   ├── PreferencesExportImport ...... 3 tests
 │   └── DashboardPhase6 .............. 3 tests
+├── Phase 7 Feature Tests ............ 27 tests ✅  ← NEW (Phase 7)
+│   ├── InvertedHammer ............... 2 tests
+│   ├── Marubozu ..................... 6 tests
+│   ├── ThreeWhiteSoldiers ........... 4 tests
+│   ├── ThreeBlackCrows .............. 3 tests
+│   ├── NamedTokenInSequence ......... 2 tests
+│   ├── ConfigureEmail ............... 2 tests
+│   ├── SendEmail .................... 5 tests
+│   └── AlertRuleEmailTo ............. 3 tests
 ├── Detection Tests .................. 1 test  ✅
 ├── Ingestion Tests .................. 2 tests ✅
 ├── Storage Tests .................... 4 tests ✅
@@ -449,7 +509,7 @@ Unit Tests: 225/225 PASSING ✅ (4 skipped: 2 E2E + 2 network)
 
 E2E Tests: 2 skipped (documented reason)
 Network Tests: 2 skipped (enable for integration testing)
-Execution Time: ~142 seconds
+Execution Time: ~153 seconds
 Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 ```
 
@@ -473,7 +533,7 @@ candle-patterns/
 │   │   ├── reverse_pattern_finder()    Find sequences preceding big moves
 │   │   ├── sequence_confidence()       Statistical significance scoring
 │   │   ├── sequence_heatmap_data()     Pattern density across time buckets
-│   │   └── match_named_token()        9 tokens: Doji, Hammer, Engulfing, etc.
+│   │   └── match_named_token()        15 tokens: Doji, Hammer, Engulfing, etc.
 │   ├── data_feeds.py ................... Yahoo Finance + LRU cache
 │   │   ├── fetch_yahoo_data()          Fetch OHLCV (cached)
 │   │   ├── search_symbols()            Symbol search/autocomplete
@@ -491,7 +551,9 @@ candle-patterns/
 │   │   ├── add/list/remove/toggle_rule  CRUD for alert rules
 │   │   ├── record/get/ack/clear_alert   Alert history
 │   │   ├── send_webhook()              POST JSON to URL
-│   │   └── check_and_trigger()         Evaluate rules & fire
+│   │   ├── configure_email()           SMTP settings (in-memory)
+│   │   ├── send_email()                Email via SMTP/TLS
+│   │   └── check_and_trigger()         Evaluate rules & fire (webhook + email)
 │   ├── ml_sequence.py ................. Advanced ML predictor
 │   │   ├── engineer_sequence_features() 17 features
 │   │   ├── SequencePredictor            GradientBoosting + calibration
@@ -517,7 +579,7 @@ candle-patterns/
 │   ├── ml_baseline.py .................. ML model (RandomForest)
 │   ├── backtesting.py .................. Performance evaluation (Sharpe, equity curve)
 │   └── reporting.py .................... Report generation
-├── tests/ .............................. 225 unit tests (100% passing)
+├── tests/ .............................. 252 unit tests (100% passing)
 ├── Dockerfile .......................... Multi-stage build
 ├── .github/workflows/ .................. CI/CD (ci.yml, cleanup.yml)
 ├── data/ ............................... Sample datasets + watchlist.json
@@ -526,27 +588,30 @@ candle-patterns/
 
 ---
 
-## System Audit (Mar 3, 2026 — Post Phase 6)
+## System Audit (Mar 3, 2026 — Post Phase 7)
 
 ✅ **Core Purpose**: Sequential colour pattern scanning — **FULLY OPERATIONAL**  
 ✅ **Code Repository**: Clean, all changes committed  
-✅ **Test Suite**: **225/225 passing** (100% of executed tests, 4 skipped)  
+✅ **Test Suite**: **252/252 passing** (100% of executed tests, 4 skipped)  
 ✅ **Dashboard**: 12 tabs — Chart, Matches, Discovery, Statistics, Heatmap, Reverse Finder, Backtesting, Multi-TF, Watchlist, Alerts, ML Predict, Settings  
-✅ **Pattern Engine**: parse, match, wildcard, discover, predict, statistics, reverse, confidence, heatmap, 9 named tokens  
+✅ **Pattern Engine**: parse, match, wildcard, discover, predict, statistics, reverse, confidence, heatmap, 15 named tokens  
 ✅ **Data Sources**: CSV upload + Yahoo Finance API (cached, stocks, crypto, indices, forex, ETFs)  
 ✅ **Multi-Timeframe**: Cross-interval scanning + alignment detection  
 ✅ **Backtesting**: Equity curve, Sharpe ratio, drawdown, profit factor per sequence  
 ✅ **Watchlist**: Save/load/export/import sequence libraries  
 ✅ **Performance**: Vectorized numpy scanning, chunked processing (10K+), OHLCV downsampling, CandleCache  
-✅ **Alerts**: SQLite-backed rules CRUD, webhook dispatch, alert history, dashboard tab  
+✅ **Alerts**: SQLite-backed rules CRUD, webhook + email dispatch, alert history, dashboard tab  
 ✅ **ML Predictor**: GradientBoosting + calibration, 17 features, feature importance, save/load  
 ✅ **Preferences**: JSON-backed profiles, defaults, recents, export/import  
 ✅ **Live Refresh**: Configurable auto-refresh interval for real-time scanning  
 ✅ **Sample Data**: Auto-loads (200 candles)  
 ✅ **Module Imports**: Clean (~31 registered callbacks)  
 ✅ **CLI**: 5 commands operational (run, cleanup, train, predict, backtest)  
+✅ **CI/CD**: GitHub Actions (Python 3.10/3.12/3.14 matrix) + Docker (3.12-slim)  
+✅ **Security**: SECURITY.md — GDPR analysis, credential handling, data deletion  
+✅ **Documentation**: README.md (comprehensive), SECURITY.md, PATTERN_CATALOG.md  
 
-**Audit Status**: PASS — Phase 6 complete, system fully operational, v1.0.0 released
+**Audit Status**: PASS — Phase 7 complete, system fully operational, v1.1.0 released
 
 ---
 
@@ -554,7 +619,7 @@ candle-patterns/
 
 | Metric | Value | Context |
 |---|---|---|
-| Test Suite Time | ~142s | All 225 tests on Windows |
+| Test Suite Time | ~153s | All 252 tests on Windows |
 | Dashboard Callbacks | ~31 | Lean, no duplicate outputs |
 | Dashboard Load | <2s | 200 candles + auto-discovery |
 | Sequence Scan | <500ms | 15 sequences against 200 candles |
@@ -604,6 +669,19 @@ candle-patterns/
 **Rationale**: Mature, interpretable, good baseline
 
 ---
+
+## Phase 7 Tasks — Status
+
+| ID | Task | Priority | Status | Notes |
+|---|---|---|---|---|
+| 82 | Extended named tokens (6 new) | P0 | ✅ DONE | InvertedHammer, Marubozu, BullMarubozu, BearMarubozu, ThreeWhiteSoldiers, ThreeBlackCrows |
+| 83 | Email alert channel | P0 | ✅ DONE | configure_email(), send_email(), SMTP/TLS, integrated with check_and_trigger |
+| 84 | README.md comprehensive rewrite | P0 | ✅ DONE | Features, quickstart, syntax reference, project structure |
+| 85 | SECURITY.md (GDPR/security) | P0 | ✅ DONE | Data handling, credentials, GDPR analysis, data deletion |
+| 86 | CI modernisation | P1 | ✅ DONE | Python 3.10/3.12/3.14 matrix, separated Docker job |
+| 87 | Dockerfile update | P1 | ✅ DONE | Python 3.10 → 3.12-slim |
+| 88 | 27 new Phase 7 tests | P0 | ✅ DONE | 252 total tests, 0 failures |
+| 89 | Documentation update | P0 | ✅ DONE | PROJECT_PLAN.md, PROGRESS_SUMMARY.md |
 
 ## Phase 6 Tasks — Status
 
@@ -671,7 +749,18 @@ candle-patterns/
 
 ## Next Steps (Future Phases)
 
-### Completed This Sprint (Phase 6 — Performance, Alerts, ML, Preferences)
+### Completed This Sprint (Phase 7 — Extended Tokens, Email Alerts, Docs & CI)
+
+- [x] 6 new named tokens (InvertedHammer, Marubozu, BullMarubozu, BearMarubozu, ThreeWhiteSoldiers, ThreeBlackCrows)
+- [x] Email alert channel (configure_email, send_email, SMTP/TLS, integrated with check_and_trigger)
+- [x] README.md comprehensive rewrite (features, quickstart, syntax reference, project structure)
+- [x] SECURITY.md created (GDPR, credential handling, data deletion)
+- [x] CI modernisation (Python 3.10/3.12/3.14 matrix, separated Docker job)
+- [x] Dockerfile updated (Python 3.10 → 3.12-slim)
+- [x] 27 new tests (252 total, 100% pass rate)
+- [x] Updated documentation (PROJECT_PLAN.md, PROGRESS_SUMMARY.md)
+
+### Completed Previously (Phase 6 — Performance, Alerts, ML, Preferences)
 
 - [x] Performance optimization module (vectorized numpy, chunked processing, downsampling, cache)
 - [x] Sequence alerts system (SQLite rules, webhook dispatch, history, dashboard tab)
@@ -679,7 +768,6 @@ candle-patterns/
 - [x] User preferences (JSON profiles, defaults, recents, export/import, settings tab)
 - [x] Live refresh (dcc.Interval auto-scan, configurable interval)
 - [x] 56 new tests (225 total, 100% pass rate)
-- [x] Updated documentation (PROJECT_PLAN.md, PROGRESS_SUMMARY.md)
 
 ### Completed Previously (Phase 5 — Multi-TF, Backtesting, Watchlist)
 
@@ -715,13 +803,12 @@ candle-patterns/
 ### Future Roadmap
 
 - [ ] E2E Playwright test suite
-- [ ] GDPR/security documentation
 - [ ] Docker publish to GHCR
 - [ ] WebSocket live candle streaming (real-time market data)
-- [ ] Email notification channel for alerts (currently webhook only)
 - [ ] Neural network sequence predictor (deep learning upgrade)
 - [ ] Multi-user support with authentication
-- [ ] Additional named tokens (ThreeWhiteSoldiers, ThreeBlackCrows, etc.)
+- [ ] API REST endpoint for headless integrations
+- [ ] Portfolio-level multi-symbol scanning
 
 ---
 
@@ -752,7 +839,17 @@ candle-patterns/
   - 6 dashboard tabs, 17 callbacks
   - **127 tests** (100% pass rate)
 
-- **v1.0.0** — Phase 6 (Mar 3, 2026) ✅ CURRENT
+- **v1.1.0** — Phase 7 (Mar 3, 2026) ✅ CURRENT
+  - **Extended named tokens** — 6 new: InvertedHammer, Marubozu, BullMarubozu, BearMarubozu, ThreeWhiteSoldiers, ThreeBlackCrows (15 total)
+  - **Email alert channel** — SMTP/TLS, configurable credentials, integrated with check_and_trigger
+  - **README.md rewrite** — comprehensive features, quickstart, syntax reference, project structure
+  - **SECURITY.md** — GDPR analysis, credential handling, data deletion instructions
+  - **CI modernisation** — Python 3.10/3.12/3.14 matrix, separated Docker job, updated actions
+  - **Docker update** — Python 3.12-slim (from 3.10)
+  - 12 dashboard tabs, ~31 callbacks
+  - **252 tests** (100% pass rate)
+
+- **v1.0.0** — Phase 6 (Mar 3, 2026) ✅
   - **Performance optimization** — vectorized numpy scanning (~50-100x faster), chunked processing (10K+), OHLCV downsampling, CandleCache
   - **Sequence alerts** — SQLite-backed rules CRUD, webhook dispatch, alert history, dashboard tab
   - **Advanced ML predictor** — GradientBoosting, 17 engineered features, calibrated probabilities, feature importance

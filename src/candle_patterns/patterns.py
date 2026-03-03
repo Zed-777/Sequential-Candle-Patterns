@@ -148,6 +148,55 @@ def match_named_token(df: pd.DataFrame, idx: int, token: str) -> bool:
         rng = row["high"] - row["low"]
         return bool(rng > 0 and body <= 0.2 * rng)
 
+    # --- Inverted Hammer (small body at top, long lower shadow) ---
+    if token_low == "invertedhammer":
+        row = df.iloc[idx]
+        body = abs(row["close"] - row["open"])
+        upper_wick = row["high"] - max(row["open"], row["close"])
+        lower_wick = min(row["open"], row["close"]) - row["low"]
+        return bool(body > 0 and upper_wick >= 2 * body and lower_wick <= body)
+
+    # --- Marubozu (full body, no/tiny wicks — bullish or bearish) ---
+    if token_low == "marubozu":
+        row = df.iloc[idx]
+        body = abs(row["close"] - row["open"])
+        rng = row["high"] - row["low"]
+        return bool(rng > 0 and body >= 0.90 * rng)
+
+    if token_low == "bullmarubozu":
+        row = df.iloc[idx]
+        body = abs(row["close"] - row["open"])
+        rng = row["high"] - row["low"]
+        return bool(rng > 0 and body >= 0.90 * rng and row["close"] > row["open"])
+
+    if token_low == "bearmarubozu":
+        row = df.iloc[idx]
+        body = abs(row["close"] - row["open"])
+        rng = row["high"] - row["low"]
+        return bool(rng > 0 and body >= 0.90 * rng and row["close"] < row["open"])
+
+    # --- Three White Soldiers (need idx-2, idx-1, idx — three consecutive bullish) ---
+    if token_low == "threewhitesoldiers" and idx >= 2:
+        c0, c1, c2 = df.iloc[idx - 2], df.iloc[idx - 1], df.iloc[idx]
+        return bool(
+            c0["close"] > c0["open"]
+            and c1["close"] > c1["open"]
+            and c2["close"] > c2["open"]
+            and c1["close"] > c0["close"]
+            and c2["close"] > c1["close"]
+        )
+
+    # --- Three Black Crows (need idx-2, idx-1, idx — three consecutive bearish) ---
+    if token_low == "threeblackcrows" and idx >= 2:
+        c0, c1, c2 = df.iloc[idx - 2], df.iloc[idx - 1], df.iloc[idx]
+        return bool(
+            c0["close"] < c0["open"]
+            and c1["close"] < c1["open"]
+            and c2["close"] < c2["open"]
+            and c1["close"] < c0["close"]
+            and c2["close"] < c1["close"]
+        )
+
     # fallback to direction tokens handled elsewhere
 
     return False

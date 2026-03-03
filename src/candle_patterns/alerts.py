@@ -4,21 +4,25 @@ Sequence Alerts Module.
 Monitors for pattern matches and triggers notifications via:
 - In-app alert panel (stored in-memory and in SQLite)
 - Webhook POST to user-configured URLs
+- Email notifications via SMTP
 - Logging-based alerts for server-side monitoring
 
 Each alert rule specifies:
 - One or more sequences to watch
 - Optional symbol/interval context
-- Alert action (in-app, webhook, or both)
+- Alert action (in-app, webhook, email, or any combination)
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import smtplib
 import sqlite3
 import time
 import datetime
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.request import Request, urlopen
@@ -45,6 +49,7 @@ def _init_alerts_db(db_path: Optional[Path] = None) -> None:
             symbol TEXT DEFAULT '',
             interval TEXT DEFAULT '',
             webhook_url TEXT DEFAULT '',
+            email_to TEXT DEFAULT '',
             enabled INTEGER DEFAULT 1,
             created_at REAL NOT NULL,
             updated_at REAL NOT NULL
@@ -78,6 +83,7 @@ def add_alert_rule(
     symbol: str = "",
     interval: str = "",
     webhook_url: str = "",
+    email_to: str = "",
     db_path: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """Create a new alert rule. Returns the created rule dict."""
@@ -88,9 +94,9 @@ def add_alert_rule(
     conn = sqlite3.connect(str(db))
     c = conn.cursor()
     c.execute(
-        "INSERT INTO alert_rules (name, sequences, symbol, interval, webhook_url, enabled, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?, 1, ?, ?)",
-        (name, seqs_json, symbol, interval, webhook_url, now, now),
+        "INSERT INTO alert_rules (name, sequences, symbol, interval, webhook_url, email_to, enabled, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)",
+        (name, seqs_json, symbol, interval, webhook_url, email_to, now, now),
     )
     rule_id = c.lastrowid
     conn.commit()
@@ -102,6 +108,7 @@ def add_alert_rule(
         "symbol": symbol,
         "interval": interval,
         "webhook_url": webhook_url,
+        "email_to": email_to,
         "enabled": True,
         "created_at": now,
     }
@@ -124,6 +131,7 @@ def list_alert_rules(db_path: Optional[Path] = None) -> List[Dict[str, Any]]:
             "symbol": r["symbol"],
             "interval": r["interval"],
             "webhook_url": r["webhook_url"],
+            "email_to": r["email_to"] if "email_to" in r.keys() else "",
             "enabled": bool(r["enabled"]),
             "created_at": r["created_at"],
             "updated_at": r["updated_at"],
@@ -277,6 +285,92 @@ def send_webhook(
 
 
 # ---------------------------------------------------------------------------
+# Email dispatch (SMTP)
+# ---------------------------------------------------------------------------
+
+# Email configuration — loaded from preferences or set programmatically.
+# Keys: smtp_host, smtp_port, smtp_user, smtp_password, smtp_from, smtp_use_tls
+_EMAIL_CONFIG: Dict[str, Any] = {}
+
+
+def configure_email(
+    smtp_host: str = "localhost",
+    smtp_port: int = 587,
+    smtp_user: str = "",
+    smtp_password: str = "",
+    smtp_from: str = "",
+    smtp_use_tls: bool = True,
+) -> None:
+    """Set SMTP configuration for email alerts.
+
+    Call once at startup or from the Settings tab.  Credentials are kept
+    only in process memory — never persisted to disk.
+    """
+    _EMAIL_CONFIG.update({
+        "smtp_host": smtp_host,
+        "smtp_port": smtp_port,
+        "smtp_user": smtp_user,
+        "smtp_password": smtp_password,
+        "smtp_from": smtp_from or smtp_user,
+        "smtp_use_tls": smtp_use_tls,
+    })
+
+
+def send_email(
+    to_addr: str,
+    subject: str,
+    body: str,
+    config: Optional[Dict[str, Any]] = None,
+) -> bool:
+    """Send an email alert. Returns True on success.
+
+    Uses *config* dict if provided, otherwise falls back to module-level
+    ``_EMAIL_CONFIG`` set via :func:`configure_email`.
+    """
+    if not to_addr:
+        return False
+
+    cfg = config or _EMAIL_CONFIG
+    host = cfg.get("smtp_host", "localhost")
+    port = int(cfg.get("smtp_port", 587))
+    user = cfg.get("smtp_user", "")
+    password = cfg.get("smtp_password", "")
+    from_addr = cfg.get("smtp_from", "") or user
+    use_tls = cfg.get("smtp_use_tls", True)
+
+    if not from_addr:
+        logger.warning("Email alert skipped — no smtp_from or smtp_user configured")
+        return False
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = from_addr
+    msg["To"] = to_addr
+    msg.attach(MIMEText(body, "plain"))
+
+    try:
+        if use_tls:
+            server = smtplib.SMTP(host, port, timeout=15)
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+        else:
+            server = smtplib.SMTP(host, port, timeout=15)
+            server.ehlo()
+
+        if user and password:
+            server.login(user, password)
+
+        server.sendmail(from_addr, [to_addr], msg.as_string())
+        server.quit()
+        logger.info("Email alert sent to %s", to_addr)
+        return True
+    except (smtplib.SMTPException, OSError) as exc:
+        logger.warning("Email alert failed for %s: %s", to_addr, exc)
+        return False
+
+
+# ---------------------------------------------------------------------------
 # Check & Trigger — called by the live scanner
 # ---------------------------------------------------------------------------
 
@@ -345,6 +439,21 @@ def check_and_trigger(
                                 datetime.timezone.utc
                             ).isoformat(),
                         })
+
+                    # Fire email if configured
+                    if rule.get("email_to"):
+                        send_email(
+                            to_addr=rule["email_to"],
+                            subject=f"[CandlePatterns Alert] {rule['name']} — {seq_str}",
+                            body=(
+                                f"Alert: {rule['name']}\n"
+                                f"Sequence: {seq_str}\n"
+                                f"Symbol: {symbol or 'N/A'}\n"
+                                f"Matches: {len(matches)}\n"
+                                f"Severity: {severity}\n"
+                                f"Time: {datetime.datetime.now(datetime.timezone.utc).isoformat()}\n"
+                            ),
+                        )
 
                     triggered.append({
                         "alert_id": alert_id,
