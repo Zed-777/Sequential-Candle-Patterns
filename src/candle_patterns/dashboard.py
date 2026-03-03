@@ -59,6 +59,36 @@ from candle_patterns.backtesting import BacktestEngine
 
 from candle_patterns.storage import save_upload
 
+from candle_patterns.alerts import (
+    add_alert_rule,
+    list_alert_rules,
+    remove_alert_rule,
+    get_alert_history,
+    acknowledge_alert,
+    clear_alert_history,
+    check_and_trigger,
+    get_unread_count,
+)
+
+from candle_patterns.ml_sequence import (
+    train_sequence_predictor,
+    SequencePredictor,
+)
+
+from candle_patterns.preferences import (
+    load_preferences,
+    save_preferences,
+    set_preference,
+    add_recent_symbol,
+    add_recent_sequence,
+    reset_preferences,
+)
+
+from candle_patterns.performance import (
+    downsample_ohlcv,
+    dataset_info,
+)
+
 # ============================================================================
 # PRESET SEQUENCE LIBRARY — common colour-based candle sequences
 # ============================================================================
@@ -1064,6 +1094,16 @@ store_current = dcc.Store(id='current-data', data=(app.default_sample_data if ap
 store_scan = dcc.Store(id='scan-results', data=None, storage_type='memory')
 store_hold_period = dcc.Store(id='hold-period-store', data=5, storage_type='memory')
 
+# Live-refresh interval component (disabled by default, 60s when enabled)
+live_interval = dcc.Interval(
+    id='live-interval',
+    interval=60 * 1000,  # milliseconds
+    n_intervals=0,
+    disabled=True,
+)
+store_live_symbol = dcc.Store(id='live-symbol', data='', storage_type='memory')
+store_ml_model = dcc.Store(id='ml-model-store', data=None, storage_type='memory')
+
 # Modal for pattern detail
 pattern_modal = dbc.Modal(
     [
@@ -1370,6 +1410,203 @@ main_content = dbc.Tabs(
             ],
             className="p-4",
         ),
+        # ==========================================
+        # ALERTS TAB  (Phase 6)
+        # ==========================================
+        dbc.Tab(
+            label="Alerts",
+            tab_id="tab-alerts",
+            children=[
+                dbc.Container(
+                    [
+                        html.H5(
+                            [html.I(className="bi bi-bell me-2"), "Sequence Alerts"],
+                            style={"fontWeight": "800", "marginTop": "1rem", "marginBottom": "1rem"},
+                        ),
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label("Rule Name", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="alert-rule-name", type="text", placeholder="My Alert",
+                                          style={"width": "100%"}),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("Sequences (comma-separated)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="alert-sequences", type="text",
+                                          placeholder="3R -> 2G, 5R -> 3G",
+                                          style={"width": "100%"}),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("Symbol (optional)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="alert-symbol", type="text", placeholder="AAPL",
+                                          style={"width": "100%"}),
+                            ], width=2),
+                            dbc.Col([
+                                html.Label("Webhook URL (optional)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="alert-webhook", type="text", placeholder="https://...",
+                                          style={"width": "100%"}),
+                            ], width=2),
+                            dbc.Col([
+                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
+                                dbc.Button(
+                                    [html.I(className="bi bi-plus-circle"), " Add Rule"],
+                                    id="alert-add-btn",
+                                    color="warning",
+                                    className="w-100",
+                                    style={"fontWeight": "700"},
+                                ),
+                            ], width=2),
+                        ], className="g-3 mb-3"),
+                        html.Div(id="alert-add-status", style={"marginBottom": "0.5rem"}),
+                        html.Hr(),
+                        html.H6("Active Rules", style={"fontWeight": "700"}),
+                        dcc.Loading(html.Div(id="alert-rules-content"), type="circle", color="#f59e0b"),
+                        html.Hr(),
+                        html.H6("Alert History", style={"fontWeight": "700"}),
+                        dcc.Loading(html.Div(id="alert-history-content"), type="circle", color="#f59e0b"),
+                        dcc.Store(id="alert-refresh-trigger", data=0),
+                    ],
+                    fluid=True,
+                )
+            ],
+            className="p-4",
+        ),
+        # ==========================================
+        # ML PREDICTIONS TAB  (Phase 6)
+        # ==========================================
+        dbc.Tab(
+            label="ML Predict",
+            tab_id="tab-ml-predict",
+            children=[
+                dbc.Container(
+                    [
+                        html.H5(
+                            [html.I(className="bi bi-robot me-2"), "Sequence Outcome Predictor"],
+                            style={"fontWeight": "800", "marginTop": "1rem", "marginBottom": "0.5rem"},
+                        ),
+                        html.P(
+                            "Train a GradientBoosting model on the loaded data to predict whether "
+                            "the price will rise or fall after current conditions.",
+                            style={"color": "#6b7280", "fontSize": "0.85rem"},
+                        ),
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label("Hold Period (candles)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Slider(id="ml-hold-slider", min=1, max=20, step=1, value=5,
+                                           marks={i: str(i) for i in [1, 5, 10, 15, 20]}),
+                            ], width=5),
+                            dbc.Col([
+                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
+                                dbc.Button(
+                                    [html.I(className="bi bi-lightning-charge"), " Train & Predict"],
+                                    id="ml-train-btn",
+                                    color="primary",
+                                    className="w-100",
+                                    style={"fontWeight": "700"},
+                                ),
+                            ], width=3),
+                        ], className="g-3 mb-3", style={"marginTop": "1rem"}),
+                        dcc.Loading(html.Div(id="ml-predict-content"), type="circle", color="#6366f1"),
+                    ],
+                    fluid=True,
+                )
+            ],
+            className="p-4",
+        ),
+        # ==========================================
+        # SETTINGS / PREFERENCES TAB  (Phase 6)
+        # ==========================================
+        dbc.Tab(
+            label="Settings",
+            tab_id="tab-settings",
+            children=[
+                dbc.Container(
+                    [
+                        html.H5(
+                            [html.I(className="bi bi-gear me-2"), "Preferences"],
+                            style={"fontWeight": "800", "marginTop": "1rem", "marginBottom": "1rem"},
+                        ),
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label("Default Symbol", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="pref-default-symbol", type="text", placeholder="AAPL",
+                                          style={"width": "100%"}),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("Default Period", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Dropdown(
+                                    id="pref-default-period",
+                                    options=[{"label": p, "value": p} for p in VALID_PERIODS],
+                                    value="6mo", clearable=False,
+                                ),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("Default Interval", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Dropdown(
+                                    id="pref-default-interval",
+                                    options=[{"label": i, "value": i} for i in VALID_INTERVALS],
+                                    value="1d", clearable=False,
+                                ),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("Hold Period", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="pref-hold-period", type="number", value=5, min=1, max=20,
+                                          style={"width": "100%"}),
+                            ], width=3),
+                        ], className="g-3 mb-3"),
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label("Live Refresh", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dbc.Checklist(
+                                    id="pref-live-enabled",
+                                    options=[{"label": " Enable auto-refresh", "value": "enabled"}],
+                                    value=[],
+                                    switch=True,
+                                ),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("Refresh Interval (sec)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="pref-live-interval", type="number", value=60, min=10, max=600, step=10,
+                                          style={"width": "100%"}),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("Discovery Max Results", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Input(id="pref-discovery-max", type="number", value=25, min=5, max=100,
+                                          style={"width": "100%"}),
+                            ], width=3),
+                            dbc.Col([
+                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
+                                dbc.Button(
+                                    [html.I(className="bi bi-save"), " Save Preferences"],
+                                    id="pref-save-btn",
+                                    color="success",
+                                    className="w-100",
+                                    style={"fontWeight": "700"},
+                                ),
+                            ], width=3),
+                        ], className="g-3 mb-3"),
+                        html.Div(id="pref-save-status", style={"marginTop": "0.5rem"}),
+                        html.Hr(),
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Button(
+                                    [html.I(className="bi bi-arrow-counterclockwise"), " Reset to Defaults"],
+                                    id="pref-reset-btn",
+                                    color="outline-danger",
+                                    size="sm",
+                                    style={"fontWeight": "700"},
+                                ),
+                            ], width=4),
+                        ]),
+                        html.Div(id="pref-reset-status", style={"marginTop": "0.5rem"}),
+                        html.Hr(),
+                        html.H6("Dataset Info", style={"fontWeight": "700"}),
+                        html.Div(id="dataset-info-content"),
+                    ],
+                    fluid=True,
+                )
+            ],
+            className="p-4",
+        ),
     ],
     id="tabs",
     active_tab="tab-chart",
@@ -1421,6 +1658,9 @@ app.layout = html.Div(
         store_current,
         store_scan,
         store_hold_period,
+        live_interval,
+        store_live_symbol,
+        store_ml_model,
         dcc.Location(id='url', refresh=False),
         html.Div(id='page-load-signal', children=1, style={'display': 'none'}),
         # Main body: sidebar LEFT + content RIGHT, each independently scrollable
@@ -2870,6 +3110,383 @@ def display_watchlist(trigger, active_tab):
     )
 
     return html.Div([header, table])
+
+
+# =========================================================================
+# PHASE 6 CALLBACKS — Alerts, ML Predict, Settings, Live Refresh
+# =========================================================================
+
+# --- ALERTS: Add Rule ---
+@app.callback(
+    Output("alert-add-status", "children"),
+    Output("alert-refresh-trigger", "data"),
+    Input("alert-add-btn", "n_clicks"),
+    State("alert-rule-name", "value"),
+    State("alert-sequences", "value"),
+    State("alert-symbol", "value"),
+    State("alert-webhook", "value"),
+    State("alert-refresh-trigger", "data"),
+    prevent_initial_call=True,
+)
+def on_add_alert_rule(n_clicks, name, sequences_str, symbol, webhook, trigger):
+    if not n_clicks:
+        return "", trigger
+    if not name or not name.strip():
+        return html.Div("Rule name is required.", style={"color": "#ef4444"}), trigger
+    if not sequences_str or not sequences_str.strip():
+        return html.Div("Enter at least one sequence.", style={"color": "#ef4444"}), trigger
+    seqs = [s.strip() for s in sequences_str.split(",") if s.strip()]
+    try:
+        rule = add_alert_rule(name=name.strip(), sequences=seqs,
+                              symbol=symbol or "", webhook_url=webhook or "")
+        msg = html.Div(
+            [html.I(className="bi bi-check-circle me-1"),
+             f"Alert rule '{name}' created ({len(seqs)} sequences)"],
+            style={"color": "#10b981", "fontWeight": "600"},
+        )
+        return msg, (trigger or 0) + 1
+    except Exception as e:
+        return html.Div(f"Error: {e}", style={"color": "#ef4444"}), trigger
+
+
+# --- ALERTS: Display Rules ---
+@app.callback(
+    Output("alert-rules-content", "children"),
+    Input("alert-refresh-trigger", "data"),
+    Input("tabs", "active_tab"),
+)
+def display_alert_rules(trigger, active_tab):
+    if active_tab != "tab-alerts":
+        return html.Div()
+    try:
+        rules = list_alert_rules()
+    except Exception:
+        rules = []
+    if not rules:
+        return html.Div(
+            [html.I(className="bi bi-bell-slash me-1"), " No alert rules yet."],
+            style={"color": "#6b7280", "padding": "1rem", "textAlign": "center"},
+        )
+    rows = []
+    for r in rules:
+        import datetime as _dt
+        created = _dt.datetime.fromtimestamp(r.get("created_at", 0)).strftime("%Y-%m-%d %H:%M")
+        seqs_str = ", ".join(r.get("sequences", []))
+        status_badge = html.Span(
+            "Active" if r["enabled"] else "Disabled",
+            style={
+                "backgroundColor": "#10b981" if r["enabled"] else "#9ca3af",
+                "color": "white", "padding": "2px 8px", "borderRadius": "4px",
+                "fontSize": "0.75rem", "fontWeight": "700",
+            },
+        )
+        rows.append(html.Tr([
+            html.Td(r.get("name", ""), style={"fontWeight": "700"}),
+            html.Td(html.Code(seqs_str, style={"fontSize": "0.8rem"})),
+            html.Td(r.get("symbol", "") or "Any"),
+            html.Td(status_badge),
+            html.Td(created, style={"fontSize": "0.8rem", "color": "#6b7280"}),
+        ]))
+    table = dbc.Table(
+        [html.Thead(html.Tr([
+            html.Th("Name"), html.Th("Sequences"), html.Th("Symbol"),
+            html.Th("Status"), html.Th("Created"),
+        ])),
+         html.Tbody(rows)],
+        bordered=True, hover=True, responsive=True, striped=True, size="sm",
+    )
+    return table
+
+
+# --- ALERTS: Display History ---
+@app.callback(
+    Output("alert-history-content", "children"),
+    Input("alert-refresh-trigger", "data"),
+    Input("tabs", "active_tab"),
+)
+def display_alert_history(trigger, active_tab):
+    if active_tab != "tab-alerts":
+        return html.Div()
+    try:
+        history = get_alert_history(limit=30)
+    except Exception:
+        history = []
+    if not history:
+        return html.Div(
+            [html.I(className="bi bi-inbox me-1"), " No alerts triggered yet."],
+            style={"color": "#6b7280", "padding": "1rem", "textAlign": "center"},
+        )
+    rows = []
+    for a in history:
+        import datetime as _dt
+        ts = _dt.datetime.fromtimestamp(a.get("triggered_at", 0)).strftime("%Y-%m-%d %H:%M:%S")
+        sev = a.get("severity", "info")
+        sev_color = {"warning": "#f59e0b", "info": "#3b82f6"}.get(sev, "#6b7280")
+        rows.append(html.Tr([
+            html.Td(html.Span(sev.upper(), style={"color": sev_color, "fontWeight": "700", "fontSize": "0.75rem"})),
+            html.Td(a.get("rule_name", ""), style={"fontWeight": "600"}),
+            html.Td(html.Code(a.get("sequence", ""), style={"fontSize": "0.8rem"})),
+            html.Td(a.get("symbol", "") or "—"),
+            html.Td(str(a.get("match_count", 0)), style={"fontWeight": "700"}),
+            html.Td(ts, style={"fontSize": "0.8rem", "color": "#6b7280"}),
+        ]))
+    table = dbc.Table(
+        [html.Thead(html.Tr([
+            html.Th("Severity"), html.Th("Rule"), html.Th("Sequence"),
+            html.Th("Symbol"), html.Th("Matches"), html.Th("Time"),
+        ])),
+         html.Tbody(rows)],
+        bordered=True, hover=True, responsive=True, striped=True, size="sm",
+    )
+    return table
+
+
+# --- ML PREDICTIONS: Train & Predict ---
+@app.callback(
+    Output("ml-predict-content", "children"),
+    Input("ml-train-btn", "n_clicks"),
+    State("current-data", "data"),
+    State("ml-hold-slider", "value"),
+    prevent_initial_call=True,
+)
+def on_ml_train_predict(n_clicks, data, hold_candles):
+    if not n_clicks or not data:
+        return html.Div("Load data first.", style={"color": "#6b7280", "padding": "1rem"})
+
+    try:
+        df = pd.DataFrame(data["df"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+        hold = int(hold_candles or 5)
+
+        result = train_sequence_predictor(df, hold_candles=hold)
+        if "error" in result:
+            return html.Div(result["error"], style={"color": "#ef4444", "padding": "1rem"})
+
+        metrics = result["metrics"]
+        predictor = result["model"]
+
+        # Current prediction
+        prediction = predictor.predict_next_outcome(df, hold_candles=hold)
+
+        # Metrics cards
+        metric_cards = dbc.Row([
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H6("Accuracy", style={"color": "#6b7280", "fontSize": "0.75rem", "textTransform": "uppercase"}),
+                    html.H4(f"{metrics['accuracy']:.1%}", style={"fontWeight": "800", "color": "#6366f1"}),
+                ])
+            ], style={"borderRadius": "12px", "border": "1px solid #e5e7eb"}), width=2),
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H6("ROC AUC", style={"color": "#6b7280", "fontSize": "0.75rem", "textTransform": "uppercase"}),
+                    html.H4(f"{metrics['roc_auc']:.3f}", style={"fontWeight": "800", "color": "#3b82f6"}),
+                ])
+            ], style={"borderRadius": "12px", "border": "1px solid #e5e7eb"}), width=2),
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H6("Precision", style={"color": "#6b7280", "fontSize": "0.75rem", "textTransform": "uppercase"}),
+                    html.H4(f"{metrics['precision']:.1%}", style={"fontWeight": "800", "color": "#10b981"}),
+                ])
+            ], style={"borderRadius": "12px", "border": "1px solid #e5e7eb"}), width=2),
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H6("Recall", style={"color": "#6b7280", "fontSize": "0.75rem", "textTransform": "uppercase"}),
+                    html.H4(f"{metrics['recall']:.1%}", style={"fontWeight": "800", "color": "#f59e0b"}),
+                ])
+            ], style={"borderRadius": "12px", "border": "1px solid #e5e7eb"}), width=2),
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H6("F1 Score", style={"color": "#6b7280", "fontSize": "0.75rem", "textTransform": "uppercase"}),
+                    html.H4(f"{metrics['f1']:.3f}", style={"fontWeight": "800", "color": "#ec4899"}),
+                ])
+            ], style={"borderRadius": "12px", "border": "1px solid #e5e7eb"}), width=2),
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H6("Samples", style={"color": "#6b7280", "fontSize": "0.75rem", "textTransform": "uppercase"}),
+                    html.H4(str(result["n_samples"]), style={"fontWeight": "800", "color": "#6b7280"}),
+                ])
+            ], style={"borderRadius": "12px", "border": "1px solid #e5e7eb"}), width=2),
+        ], className="g-3 mb-4")
+
+        # Prediction result
+        direction = prediction.get("direction", "unknown")
+        confidence = prediction.get("confidence", 0)
+        pred_color = "#10b981" if direction == "bullish" else "#ef4444" if direction == "bearish" else "#6b7280"
+        pred_icon = "bi-arrow-up-circle" if direction == "bullish" else "bi-arrow-down-circle"
+
+        pred_card = dbc.Card([
+            dbc.CardBody([
+                html.H5([html.I(className=f"bi {pred_icon} me-2"), "Current Prediction"],
+                         style={"fontWeight": "800"}),
+                html.H3(
+                    f"{direction.upper()} ({confidence:.1%} confidence)",
+                    style={"fontWeight": "800", "color": pred_color, "marginTop": "0.5rem"},
+                ),
+                html.Small(
+                    f"Based on {result['n_features']} features, {hold}-candle hold period • "
+                    f"{'Calibrated' if metrics.get('calibrated') else 'Uncalibrated'} probabilities",
+                    style={"color": "#6b7280"},
+                ),
+            ])
+        ], style={"borderRadius": "12px", "border": f"2px solid {pred_color}", "marginBottom": "1.5rem"})
+
+        # Feature importance
+        fi = result.get("feature_importance", [])
+        fi_section = html.Div()
+        if fi:
+            fi_rows = []
+            for feat in fi[:10]:
+                fi_rows.append(html.Tr([
+                    html.Td(feat["feature"], style={"fontWeight": "600"}),
+                    html.Td(f"{feat['importance']:.4f}"),
+                    html.Td(
+                        html.Div(style={
+                            "width": f"{feat['importance'] * 400}px",
+                            "height": "8px",
+                            "backgroundColor": "#6366f1",
+                            "borderRadius": "4px",
+                        })
+                    ),
+                ]))
+            fi_section = html.Div([
+                html.H6("Feature Importance (Top 10)", style={"fontWeight": "700", "marginTop": "1rem"}),
+                dbc.Table(
+                    [html.Thead(html.Tr([html.Th("Feature"), html.Th("Importance"), html.Th("")])),
+                     html.Tbody(fi_rows)],
+                    bordered=True, hover=True, size="sm",
+                ),
+            ])
+
+        return html.Div([metric_cards, pred_card, fi_section])
+
+    except Exception as e:
+        logger.exception("ML prediction failed: %s", e)
+        return html.Div(f"Error: {e}", style={"color": "#ef4444", "padding": "1rem"})
+
+
+# --- SETTINGS: Save Preferences ---
+@app.callback(
+    Output("pref-save-status", "children"),
+    Input("pref-save-btn", "n_clicks"),
+    State("pref-default-symbol", "value"),
+    State("pref-default-period", "value"),
+    State("pref-default-interval", "value"),
+    State("pref-hold-period", "value"),
+    State("pref-live-enabled", "value"),
+    State("pref-live-interval", "value"),
+    State("pref-discovery-max", "value"),
+    prevent_initial_call=True,
+)
+def on_save_preferences(n_clicks, symbol, period, interval, hold, live_enabled, live_interval_sec, discovery_max):
+    if not n_clicks:
+        return ""
+    try:
+        prefs = load_preferences()
+        if symbol:
+            prefs["default_symbol"] = symbol
+        if period:
+            prefs["default_period"] = period
+        if interval:
+            prefs["default_interval"] = interval
+        if hold:
+            prefs["hold_period"] = int(hold)
+        prefs["live_refresh_enabled"] = "enabled" in (live_enabled or [])
+        if live_interval_sec:
+            prefs["live_refresh_interval"] = int(live_interval_sec)
+        if discovery_max:
+            prefs["discovery_max_results"] = int(discovery_max)
+        save_preferences(prefs)
+        return html.Div(
+            [html.I(className="bi bi-check-circle me-1"), "Preferences saved!"],
+            style={"color": "#10b981", "fontWeight": "600"},
+        )
+    except Exception as e:
+        return html.Div(f"Error: {e}", style={"color": "#ef4444"})
+
+
+# --- SETTINGS: Reset Preferences ---
+@app.callback(
+    Output("pref-reset-status", "children"),
+    Input("pref-reset-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def on_reset_preferences(n_clicks):
+    if not n_clicks:
+        return ""
+    reset_preferences()
+    return html.Div(
+        [html.I(className="bi bi-check-circle me-1"), "Preferences reset to defaults."],
+        style={"color": "#f59e0b", "fontWeight": "600"},
+    )
+
+
+# --- SETTINGS: Dataset Info ---
+@app.callback(
+    Output("dataset-info-content", "children"),
+    Input("tabs", "active_tab"),
+    State("current-data", "data"),
+)
+def show_dataset_info(active_tab, data):
+    if active_tab != "tab-settings":
+        return html.Div()
+    if not data:
+        return html.Div("No data loaded.", style={"color": "#6b7280"})
+    try:
+        df = pd.DataFrame(data["df"])
+        info = dataset_info(df)
+        return html.Div([
+            html.Div(f"Rows: {info['rows']}", style={"fontWeight": "600"}),
+            html.Div(f"Memory: {info['memory_mb']} MB"),
+            html.Div(f"Needs downsampling: {'Yes' if info['needs_downsampling'] else 'No'}"),
+            html.Div(f"Needs chunking: {'Yes' if info['needs_chunking'] else 'No'}"),
+        ], style={"padding": "0.5rem", "color": "#374151"})
+    except Exception:
+        return html.Div("Could not compute dataset info.", style={"color": "#6b7280"})
+
+
+# --- LIVE REFRESH: Toggle interval based on preferences ---
+@app.callback(
+    Output("live-interval", "disabled"),
+    Output("live-interval", "interval"),
+    Input("pref-save-btn", "n_clicks"),
+    State("pref-live-enabled", "value"),
+    State("pref-live-interval", "value"),
+)
+def toggle_live_interval(n_clicks, live_enabled, live_interval_sec):
+    enabled = "enabled" in (live_enabled or [])
+    interval_ms = int(live_interval_sec or 60) * 1000
+    return not enabled, interval_ms
+
+
+# --- LIVE REFRESH: Auto-fetch on interval tick ---
+@app.callback(
+    Output("current-data", "data", allow_duplicate=True),
+    Input("live-interval", "n_intervals"),
+    State("yf-symbol", "value"),
+    State("yf-period", "value"),
+    State("yf-interval", "value"),
+    prevent_initial_call=True,
+)
+def on_live_refresh(n_intervals, symbol, period, interval):
+    """Auto-refresh data from Yahoo Finance using the current sidebar symbol."""
+    if not symbol or not symbol.strip():
+        from dash.exceptions import PreventUpdate
+        raise PreventUpdate
+    try:
+        df = fetch_yahoo_data(symbol.strip(), period=period or "1d", interval=interval or "1d")
+        if df is None or df.empty:
+            from dash.exceptions import PreventUpdate
+            raise PreventUpdate
+        data = {
+            "filename": f"live_{symbol.strip()}",
+            "upload_id": None,
+            "df": df.to_dict("records"),
+        }
+        return data
+    except Exception:
+        from dash.exceptions import PreventUpdate
+        raise PreventUpdate
+
 
 if __name__ == "__main__":
     import sys

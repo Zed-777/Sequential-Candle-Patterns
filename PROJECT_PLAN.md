@@ -1,8 +1,8 @@
 # Sequential Candle Pattern Analysis System — Development Plan & Progress
 
-**Last Updated**: February 24, 2026 (Phase 5 Sprint — Multi-TF, Backtesting, Watchlist & Named Tokens)  
-**Project Status**: PHASE 5 COMPLETE — Multi-Timeframe + Backtesting + Watchlist + Extended Tokens  
-**Overall Progress**: MVP + Phase 2 + Phase 3 + Phase 4 + Phase 5 Done
+**Last Updated**: March 3, 2026 (Phase 6 Sprint — Performance, Alerts, ML Predictor, Preferences & Live Refresh)  
+**Project Status**: PHASE 6 COMPLETE — v1.0.0 — Performance + Alerts + ML Predictor + Preferences + Live Scanning  
+**Overall Progress**: MVP + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 Done
 
 ---
 
@@ -29,15 +29,21 @@ The Candle Patterns system is a **sequential colour-based candle pattern scanner
 - ✅ **Sequence Watchlist** — save/load/export/import sequence libraries with JSON persistence
 - ✅ **Extended Named Tokens** — Engulfing, BullEngulfing, BearEngulfing, MorningStar, EveningStar, ShootingStar, SpinningTop in sequences
 - ✅ **Data Feed Caching** — LRU cache with 5-min TTL for Yahoo Finance fetches
-- ✅ **Interactive Dashboard** — 9 tabs: Chart, Matches, Discovery, Statistics, Heatmap, Reverse Finder, Backtesting, Multi-TF, Watchlist
+- ✅ **Performance Optimization** — vectorized numpy sequence scanning (~50-100x faster), chunked processing for 10K+ datasets, OHLCV-aware downsampling, CandleCache memoization
+- ✅ **Sequence Alerts** — SQLite-backed alert rules CRUD, webhook dispatch, alert history, in-dashboard notification panel
+- ✅ **Advanced ML Predictor** — GradientBoosting sequence outcome predictor, 17 engineered features, calibrated probabilities, feature importance
+- ✅ **User Preferences** — JSON-backed user profiles with theme, defaults, recents, export/import
+- ✅ **Live Refresh** — configurable auto-refresh interval (dcc.Interval) for real-time scanning
+- ✅ **Interactive Dashboard** — 12 tabs: Chart, Matches, Discovery, Statistics, Heatmap, Reverse Finder, Backtesting, Multi-TF, Watchlist, Alerts, ML Predict, Settings
 - ✅ **CSV ingestion** with OHLCV validation
 - ✅ **17 rule-based traditional pattern detectors** (secondary feature)
 - ✅ **ML baseline model** (RandomForest classifier)
+- ✅ **ML sequence predictor** (GradientBoosting with calibration)
 - ✅ **Backtesting engine** with Sharpe ratio & drawdown
 - ✅ **SQLite persistence** with 30-day cleanup
 - ✅ **CLI tools** (run, cleanup, train, predict, backtest)
 - ✅ **Docker containerization** + GitHub Actions CI/CD
-- ✅ **169 tests** (169 passing, 4 skipped) — 100% pass rate
+- ✅ **225 tests** (225 passing, 4 skipped) — 100% pass rate
 
 ---
 
@@ -60,7 +66,11 @@ Statistics: win rate, avg return, predictions
 | Module | Purpose |
 |---|---|
 | `patterns.py` | **Core engine** — sequence parsing, matching, wildcards, discovery, predictions, outcome stats, reverse finder, confidence scoring, heatmap data, 9 named tokens |
-| `dashboard.py` | Dash web app — 9 tabs, 21 callbacks, sequence-focused UI |
+| `performance.py` | **Performance optimization** — vectorized numpy scanning, chunked processing, downsampling, CandleCache |
+| `alerts.py` | **Sequence alerts** — SQLite-backed rules CRUD, webhook dispatch, alert history, notifications |
+| `ml_sequence.py` | **Advanced ML predictor** — GradientBoosting, 17 features, calibrated probabilities, feature importance |
+| `preferences.py` | **User preferences** — JSON-backed profiles, defaults, recents, export/import |
+| `dashboard.py` | Dash web app — 12 tabs, ~31 callbacks, sequence-focused UI |
 | `data_feeds.py` | **Yahoo Finance integration** — fetch real market data (stocks, crypto, indices, forex) + LRU cache |
 | `multi_timeframe.py` | **Multi-timeframe analysis** — cross-interval scanning + alignment detection |
 | `watchlist.py` | **Sequence watchlist** — save/load/export/import sequence libraries (JSON) |
@@ -75,6 +85,59 @@ Statistics: win rate, avg return, predictions
 ---
 
 ## Recent Progress
+
+### Phase 6 Sprint — Performance, Alerts, ML Predictor, Preferences & Live Refresh (Mar 3, 2026) ✅
+
+1. **Performance Optimization Module** (Priority 0)
+   - New `performance.py` module: `vectorized_symbol_sequence()` (numpy-accelerated R/G/Doji classification, ~50-100x faster than row-by-row), `vectorized_find_sequence()` (numpy-level sequence matching for simple tokens), `process_in_chunks()` (overlapping chunk scanning for 10K+ datasets), `downsample_ohlcv()` (OHLCV-aware chart downsampling preserving open/high/low/close semantics), `CandleCache` (memoizes symbol arrays keyed by df id+length), `batch_sequence_stats()` (multi-sequence), `dataset_info()` (size metadata for performance decisions)
+   - Status: ✅ COMPLETE
+
+2. **Sequence Alerts System** (Priority 0)
+   - New `alerts.py` module with SQLite-backed alert rules and history
+   - `add_alert_rule()` / `list_alert_rules()` / `remove_alert_rule()` / `toggle_alert_rule()` (CRUD)
+   - `record_alert()` / `get_alert_history()` / `acknowledge_alert()` / `clear_alert_history()` (history)
+   - `send_webhook()` dispatches POST JSON to configurable URL via urllib
+   - `check_and_trigger()` evaluates all enabled rules against DataFrame, fires webhooks, records alerts
+   - New "Alerts" dashboard tab with rule form, rules table, history table
+   - Status: ✅ COMPLETE
+
+3. **Advanced ML Sequence Predictor** (Priority 0)
+   - New `ml_sequence.py` module: `engineer_sequence_features()` builds 17 features (hl_ratio, oc_ratio, body_pct, upper/lower_wick_ratio, is_green, streak_length, mom_3/5/10, rsi_14, volatility_5/10, volume_ma_5, volume_ratio, rolling_green_pct, doji_density_10)
+   - `SequencePredictor` class: GradientBoosting with optional CalibratedClassifierCV probability calibration
+   - Methods: `train()`, `predict()`, `cross_validate()`, `feature_importance()`, `save()`/`load()`, `predict_next_outcome()`
+   - `train_sequence_predictor()` convenience function
+   - New "ML Predict" dashboard tab: hold period slider, train button, metrics cards, prediction display, feature importance
+   - Status: ✅ COMPLETE
+
+4. **User Preferences** (Priority 0)
+   - New `preferences.py` module: JSON-backed user profiles at `data/preferences.json`
+   - 25+ configurable keys: theme, default_sequences, default_symbol, default_period/interval, hold_period, lookahead, chart_style, live_refresh settings, etc.
+   - `load_preferences()` / `save_preferences()` / `get_preference()` / `set_preference()` / `reset_preferences()`
+   - `add_recent_symbol()` / `add_recent_sequence()` (deduped, max 10)
+   - `export_preferences()` / `import_preferences()` (JSON backup/sharing)
+   - New "Settings" dashboard tab: default symbol/period/interval, hold period, live refresh toggle/interval, discovery max, save/reset buttons, dataset info
+   - Status: ✅ COMPLETE
+
+5. **Live Refresh** (Priority 0)
+   - Added `dcc.Interval(id='live-interval')` component (60s default, disabled by default)
+   - Settings tab toggle enables/disables live refresh with configurable interval
+   - Auto-fetches Yahoo Finance data on interval tick via `on_live_refresh` callback
+   - Status: ✅ COMPLETE
+
+6. **Dashboard Integration** (Priority 0)
+   - 3 new tabs: Alerts, ML Predict, Settings (12 total)
+   - ~10 new callbacks for alerts CRUD, ML train/predict, preferences save/reset, live refresh
+   - `dcc.Store` components for live symbol and ML model state
+   - Status: ✅ COMPLETE
+
+7. **56 New Phase 6 Tests** (Priority 0)
+   - Performance: vectorized_symbol_sequence (4), vectorized_find_sequence (3), downsample_ohlcv (3), chunked_processing (2), CandleCache (3), dataset_info (2), batch_sequence_stats (1)
+   - Alerts: rule CRUD (3), alert history (4), check_and_trigger (2), webhook (2)
+   - ML: engineer_sequence_features (3), SequencePredictor (5), train_sequence_predictor (2)
+   - Preferences: load/save (4), get/set (3), recents (4), export/import (3)
+   - Dashboard integration: importable (1), new tabs in layout (1), live interval (1)
+   - Total: **225 tests** (225 passing, 4 skipped)
+   - Status: ✅ COMPLETE
 
 ### Phase 5 Sprint — Multi-TF, Backtesting, Watchlist & Tokens (Feb 24, 2026) ✅
 
@@ -220,7 +283,7 @@ Statistics: win rate, avg return, predictions
 
 ---
 
-## Dashboard — 9 Tabs
+## Dashboard — 12 Tabs
 
 | Tab | Purpose |
 |---|---|
@@ -233,6 +296,9 @@ Statistics: win rate, avg return, predictions
 | **Backtesting** | Per-sequence equity curve, Sharpe ratio, max drawdown, profit factor, win rate |
 | **Multi-TF** | Cross-timeframe sequence alignment — scan same symbol at 1H/4H/Daily/Weekly |
 | **Watchlist** | Save/load sequence libraries with labels, symbols, notes |
+| **Alerts** | Sequence alert rules — add/toggle/remove rules, webhook URL, alert history with ack |
+| **ML Predict** | Advanced ML sequence predictor — train GradientBoosting model, view metrics, predict next outcome, feature importance |
+| **Settings** | User preferences — default symbol/period/interval, hold period, live refresh toggle/interval, save/reset |
 
 ### Sidebar Features
 
@@ -269,12 +335,17 @@ Statistics: win rate, avg return, predictions
 | Data Feed Caching | DONE | LRU cache with 5-min TTL for Yahoo Finance |
 | CSV Ingestion | DONE | OHLCV validation, multiple format support |
 | Traditional Pattern Detection | DONE | **17 patterns** (secondary feature) |
-| Dashboard | DONE | **9 tabs**, 21 callbacks, modern UI |
-| SQLite Persistence | DONE | 30-day auto-cleanup |
+| Dashboard | DONE | **12 tabs**, ~31 callbacks, modern UI |
+| SQLite Persistence | DONE | 30-day auto-cleanup + alert rules/history |
 | CLI Tools | DONE | 5 commands: run, cleanup, train, predict, backtest |
 | ML Baseline | DONE | RandomForest with feature engineering |
+| ML Sequence Predictor | DONE | GradientBoosting, 17 features, calibrated probabilities |
+| Performance Optimization | DONE | Vectorized numpy scanning, chunked processing, downsampling, cache |
+| Sequence Alerts | DONE | SQLite rules CRUD, webhook dispatch, history, dashboard tab |
+| User Preferences | DONE | JSON-backed profiles, defaults, recents, export/import |
+| Live Refresh | DONE | Configurable auto-refresh interval for real-time scanning |
 | Backtesting | DONE | Sharpe ratio, drawdown, win rate, profit factor |
-| Unit Tests | DONE | **169 tests** (169 passing, 4 skipped) — 100% |
+| Unit Tests | DONE | **225 tests** (225 passing, 4 skipped) — 100% |
 | Docker | DONE | Multi-stage build, CI automation |
 | Release v0.1.0 | DONE | Published and tagged |
 
@@ -312,7 +383,7 @@ Examples:
 ## Test Coverage Report
 
 ```text
-Unit Tests: 169/169 PASSING ✅ (4 skipped: 2 E2E + 2 network)
+Unit Tests: 225/225 PASSING ✅ (4 skipped: 2 E2E + 2 network)
 
 ├── Sequence Pattern Tests ........... 42 tests ✅  (Phase 3)
 │   ├── ParseSequence ................ 6 tests
@@ -333,13 +404,33 @@ Unit Tests: 169/169 PASSING ✅ (4 skipped: 2 E2E + 2 network)
 │   ├── SequenceConfidence ........... 6 tests
 │   ├── SequenceHeatmapData .......... 7 tests
 │   └── PatternsIntegration .......... 3 tests
-├── Phase 5 Feature Tests ............ 42 tests ✅  ← NEW (Phase 5)
+├── Phase 5 Feature Tests ............ 42 tests ✅  (Phase 5)
 │   ├── MultiTimeframeModule ......... 7 tests
 │   ├── Watchlist .................... 11 tests
 │   ├── DataFeedCache ................ 6 tests
 │   ├── NamedTokens .................. 10 tests
 │   ├── BacktestIntegration .......... 6 tests
 │   └── NamedTokenSequenceScanning ... 2 tests
+├── Phase 6 Feature Tests ............ 56 tests ✅  ← NEW (Phase 6)
+│   ├── VectorizedSymbolSequence ..... 4 tests
+│   ├── VectorizedFindSequence ....... 3 tests
+│   ├── DownsampleOhlcv .............. 3 tests
+│   ├── ChunkedProcessing ............ 2 tests
+│   ├── CandleCache .................. 3 tests
+│   ├── DatasetInfo .................. 2 tests
+│   ├── BatchSequenceStats ........... 1 test
+│   ├── AlertRuleCRUD ................ 3 tests
+│   ├── AlertHistory ................. 4 tests
+│   ├── CheckAndTrigger .............. 2 tests
+│   ├── WebhookDispatch .............. 2 tests
+│   ├── EngineerSequenceFeatures ..... 3 tests
+│   ├── SequencePredictor ............ 5 tests
+│   ├── TrainSequencePredictor ....... 2 tests
+│   ├── PreferencesLoadSave .......... 4 tests
+│   ├── PreferencesGetSet ............ 3 tests
+│   ├── PreferencesRecents ........... 4 tests
+│   ├── PreferencesExportImport ...... 3 tests
+│   └── DashboardPhase6 .............. 3 tests
 ├── Detection Tests .................. 1 test  ✅
 ├── Ingestion Tests .................. 2 tests ✅
 ├── Storage Tests .................... 4 tests ✅
@@ -358,7 +449,7 @@ Unit Tests: 169/169 PASSING ✅ (4 skipped: 2 E2E + 2 network)
 
 E2E Tests: 2 skipped (documented reason)
 Network Tests: 2 skipped (enable for integration testing)
-Execution Time: ~41 seconds
+Execution Time: ~142 seconds
 Platform: Windows 10, Python 3.14.0, pytest-9.0.2
 ```
 
@@ -388,6 +479,28 @@ candle-patterns/
 │   │   ├── search_symbols()            Symbol search/autocomplete
 │   │   ├── cache_get/put/clear/stats   In-memory LRU cache
 │   │   └── get_symbol_info()           Symbol metadata
+│   ├── performance.py ................. Performance optimization
+│   │   ├── vectorized_symbol_sequence() Numpy-accelerated R/G/Doji
+│   │   ├── vectorized_find_sequence()   Numpy sequence matching
+│   │   ├── process_in_chunks()         Overlapping chunk scanning
+│   │   ├── downsample_ohlcv()          OHLCV-aware downsampling
+│   │   ├── CandleCache                 Memoize symbol arrays
+│   │   ├── batch_sequence_stats()       Multi-sequence stats
+│   │   └── dataset_info()              Size metadata
+│   ├── alerts.py ...................... Sequence alert system
+│   │   ├── add/list/remove/toggle_rule  CRUD for alert rules
+│   │   ├── record/get/ack/clear_alert   Alert history
+│   │   ├── send_webhook()              POST JSON to URL
+│   │   └── check_and_trigger()         Evaluate rules & fire
+│   ├── ml_sequence.py ................. Advanced ML predictor
+│   │   ├── engineer_sequence_features() 17 features
+│   │   ├── SequencePredictor            GradientBoosting + calibration
+│   │   └── train_sequence_predictor()   Convenience wrapper
+│   ├── preferences.py ................. User preferences
+│   │   ├── load/save_preferences()      JSON persistence
+│   │   ├── get/set_preference()         Individual key access
+│   │   ├── add_recent_symbol/sequence() Deduped recents (max 10)
+│   │   └── export/import_preferences()  JSON backup/sharing
 │   ├── multi_timeframe.py .............. Multi-TF analysis
 │   │   ├── fetch_multi_timeframe()     Fetch at multiple intervals
 │   │   ├── scan_multi_timeframe()      Scan sequences per TF
@@ -398,13 +511,13 @@ candle-patterns/
 │   │   ├── remove/update/clear()       CRUD operations
 │   │   └── export/import_watchlist()   JSON export/import
 │   ├── detection.py .................... Traditional pattern detectors (17)
-│   ├── dashboard.py .................... Dash web app (9 tabs, 21 callbacks)
+│   ├── dashboard.py .................... Dash web app (12 tabs, ~31 callbacks)
 │   ├── opp_miner.py .................... Ordinal pattern mining
 │   ├── storage.py ...................... SQLite persistence
 │   ├── ml_baseline.py .................. ML model (RandomForest)
 │   ├── backtesting.py .................. Performance evaluation (Sharpe, equity curve)
 │   └── reporting.py .................... Report generation
-├── tests/ .............................. 169 unit tests (100% passing)
+├── tests/ .............................. 225 unit tests (100% passing)
 ├── Dockerfile .......................... Multi-stage build
 ├── .github/workflows/ .................. CI/CD (ci.yml, cleanup.yml)
 ├── data/ ............................... Sample datasets + watchlist.json
@@ -413,22 +526,27 @@ candle-patterns/
 
 ---
 
-## System Audit (Feb 24, 2026 — Post Phase 5)
+## System Audit (Mar 3, 2026 — Post Phase 6)
 
 ✅ **Core Purpose**: Sequential colour pattern scanning — **FULLY OPERATIONAL**  
 ✅ **Code Repository**: Clean, all changes committed  
-✅ **Test Suite**: **169/169 passing** (100% of executed tests, 4 skipped)  
-✅ **Dashboard**: 9 tabs — Chart, Matches, Discovery, Statistics, Heatmap, Reverse Finder, Backtesting, Multi-TF, Watchlist  
+✅ **Test Suite**: **225/225 passing** (100% of executed tests, 4 skipped)  
+✅ **Dashboard**: 12 tabs — Chart, Matches, Discovery, Statistics, Heatmap, Reverse Finder, Backtesting, Multi-TF, Watchlist, Alerts, ML Predict, Settings  
 ✅ **Pattern Engine**: parse, match, wildcard, discover, predict, statistics, reverse, confidence, heatmap, 9 named tokens  
 ✅ **Data Sources**: CSV upload + Yahoo Finance API (cached, stocks, crypto, indices, forex, ETFs)  
 ✅ **Multi-Timeframe**: Cross-interval scanning + alignment detection  
 ✅ **Backtesting**: Equity curve, Sharpe ratio, drawdown, profit factor per sequence  
 ✅ **Watchlist**: Save/load/export/import sequence libraries  
+✅ **Performance**: Vectorized numpy scanning, chunked processing (10K+), OHLCV downsampling, CandleCache  
+✅ **Alerts**: SQLite-backed rules CRUD, webhook dispatch, alert history, dashboard tab  
+✅ **ML Predictor**: GradientBoosting + calibration, 17 features, feature importance, save/load  
+✅ **Preferences**: JSON-backed profiles, defaults, recents, export/import  
+✅ **Live Refresh**: Configurable auto-refresh interval for real-time scanning  
 ✅ **Sample Data**: Auto-loads (200 candles)  
-✅ **Module Imports**: Clean (21 registered callbacks)  
+✅ **Module Imports**: Clean (~31 registered callbacks)  
 ✅ **CLI**: 5 commands operational (run, cleanup, train, predict, backtest)  
 
-**Audit Status**: PASS — Phase 5 complete, system fully operational
+**Audit Status**: PASS — Phase 6 complete, system fully operational, v1.0.0 released
 
 ---
 
@@ -436,10 +554,13 @@ candle-patterns/
 
 | Metric | Value | Context |
 |---|---|---|
-| Test Suite Time | ~41s | All 169 tests on Windows |
-| Dashboard Callbacks | 21 | Lean, no duplicate outputs |
+| Test Suite Time | ~142s | All 225 tests on Windows |
+| Dashboard Callbacks | ~31 | Lean, no duplicate outputs |
 | Dashboard Load | <2s | 200 candles + auto-discovery |
 | Sequence Scan | <500ms | 15 sequences against 200 candles |
+| Vectorized Scan | <50ms | Numpy-accelerated for 10K+ candles |
+| Chunk Processing | <2s | 10K+ candles, 5K chunks with overlap |
+| Downsampling | <100ms | OHLCV-aware to target size |
 | Auto-Discovery | <200ms | Scan lengths 3-8, top 25 |
 | What-Comes-Next | <100ms | Per sequence prediction |
 | Outcome Stats | <100ms | Per sequence, configurable hold |
@@ -448,7 +569,10 @@ candle-patterns/
 | Heatmap Data | <200ms | Density across time buckets |
 | Yahoo Finance Fetch | 1-3s | Depends on period/interval (cached after 1st) |
 | Multi-TF Analysis | 3-10s | Depends on # timeframes (cached) |
+| ML Training | 1-5s | GradientBoosting on 200 candles |
+| Alert Evaluation | <100ms | Check all enabled rules |
 | Watchlist Save/Load | <50ms | JSON file I/O |
+| Preferences Load | <10ms | JSON file I/O |
 
 ---
 
@@ -480,6 +604,21 @@ candle-patterns/
 **Rationale**: Mature, interpretable, good baseline
 
 ---
+
+## Phase 6 Tasks — Status
+
+| ID | Task | Priority | Status | Notes |
+|---|---|---|---|---|
+| 72 | Performance optimization module | P0 | ✅ DONE | performance.py: vectorized scanning, chunking, downsampling, cache |
+| 73 | Sequence alerts module | P0 | ✅ DONE | alerts.py: SQLite rules CRUD, webhook, history |
+| 74 | Alerts dashboard tab | P0 | ✅ DONE | Rule form, rules table, history table |
+| 75 | Advanced ML predictor module | P0 | ✅ DONE | ml_sequence.py: GradientBoosting, 17 features, calibration |
+| 76 | ML Predict dashboard tab | P0 | ✅ DONE | Train button, metrics, prediction, feature importance |
+| 77 | User preferences module | P0 | ✅ DONE | preferences.py: JSON profiles, defaults, recents, export/import |
+| 78 | Settings dashboard tab | P0 | ✅ DONE | Default settings, live refresh toggle, save/reset |
+| 79 | Live refresh (dcc.Interval) | P0 | ✅ DONE | Configurable auto-refresh for real-time scanning |
+| 80 | 56 new Phase 6 tests | P0 | ✅ DONE | 225 total tests, 0 failures |
+| 81 | Documentation update | P0 | ✅ DONE | PROJECT_PLAN.md, PROGRESS_SUMMARY.md |
 
 ## Phase 5 Tasks — Status
 
@@ -532,7 +671,17 @@ candle-patterns/
 
 ## Next Steps (Future Phases)
 
-### Completed This Sprint (Phase 5 — Multi-TF, Backtesting, Watchlist)
+### Completed This Sprint (Phase 6 — Performance, Alerts, ML, Preferences)
+
+- [x] Performance optimization module (vectorized numpy, chunked processing, downsampling, cache)
+- [x] Sequence alerts system (SQLite rules, webhook dispatch, history, dashboard tab)
+- [x] Advanced ML sequence predictor (GradientBoosting, 17 features, calibration, dashboard tab)
+- [x] User preferences (JSON profiles, defaults, recents, export/import, settings tab)
+- [x] Live refresh (dcc.Interval auto-scan, configurable interval)
+- [x] 56 new tests (225 total, 100% pass rate)
+- [x] Updated documentation (PROJECT_PLAN.md, PROGRESS_SUMMARY.md)
+
+### Completed Previously (Phase 5 — Multi-TF, Backtesting, Watchlist)
 
 - [x] Multi-Timeframe Analysis module + dashboard tab
 - [x] Backtesting dashboard tab (equity curve, Sharpe, drawdown, profit factor)
@@ -565,14 +714,14 @@ candle-patterns/
 
 ### Future Roadmap
 
-- [ ] Real-time data streaming (WebSocket live candle updates)
-- [ ] Sequence alerts (email/webhook when pattern matches live data)
-- [ ] Advanced ML: train sequence outcome predictor (neural net)
 - [ ] E2E Playwright test suite
-- [ ] Performance optimization (lazy loading, larger datasets 10K+)
-- [ ] User profiles and saved preferences
 - [ ] GDPR/security documentation
 - [ ] Docker publish to GHCR
+- [ ] WebSocket live candle streaming (real-time market data)
+- [ ] Email notification channel for alerts (currently webhook only)
+- [ ] Neural network sequence predictor (deep learning upgrade)
+- [ ] Multi-user support with authentication
+- [ ] Additional named tokens (ThreeWhiteSoldiers, ThreeBlackCrows, etc.)
 
 ---
 
@@ -603,7 +752,16 @@ candle-patterns/
   - 6 dashboard tabs, 17 callbacks
   - **127 tests** (100% pass rate)
 
-- **v0.5.0** — Phase 5 (Feb 24, 2026) ✅ CURRENT
+- **v1.0.0** — Phase 6 (Mar 3, 2026) ✅ CURRENT
+  - **Performance optimization** — vectorized numpy scanning (~50-100x faster), chunked processing (10K+), OHLCV downsampling, CandleCache
+  - **Sequence alerts** — SQLite-backed rules CRUD, webhook dispatch, alert history, dashboard tab
+  - **Advanced ML predictor** — GradientBoosting, 17 engineered features, calibrated probabilities, feature importance
+  - **User preferences** — JSON-backed profiles, defaults, recents, export/import, settings tab
+  - **Live refresh** — configurable dcc.Interval auto-scan for real-time pattern detection
+  - 12 dashboard tabs, ~31 callbacks
+  - **225 tests** (100% pass rate)
+
+- **v0.5.0** — Phase 5 (Feb 24, 2026) ✅
   - **Multi-Timeframe Analysis** — scan across 1H/4H/Daily/Weekly, alignment detection
   - **Backtesting Tab** — equity curve, Sharpe ratio, max drawdown, profit factor
   - **Sequence Watchlist** — save/load/export/import with JSON persistence
@@ -611,10 +769,6 @@ candle-patterns/
   - **Data Feed Caching** — LRU (50 entries, 5-min TTL)
   - 9 dashboard tabs, 21 callbacks
   - **169 tests** (100% pass rate)
-
-- **v1.0.0** (Planned)
-  - Real-time feeds, sequence alerts, advanced ML
-  - E2E Playwright suite, GHCR publication
 
 ---
 

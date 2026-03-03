@@ -1,16 +1,49 @@
 # Candle Patterns - Development Progress Summary
 
-**Last Updated**: February 13, 2026 (16:45 UTC)  
-**System Status**: MVP - Fully Functional, All Tests Passing  
-**Test Coverage**: 38/38 unit tests passing (100%); 2 E2E tests skipped (environment constraints)
+**Last Updated**: March 3, 2026  
+**System Status**: v1.0.0 — Phase 6 Complete — All Features Operational  
+**Test Coverage**: 225/225 unit tests passing (100%); 4 skipped (2 E2E + 2 network)
 
 ---
 
 ## Executive Summary
 
-Candle Patterns is a **complete, tested, and production-ready** sequential pattern analysis system for candlestick/OHLCV data. The MVP includes CSV ingestion, pattern detection (10+ patterns), dashboard visualization, backtesting, ML baseline models, SQLite persistence, CLI tools, Docker containerization, and CI/CD pipeline.
+Candle Patterns is a **complete, tested, and production-ready** sequential colour-based candle pattern analysis system. The system includes CSV ingestion, Yahoo Finance integration, sequential pattern scanning with wildcards and named tokens, auto-discovery, what-comes-next prediction, outcome statistics, confidence scoring, reverse pattern finder, sequence heatmap, backtesting, multi-timeframe analysis, sequence watchlist, sequence alerts with webhooks, advanced ML prediction (GradientBoosting), user preferences, and performance optimization for large datasets.
 
-**Key Achievement**: Fixed critical test suite issues (invalid timestamps, pandas Python 3.14 compatibility), achieved 100% test pass rate (38/38 tests), and now preload the sample dataset into `current-data` so charts/filters work immediately on load.
+**Phase 6 Achievements**: Added 4 new modules (performance.py, alerts.py, ml_sequence.py, preferences.py), expanded dashboard from 9 to 12 tabs with live refresh capability, added 56 new tests for a total of 225 (100% pass rate), and bumped version to v1.0.0.
+
+---
+
+## Phase 6 — Performance, Alerts, ML Predictor, Preferences & Live Refresh (Mar 3, 2026) ✅
+
+### New Modules
+
+| Module | Purpose | Key Functions |
+|---|---|---|
+| `performance.py` | Performance optimization for 10K+ datasets | `vectorized_symbol_sequence()`, `process_in_chunks()`, `downsample_ohlcv()`, `CandleCache`, `batch_sequence_stats()`, `dataset_info()` |
+| `alerts.py` | Sequence alert system with webhooks | `add/list/remove/toggle_alert_rule()`, `check_and_trigger()`, `send_webhook()`, alert history CRUD |
+| `ml_sequence.py` | Advanced ML sequence predictor | `engineer_sequence_features()` (17 features), `SequencePredictor` (GradientBoosting + calibration), `train_sequence_predictor()` |
+| `preferences.py` | User profiles & preferences | `load/save_preferences()`, `get/set_preference()`, `add_recent_symbol/sequence()`, `export/import_preferences()` |
+
+### New Dashboard Tabs (12 total)
+
+| Tab | Features |
+|---|---|
+| **Alerts** | Add/toggle/remove alert rules, webhook URL configuration, alert history with acknowledgement |
+| **ML Predict** | Train GradientBoosting predictor, view accuracy/precision/recall/F1, predict next candle outcome, feature importance chart |
+| **Settings** | Default symbol/period/interval, hold period, live refresh toggle/interval, save/reset preferences, dataset info |
+
+### Live Refresh
+
+- `dcc.Interval` component with configurable interval (default 60s, disabled by default)
+- Settings tab toggle enables auto-refresh for real-time Yahoo Finance scanning
+- Auto-fetches and re-scans patterns on each tick
+
+### Test Suite
+
+- **56 new tests** added in `test_phase6_features.py`
+- **225 total tests** (225 passing, 4 skipped)
+- Zero regressions from existing 169 tests
 
 ---
 

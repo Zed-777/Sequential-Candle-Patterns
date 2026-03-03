@@ -9,5 +9,9 @@ __all__ = [
     "backtest",
     "dashboard",
     "cli",
+    "alerts",
+    "ml_sequence",
+    "preferences",
+    "performance",
 ]
-__version__ = "0.1.0"
+__version__ = "1.0.0"
