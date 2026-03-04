@@ -6,7 +6,7 @@ import dash
 import dash_bootstrap_components as dbc
 from pathlib import Path
 
-from dash import html, dcc, Input, Output, State, callback_context
+from dash import html, dcc, Input, Output, State, callback_context, MATCH
 from dash.dcc.express import send_data_frame, send_bytes
 
 import plotly.graph_objects as go
@@ -841,6 +841,14 @@ navbar = dbc.Navbar(
                         ],
                         width="auto",
                     ),
+                    dbc.Col(
+                        html.Span(
+                            id="alert-badge",
+                            style={"cursor": "pointer"},
+                        ),
+                        width="auto",
+                        className="ms-auto",
+                    ),
                 ],
                 align="center",
                 className="w-100",
@@ -888,7 +896,10 @@ sidebar = dbc.Card(
                         "Load sample dataset (200 candlesticks)",
                         style={"marginTop": "8px", "color": "#6b7280", "display": "block", "fontWeight": "500"}
                     ),
-                    html.Div(id="upload-status", style={"marginTop": "12px"}),
+                    dcc.Loading(
+                        html.Div(id="upload-status", style={"marginTop": "12px"}),
+                        type="circle", color="#6366f1",
+                    ),
                 ], style={"marginBottom": "1.5rem"}),
                 
                 html.Hr(className="hr-style"),
@@ -955,14 +966,20 @@ sidebar = dbc.Card(
                     ], className="g-2 mb-2"),
                     
                     # Fetch button
-                    dbc.Button(
-                        [html.I(className="bi bi-cloud-download"), " Fetch Data"],
-                        id="yf-fetch-btn",
-                        color="info",
-                        className="w-100 mt-2",
-                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem"},
+                    dcc.Loading(
+                        dbc.Button(
+                            [html.I(className="bi bi-cloud-download"), " Fetch Data"],
+                            id="yf-fetch-btn",
+                            color="info",
+                            className="w-100 mt-2",
+                            style={"fontWeight": "700", "padding": "0.85rem 1.5rem"},
+                        ),
+                        type="circle", color="#6366f1",
                     ),
-                    html.Div(id="yf-fetch-status", style={"marginTop": "0.5rem"}),
+                    dcc.Loading(
+                        html.Div(id="yf-fetch-status", style={"marginTop": "0.5rem"}),
+                        type="circle", color="#6366f1",
+                    ),
                 ], style={"marginBottom": "1.5rem"}),
                 
                 html.Hr(className="hr-style"),
@@ -1056,6 +1073,10 @@ sidebar = dbc.Card(
                         className="w-100",
                         style={"fontWeight": "700", "padding": "0.65rem 1rem"}
                     ),
+                    dcc.ConfirmDialog(
+                        id="cleanup-confirm",
+                        message="This will permanently delete uploads older than 30 days. Continue?",
+                    ),
                     html.Div(
                         id="cleanup-result",
                         style={"marginTop": "10px", "fontSize": "0.9em", "color": "#6b7280", "fontWeight": "500"}
@@ -1084,6 +1105,7 @@ sidebar = dbc.Card(
                         style={"fontWeight": "700", "padding": "0.65rem 1rem"}
                     ),
                     dcc.Download(id="download-asset"),
+                    html.Div(id="export-status", style={"marginTop": "0.5rem"}),
                 ], style={"marginBottom": "1.5rem"}),
                 
                 html.Hr(className="hr-style"),
@@ -1469,6 +1491,14 @@ main_content = dbc.Tabs(
                         dcc.Loading(html.Div(id="alert-rules-content"), type="circle", color="#f59e0b"),
                         html.Hr(),
                         html.H6("Alert History", style={"fontWeight": "700"}),
+                        dbc.Button(
+                            [html.I(className="bi bi-trash me-1"), "Clear History"],
+                            id="alert-clear-history-btn",
+                            color="outline-danger", size="sm",
+                            className="mb-2",
+                            style={"fontWeight": "600"},
+                        ),
+                        html.Div(id="alert-clear-status", style={"marginBottom": "0.5rem"}),
                         dcc.Loading(html.Div(id="alert-history-content"), type="circle", color="#f59e0b"),
                         dcc.Store(id="alert-refresh-trigger", data=0),
                     ],
@@ -1744,6 +1774,21 @@ def on_upload(contents, filename):
 
     decoded = base64.b64decode(content_string)
     df = pd.read_csv(io.BytesIO(decoded))
+
+    # Validate required columns
+    required_cols = {"open", "high", "low", "close"}
+    missing = required_cols - set(c.lower() for c in df.columns)
+    if missing:
+        return (
+            html.Div(
+                [html.I(className="bi bi-exclamation-triangle me-1"),
+                 f"CSV missing required columns: {', '.join(sorted(missing))}"],
+                style={"color": "#ef4444", "fontWeight": "600", "padding": "10px",
+                       "backgroundColor": "#fef2f2", "borderRadius": "8px"},
+            ),
+            dash.no_update,
+            dash.no_update,
+        )
 
     if "timestamp" in df.columns:
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
@@ -2347,16 +2392,30 @@ def refresh_history(_):
     return [{"label": f"{r['stored_at']} - {r['filename']}", "value": r["id"]} for r in rows]
 
 
-# Run cleanup  --------------------------------------------------------
+# Run cleanup (with confirmation) ------------------------------------
 @app.callback(
-    Output("cleanup-result", "children", allow_duplicate=True),
+    Output("cleanup-confirm", "displayed"),
     Input("cleanup-btn", "n_clicks"),
     prevent_initial_call=True,
 )
-def run_cleanup(n):
+def confirm_cleanup(n):
+    return True
+
+
+@app.callback(
+    Output("cleanup-result", "children", allow_duplicate=True),
+    Input("cleanup-confirm", "submit_n_clicks"),
+    prevent_initial_call=True,
+)
+def run_cleanup(submit_n):
+    if not submit_n:
+        return dash.no_update
     from candle_patterns.storage import cleanup_old_uploads
     removed = cleanup_old_uploads(retention_days=30)
-    return f"Removed {removed} old uploads/detections"
+    return html.Div(
+        [html.I(className="bi bi-check-circle me-1"), f"Removed {removed} old uploads/detections"],
+        style={"color": "#10b981", "fontWeight": "600"},
+    )
 
 
 # Pattern detail modal (click on chart) --------------------------------
@@ -2437,6 +2496,7 @@ def update_stats(_, __):
 # Export ---------------------------------------------------------------
 @app.callback(
     Output("download-asset", "data"),
+    Output("export-status", "children"),
     Input("export-detections-btn", "n_clicks"),
     Input("export-aggregated-btn", "n_clicks"),
     Input("export-chart-btn", "n_clicks"),
@@ -2446,24 +2506,40 @@ def update_stats(_, __):
 )
 def export_data(n_matches, n_discovery, n_chart, scan_results, data):
     """Export matches CSV, discovery CSV, or chart PNG."""
+    no_data_msg = html.Div(
+        [html.I(className="bi bi-exclamation-circle me-1"), "No data to export"],
+        style={"color": "#f59e0b", "fontWeight": "600", "fontSize": "0.8rem"},
+    )
     if not data:
-        return dash.no_update
+        return dash.no_update, no_data_msg
     triggered = callback_context.triggered_id
 
-    if triggered == "export-detections-btn" and scan_results:
+    if triggered == "export-detections-btn":
+        if not scan_results:
+            return dash.no_update, no_data_msg
         rows = []
         for res in scan_results:
             for m in res.get("matches", []):
                 rows.append({"sequence": res["seq_str"], **m})
         if rows:
-            return send_data_frame(pd.DataFrame(rows).to_csv, "sequence_matches.csv", index=False)
+            ok_msg = html.Div(
+                [html.I(className="bi bi-check-circle me-1"), f"Exported {len(rows)} matches"],
+                style={"color": "#10b981", "fontWeight": "600", "fontSize": "0.8rem"},
+            )
+            return send_data_frame(pd.DataFrame(rows).to_csv, "sequence_matches.csv", index=False), ok_msg
+        return dash.no_update, no_data_msg
 
     elif triggered == "export-aggregated-btn":
         df = pd.DataFrame(data["df"])
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
         discovered = discover_color_sequences(df, min_len=3, max_len=8, top_k=25)
         if discovered:
-            return send_data_frame(pd.DataFrame(discovered).to_csv, "discovered_sequences.csv", index=False)
+            ok_msg = html.Div(
+                [html.I(className="bi bi-check-circle me-1"), f"Exported {len(discovered)} sequences"],
+                style={"color": "#10b981", "fontWeight": "600", "fontSize": "0.8rem"},
+            )
+            return send_data_frame(pd.DataFrame(discovered).to_csv, "discovered_sequences.csv", index=False), ok_msg
+        return dash.no_update, no_data_msg
 
     elif triggered == "export-chart-btn":
         df = pd.DataFrame(data['df'])
@@ -2472,12 +2548,21 @@ def export_data(n_matches, n_discovery, n_chart, scan_results, data):
                                               high=df['high'], low=df['low'], close=df['close'])])
         try:
             img_bytes = fig.to_image(format='png', width=1200, height=600, scale=2)
-            return send_bytes(lambda: img_bytes, "chart.png")
+            ok_msg = html.Div(
+                [html.I(className="bi bi-check-circle me-1"), "Chart PNG exported"],
+                style={"color": "#10b981", "fontWeight": "600", "fontSize": "0.8rem"},
+            )
+            return send_bytes(lambda: img_bytes, "chart.png"), ok_msg
         except Exception as e:
             logger.exception('export chart failed: %s', e)
-            return dash.no_update
+            err_msg = html.Div(
+                [html.I(className="bi bi-exclamation-triangle me-1"),
+                 "PNG export requires the 'kaleido' package. Install with: pip install kaleido"],
+                style={"color": "#ef4444", "fontWeight": "600", "fontSize": "0.8rem"},
+            )
+            return dash.no_update, err_msg
 
-    return dash.no_update
+    return dash.no_update, ""
 
 
 # Load from history  ---------------------------------------------------
@@ -2818,14 +2903,18 @@ def run_backtest(n_clicks, hold_periods, initial_capital, scan_results, data):
         return html.Div("Load data and scan sequences first.", style={"color": "#6b7280", "padding": "1rem"})
 
     try:
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(data["df"])
+        if "timestamp" in df.columns:
+            df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
         hold_periods = int(hold_periods or 5)
         initial_capital = float(initial_capital or 10000)
         engine = BacktestEngine()
         cards: list = []
 
-        for seq_str, matches_info in scan_results.items():
-            # matches_info is a list of end-indices
+        for res in scan_results:
+            seq_str = res.get("seq_str", "")
+            matches_info = res.get("matches", [])
+            # matches_info is a list of match dicts
             if isinstance(matches_info, list):
                 indices = [m if isinstance(m, int) else m.get("end_idx", 0) for m in matches_info]
             else:
@@ -2943,8 +3032,8 @@ def run_multi_timeframe(n_clicks, symbol, intervals, lookback, scan_results):
     if not intervals:
         return html.Div("Select at least one timeframe.", style={"color": "#ef4444", "padding": "1rem"})
 
-    # Gather sequences from scan results
-    sequences = list(scan_results.keys()) if scan_results else []
+    # Gather sequences from scan results (scan_results is a list of dicts)
+    sequences = [r["seq_str"] for r in scan_results if r.get("seq_str")] if scan_results else []
     if not sequences:
         return html.Div("Scan sequences first so we know what to look for across timeframes.",
                         style={"color": "#6b7280", "padding": "1rem"})
@@ -3091,16 +3180,31 @@ def display_watchlist(trigger, active_tab):
         import datetime
         created = datetime.datetime.fromtimestamp(e.get("created_at", 0)).strftime("%Y-%m-%d %H:%M")
         seqs_str = ", ".join(e.get("sequences", []))
+        entry_id = e.get("id", 0)
         rows.append(html.Tr([
             html.Td(e.get("label", ""), style={"fontWeight": "700"}),
             html.Td(html.Code(seqs_str, style={"fontSize": "0.8rem"})),
             html.Td(e.get("symbol", "") or "—"),
             html.Td(created, style={"fontSize": "0.8rem", "color": "#6b7280"}),
+            html.Td([
+                dbc.Button(
+                    html.I(className="bi bi-play-circle"),
+                    id={"type": "wl-load-btn", "index": entry_id},
+                    color="primary", size="sm", className="me-1",
+                    title="Load into scanner",
+                ),
+                dbc.Button(
+                    html.I(className="bi bi-trash"),
+                    id={"type": "wl-delete-btn", "index": entry_id},
+                    color="danger", size="sm", outline=True,
+                    title="Delete entry",
+                ),
+            ], style={"whiteSpace": "nowrap"}),
         ]))
 
     table = dbc.Table(
         [html.Thead(html.Tr([
-            html.Th("Label"), html.Th("Sequences"), html.Th("Symbol"), html.Th("Created"),
+            html.Th("Label"), html.Th("Sequences"), html.Th("Symbol"), html.Th("Created"), html.Th("Actions"),
         ])),
          html.Tbody(rows)],
         bordered=True, hover=True, responsive=True, striped=True, size="sm",
@@ -3117,6 +3221,48 @@ def display_watchlist(trigger, active_tab):
     )
 
     return html.Div([header, table])
+
+
+# --- WATCHLIST: Delete entry via pattern-matching callback ---
+@app.callback(
+    Output("wl-refresh-trigger", "data", allow_duplicate=True),
+    Input({"type": "wl-delete-btn", "index": MATCH}, "n_clicks"),
+    State({"type": "wl-delete-btn", "index": MATCH}, "id"),
+    State("wl-refresh-trigger", "data"),
+    prevent_initial_call=True,
+)
+def delete_watchlist_entry(n_clicks, btn_id, trigger):
+    if not n_clicks:
+        return dash.no_update
+    entry_id = btn_id["index"]
+    remove_from_watchlist(entry_id)
+    return (trigger or 0) + 1
+
+
+# --- WATCHLIST: Load entry into custom-sequences-input ---
+@app.callback(
+    Output("custom-sequences-input", "value"),
+    Output("wl-status", "children", allow_duplicate=True),
+    Input({"type": "wl-load-btn", "index": MATCH}, "n_clicks"),
+    State({"type": "wl-load-btn", "index": MATCH}, "id"),
+    prevent_initial_call=True,
+)
+def load_watchlist_entry(n_clicks, btn_id):
+    if not n_clicks:
+        return dash.no_update, dash.no_update
+    entry_id = btn_id["index"]
+    entries = list_watchlist()
+    for e in entries:
+        if e.get("id") == entry_id:
+            update_last_used(entry_id)
+            seqs = "\n".join(e.get("sequences", []))
+            msg = html.Div(
+                [html.I(className="bi bi-check-circle me-1"),
+                 f"Loaded '{e.get('label', '')}' into scanner"],
+                style={"color": "#10b981", "fontWeight": "600"},
+            )
+            return seqs, msg
+    return dash.no_update, dash.no_update
 
 
 # =========================================================================
@@ -3179,6 +3325,7 @@ def display_alert_rules(trigger, active_tab):
         import datetime as _dt
         created = _dt.datetime.fromtimestamp(r.get("created_at", 0)).strftime("%Y-%m-%d %H:%M")
         seqs_str = ", ".join(r.get("sequences", []))
+        rule_id = r.get("id", 0)
         status_badge = html.Span(
             "Active" if r["enabled"] else "Disabled",
             style={
@@ -3193,16 +3340,41 @@ def display_alert_rules(trigger, active_tab):
             html.Td(r.get("symbol", "") or "Any"),
             html.Td(status_badge),
             html.Td(created, style={"fontSize": "0.8rem", "color": "#6b7280"}),
+            html.Td(
+                dbc.Button(
+                    html.I(className="bi bi-trash"),
+                    id={"type": "alert-delete-btn", "index": rule_id},
+                    color="danger", size="sm", outline=True,
+                    title="Delete rule",
+                ),
+                style={"whiteSpace": "nowrap"},
+            ),
         ]))
     table = dbc.Table(
         [html.Thead(html.Tr([
             html.Th("Name"), html.Th("Sequences"), html.Th("Symbol"),
-            html.Th("Status"), html.Th("Created"),
+            html.Th("Status"), html.Th("Created"), html.Th(""),
         ])),
          html.Tbody(rows)],
         bordered=True, hover=True, responsive=True, striped=True, size="sm",
     )
     return table
+
+
+# --- ALERTS: Delete Rule via pattern-matching callback ---
+@app.callback(
+    Output("alert-refresh-trigger", "data", allow_duplicate=True),
+    Input({"type": "alert-delete-btn", "index": MATCH}, "n_clicks"),
+    State({"type": "alert-delete-btn", "index": MATCH}, "id"),
+    State("alert-refresh-trigger", "data"),
+    prevent_initial_call=True,
+)
+def delete_alert_rule(n_clicks, btn_id, trigger):
+    if not n_clicks:
+        return dash.no_update
+    rule_id = btn_id["index"]
+    remove_alert_rule(rule_id)
+    return (trigger or 0) + 1
 
 
 # --- ALERTS: Display History ---
@@ -3246,6 +3418,53 @@ def display_alert_history(trigger, active_tab):
         bordered=True, hover=True, responsive=True, striped=True, size="sm",
     )
     return table
+
+
+# --- ALERTS: Badge (unread count in navbar) ---
+@app.callback(
+    Output("alert-badge", "children"),
+    Input("alert-refresh-trigger", "data"),
+    Input("tabs", "active_tab"),
+)
+def update_alert_badge(trigger, active_tab):
+    try:
+        count = get_unread_count()
+    except Exception:
+        count = 0
+    if count > 0:
+        return html.Span(
+            [html.I(className="bi bi-bell-fill me-1"),
+             dbc.Badge(str(count), color="danger", pill=True, className="ms-1")],
+            style={"color": "white", "fontSize": "1rem"},
+        )
+    return html.Span(
+        html.I(className="bi bi-bell", style={"color": "rgba(255,255,255,0.7)", "fontSize": "1rem"}),
+    )
+
+
+# --- ALERTS: Clear History ---
+@app.callback(
+    Output("alert-clear-status", "children"),
+    Output("alert-refresh-trigger", "data", allow_duplicate=True),
+    Input("alert-clear-history-btn", "n_clicks"),
+    State("alert-refresh-trigger", "data"),
+    prevent_initial_call=True,
+)
+def on_clear_alert_history(n_clicks, trigger):
+    if not n_clicks:
+        return dash.no_update, dash.no_update
+    try:
+        removed = clear_alert_history()
+        return (
+            html.Div(
+                [html.I(className="bi bi-check-circle me-1"),
+                 f"Cleared {removed} alert(s) from history"],
+                style={"color": "#10b981", "fontWeight": "600"},
+            ),
+            (trigger or 0) + 1,
+        )
+    except Exception as e:
+        return html.Div(f"Error: {e}", style={"color": "#ef4444"}), trigger
 
 
 # --- ML PREDICTIONS: Train & Predict ---
@@ -3371,6 +3590,35 @@ def on_ml_train_predict(n_clicks, data, hold_candles):
         return html.Div(f"Error: {e}", style={"color": "#ef4444", "padding": "1rem"})
 
 
+# --- SETTINGS: Load Saved Preferences into form ---
+@app.callback(
+    Output("pref-default-symbol", "value"),
+    Output("pref-default-period", "value"),
+    Output("pref-default-interval", "value"),
+    Output("pref-hold-period", "value"),
+    Output("pref-live-enabled", "value"),
+    Output("pref-live-interval", "value"),
+    Output("pref-discovery-max", "value"),
+    Input("tabs", "active_tab"),
+)
+def load_settings_on_tab(active_tab):
+    if active_tab != "tab-settings":
+        return (dash.no_update,) * 7
+    try:
+        prefs = load_preferences()
+        return (
+            prefs.get("default_symbol", ""),
+            prefs.get("default_period", "6mo"),
+            prefs.get("default_interval", "1d"),
+            prefs.get("hold_period", 5),
+            ["enabled"] if prefs.get("live_refresh_enabled") else [],
+            prefs.get("live_refresh_interval", 60),
+            prefs.get("discovery_max_results", 25),
+        )
+    except Exception:
+        return (dash.no_update,) * 7
+
+
 # --- SETTINGS: Save Preferences ---
 @app.callback(
     Output("pref-save-status", "children"),
@@ -3458,8 +3706,11 @@ def show_dataset_info(active_tab, data):
     Input("pref-save-btn", "n_clicks"),
     State("pref-live-enabled", "value"),
     State("pref-live-interval", "value"),
+    prevent_initial_call=True,
 )
 def toggle_live_interval(n_clicks, live_enabled, live_interval_sec):
+    if not n_clicks:
+        return dash.no_update, dash.no_update
     enabled = "enabled" in (live_enabled or [])
     interval_ms = int(live_interval_sec or 60) * 1000
     return not enabled, interval_ms
@@ -3469,7 +3720,7 @@ def toggle_live_interval(n_clicks, live_enabled, live_interval_sec):
 @app.callback(
     Output("current-data", "data", allow_duplicate=True),
     Input("live-interval", "n_intervals"),
-    State("yf-symbol", "value"),
+    State("yf-symbol-input", "value"),
     State("yf-period", "value"),
     State("yf-interval", "value"),
     prevent_initial_call=True,
