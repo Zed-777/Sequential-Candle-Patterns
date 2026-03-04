@@ -11,6 +11,7 @@ A **sequential colour-based candle pattern scanner** that lets you define candle
 ## Features
 
 ### Core Pattern Engine
+
 - **Sequential Colour Scanner** — define sequences like `3R -> 2G`, `5R -> Doji -> 3G`, scan 200+ candles
 - **Wildcard Matching** — `3R -> * -> 2G` matches any 1-3 candles between segments
 - **Multi-Sequence Scanning** — scan multiple sequences simultaneously with colour-coded chart highlights
@@ -18,6 +19,7 @@ A **sequential colour-based candle pattern scanner** that lets you define candle
 - **15 Named Tokens** — Doji, Hammer, InvertedHammer, Engulfing, BullEngulfing, BearEngulfing, MorningStar, EveningStar, ShootingStar, SpinningTop, Marubozu, BullMarubozu, BearMarubozu, ThreeWhiteSoldiers, ThreeBlackCrows
 
 ### Analysis & Prediction
+
 - **Auto-Discovery Engine** — finds the most common R/G sequences in data automatically
 - **What-Comes-Next Prediction** — R/G/Doji probability analysis after each sequence
 - **Outcome Statistics** — win rate, avg return, max gain/loss for each sequence
@@ -27,18 +29,21 @@ A **sequential colour-based candle pattern scanner** that lets you define candle
 - **Advanced ML Predictor** — GradientBoosting model with 17 engineered features, calibrated probabilities
 
 ### Data & Connectivity
+
 - **Yahoo Finance Integration** — fetch real stock/crypto/index/forex data directly from sidebar
 - **Multi-Timeframe Analysis** — scan the same symbol across 1H/4H/Daily/Weekly, detect alignment
 - **Data Feed Caching** — LRU cache with 5-min TTL for Yahoo Finance fetches
 - **CSV Ingestion** — upload and validate custom OHLCV data
 
 ### Alerts & Monitoring
+
 - **Sequence Alerts** — create rules to watch for specific patterns, with SQLite persistence
 - **Webhook Notifications** — POST JSON to any URL when patterns match
 - **Email Notifications** — SMTP-based email alerts when patterns are detected
 - **Live Refresh** — configurable auto-scan interval for real-time pattern detection
 
 ### Dashboard (12 Tabs)
+
 | Tab | Purpose |
 |---|---|
 | **Chart** | Interactive OHLCV candlestick chart with coloured match highlights |
@@ -55,6 +60,7 @@ A **sequential colour-based candle pattern scanner** that lets you define candle
 | **Settings** | User preferences, live refresh toggle, defaults |
 
 ### Other
+
 - **Backtesting Engine** — equity curve, Sharpe ratio, max drawdown, profit factor per sequence
 - **Sequence Watchlist** — save/load/export/import sequence libraries with JSON persistence
 - **User Preferences** — JSON-backed profiles with defaults, recents, export/import

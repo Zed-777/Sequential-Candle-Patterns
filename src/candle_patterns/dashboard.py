@@ -6,7 +6,7 @@ import dash
 import dash_bootstrap_components as dbc
 from pathlib import Path
 
-from dash import html, dcc, Input, Output, State, callback_context, MATCH
+from dash import html, dcc, Input, Output, State, callback_context, MATCH, ALL
 from dash.dcc.express import send_data_frame, send_bytes
 
 import plotly.graph_objects as go
@@ -488,6 +488,52 @@ input::placeholder, textarea::placeholder {
     width: 100%;
 }
 
+/* Tab Icons via CSS ::before using Bootstrap Icons font */
+.nav-tabs .nav-item:nth-child(1) .nav-link::before  { content: "\\F2CD"; }  /* bi-graph-up */
+.nav-tabs .nav-item:nth-child(2) .nav-link::before  { content: "\\F26A"; }  /* bi-list-check */
+.nav-tabs .nav-item:nth-child(3) .nav-link::before  { content: "\\F52A"; }  /* bi-search */
+.nav-tabs .nav-item:nth-child(4) .nav-link::before  { content: "\\F17A"; }  /* bi-bar-chart-line */
+.nav-tabs .nav-item:nth-child(5) .nav-link::before  { content: "\\F2FE"; }  /* bi-grid-3x3 */
+.nav-tabs .nav-item:nth-child(6) .nav-link::before  { content: "\\F124"; }  /* bi-arrow-return-left */
+.nav-tabs .nav-item:nth-child(7) .nav-link::before  { content: "\\F1C3"; }  /* bi-calculator */
+.nav-tabs .nav-item:nth-child(8) .nav-link::before  { content: "\\F357"; }  /* bi-layers */
+.nav-tabs .nav-item:nth-child(9) .nav-link::before  { content: "\\F17F"; }  /* bi-bookmark-star */
+.nav-tabs .nav-item:nth-child(10) .nav-link::before { content: "\\F15A"; }  /* bi-bell */
+.nav-tabs .nav-item:nth-child(11) .nav-link::before { content: "\\F4F5"; }  /* bi-robot */
+.nav-tabs .nav-item:nth-child(12) .nav-link::before { content: "\\F3E5"; }  /* bi-gear */
+
+.nav-tabs .nav-link::before {
+    font-family: 'bootstrap-icons' !important;
+    margin-right: 0.4em;
+    font-size: 0.95em;
+    vertical-align: -0.1em;
+}
+
+/* Sidebar Accordion */
+.sidebar-card .accordion-item {
+    border: none !important;
+    background: transparent !important;
+}
+.sidebar-card .accordion-button {
+    padding: 0.6rem 0.25rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    color: #374151 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.sidebar-card .accordion-button::after {
+    width: 0.85rem;
+    height: 0.85rem;
+    background-size: 0.85rem;
+}
+.sidebar-card .accordion-button:not(.collapsed) {
+    color: #6366f1 !important;
+}
+.sidebar-card .accordion-body {
+    padding: 0.25rem 0 0.75rem 0 !important;
+}
+
 /* Card Styling */
 .card {
     border: 1px solid var(--border-color) !important;
@@ -870,247 +916,276 @@ sidebar = dbc.Card(
         dbc.CardBody(
             [
                 html.H5([html.I(className="bi bi-gear-fill"), " Configuration"], className="card-title"),
-                
-                # Upload section
-                html.Div([
-                    dcc.Upload(
-                        id="upload-data",
-                        children=dbc.Button(
-                            [html.I(className="bi bi-upload"), " Upload CSV"],
-                            color="primary",
-                            className="w-100 mb-3",
-                            style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem"}
+
+                dbc.Accordion(
+                    [
+                        # --- Data Source ---
+                        dbc.AccordionItem(
+                            [
+                                dcc.Upload(
+                                    id="upload-data",
+                                    children=dbc.Button(
+                                        [html.I(className="bi bi-upload"), " Upload CSV"],
+                                        color="primary",
+                                        className="w-100 mb-3",
+                                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem"}
+                                    ),
+                                    style={"cursor": "pointer"}
+                                ),
+                                dbc.Button(
+                                    [html.I(className="bi bi-database-fill"), " Load Sample Data"],
+                                    id="load-sample-btn",
+                                    color="success",
+                                    className="w-100 mb-3",
+                                    style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem", "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)", "color": "white", "border": "none", "cursor": "pointer", "borderRadius": "10px"},
+                                    n_clicks=0
+                                ),
+                                dcc.Store(id="load-sample-data-store"),
+                                html.Small(
+                                    "Load sample dataset (200 candlesticks)",
+                                    style={"marginTop": "8px", "color": "#6b7280", "display": "block", "fontWeight": "500"}
+                                ),
+                                dcc.Loading(
+                                    html.Div(id="upload-status", style={"marginTop": "12px"}),
+                                    type="circle", color="#6366f1",
+                                ),
+                            ],
+                            title="Data Source",
+                            item_id="acc-data-source",
                         ),
-                        style={"cursor": "pointer"}
-                    ),
-                    dbc.Button(
-                        [html.I(className="bi bi-database-fill"), " Load Sample Data"],
-                        id="load-sample-btn",
-                        color="success",
-                        className="w-100 mb-3",
-                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem", "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)", "color": "white", "border": "none", "cursor": "pointer", "borderRadius": "10px"},
-                        n_clicks=0
-                    ),
-                    dcc.Store(id="load-sample-data-store"),
-                    html.Small(
-                        "Load sample dataset (200 candlesticks)",
-                        style={"marginTop": "8px", "color": "#6b7280", "display": "block", "fontWeight": "500"}
-                    ),
-                    dcc.Loading(
-                        html.Div(id="upload-status", style={"marginTop": "12px"}),
-                        type="circle", color="#6366f1",
-                    ),
-                ], style={"marginBottom": "1.5rem"}),
-                
-                html.Hr(className="hr-style"),
-                
-                # ==========================================
-                # YAHOO FINANCE — fetch real market data
-                # ==========================================
-                html.Div([
-                    html.H6([html.I(className="bi bi-globe"), " Yahoo Finance"]),
-                    html.Small(
-                        "Fetch real stock, crypto, or index data directly.",
-                        style={"color": "#6b7280", "display": "block", "marginBottom": "0.75rem", "fontWeight": "500"}
-                    ),
-                    
-                    # Symbol input
-                    html.Label("Symbol", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
-                    dcc.Input(
-                        id="yf-symbol-input",
-                        type="text",
-                        placeholder="e.g. AAPL, BTC-USD, ^GSPC",
-                        style={"width": "100%", "marginBottom": "0.5rem"},
-                        debounce=True,
-                    ),
-                    
-                    # Popular symbols quick-pick
-                    html.Label("Quick Pick", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "marginTop": "0.25rem"}),
-                    dcc.Dropdown(
-                        id="yf-popular-dropdown",
-                        options=[
-                            {"label": f"{cat}: {', '.join(syms[:5])}...", "value": cat}
-                            for cat, syms in POPULAR_SYMBOLS.items()
-                        ],
-                        placeholder="Browse popular symbols...",
-                        style={"marginBottom": "0.5rem"},
-                    ),
-                    dcc.Dropdown(
-                        id="yf-symbol-select",
-                        placeholder="Select symbol...",
-                        style={"marginBottom": "0.75rem"},
-                    ),
-                    
-                    # Period & Interval row
-                    dbc.Row([
-                        dbc.Col([
-                            html.Label("Period", style={"fontWeight": "700", "fontSize": "0.75rem", "color": "#374151"}),
-                            dcc.Dropdown(
-                                id="yf-period",
-                                options=[{"label": p, "value": p} for p in VALID_PERIODS],
-                                value="6mo",
-                                clearable=False,
-                                style={"fontSize": "0.85rem"},
-                            ),
-                        ], width=6),
-                        dbc.Col([
-                            html.Label("Interval", style={"fontWeight": "700", "fontSize": "0.75rem", "color": "#374151"}),
-                            dcc.Dropdown(
-                                id="yf-interval",
-                                options=[{"label": i, "value": i} for i in ["1m", "5m", "15m", "30m", "1h", "1d", "1wk", "1mo"]],
-                                value="1d",
-                                clearable=False,
-                                style={"fontSize": "0.85rem"},
-                            ),
-                        ], width=6),
-                    ], className="g-2 mb-2"),
-                    
-                    # Fetch button
-                    dcc.Loading(
-                        dbc.Button(
-                            [html.I(className="bi bi-cloud-download"), " Fetch Data"],
-                            id="yf-fetch-btn",
-                            color="info",
-                            className="w-100 mt-2",
-                            style={"fontWeight": "700", "padding": "0.85rem 1.5rem"},
+
+                        # --- Yahoo Finance ---
+                        dbc.AccordionItem(
+                            [
+                                html.Small(
+                                    "Fetch real stock, crypto, or index data directly.",
+                                    style={"color": "#6b7280", "display": "block", "marginBottom": "0.75rem", "fontWeight": "500"}
+                                ),
+                                html.Label("Symbol", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
+                                dcc.Input(
+                                    id="yf-symbol-input",
+                                    type="text",
+                                    placeholder="e.g. AAPL, BTC-USD, ^GSPC",
+                                    style={"width": "100%", "marginBottom": "0.5rem"},
+                                    debounce=True,
+                                ),
+                                html.Label("Quick Pick", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "marginTop": "0.25rem"}),
+                                dcc.Dropdown(
+                                    id="yf-popular-dropdown",
+                                    options=[
+                                        {"label": f"{cat}: {', '.join(syms[:5])}...", "value": cat}
+                                        for cat, syms in POPULAR_SYMBOLS.items()
+                                    ],
+                                    placeholder="Browse popular symbols...",
+                                    style={"marginBottom": "0.5rem"},
+                                ),
+                                dcc.Dropdown(
+                                    id="yf-symbol-select",
+                                    placeholder="Select symbol...",
+                                    style={"marginBottom": "0.75rem"},
+                                ),
+                                dbc.Row([
+                                    dbc.Col([
+                                        html.Label("Period", style={"fontWeight": "700", "fontSize": "0.75rem", "color": "#374151"}),
+                                        dcc.Dropdown(
+                                            id="yf-period",
+                                            options=[{"label": p, "value": p} for p in VALID_PERIODS],
+                                            value="6mo",
+                                            clearable=False,
+                                            style={"fontSize": "0.85rem"},
+                                        ),
+                                    ], width=6),
+                                    dbc.Col([
+                                        html.Label("Interval", style={"fontWeight": "700", "fontSize": "0.75rem", "color": "#374151"}),
+                                        dcc.Dropdown(
+                                            id="yf-interval",
+                                            options=[{"label": i, "value": i} for i in ["1m", "5m", "15m", "30m", "1h", "1d", "1wk", "1mo"]],
+                                            value="1d",
+                                            clearable=False,
+                                            style={"fontSize": "0.85rem"},
+                                        ),
+                                    ], width=6),
+                                ], className="g-2 mb-2"),
+                                dcc.Loading(
+                                    dbc.Button(
+                                        [html.I(className="bi bi-cloud-download"), " Fetch Data"],
+                                        id="yf-fetch-btn",
+                                        color="info",
+                                        className="w-100 mt-2",
+                                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem"},
+                                    ),
+                                    type="circle", color="#6366f1",
+                                ),
+                                dcc.Loading(
+                                    html.Div(id="yf-fetch-status", style={"marginTop": "0.5rem"}),
+                                    type="circle", color="#6366f1",
+                                ),
+                            ],
+                            title="Yahoo Finance",
+                            item_id="acc-yahoo",
                         ),
-                        type="circle", color="#6366f1",
-                    ),
-                    dcc.Loading(
-                        html.Div(id="yf-fetch-status", style={"marginTop": "0.5rem"}),
-                        type="circle", color="#6366f1",
-                    ),
-                ], style={"marginBottom": "1.5rem"}),
-                
+
+                        # --- Date Range Filter ---
+                        dbc.AccordionItem(
+                            [
+                                dcc.DatePickerRange(
+                                    id="date-range",
+                                    display_format="YYYY-MM-DD",
+                                    start_date_placeholder_text="Start",
+                                    end_date_placeholder_text="End",
+                                    style={"width": "100%"}
+                                ),
+                            ],
+                            title="Date Range Filter",
+                            item_id="acc-date-range",
+                        ),
+
+                        # --- Sequence Scanner ---
+                        dbc.AccordionItem(
+                            [
+                                html.Small(
+                                    "Define colour sequences and scan 200 candles for matches.",
+                                    style={"color": "#6b7280", "display": "block", "marginBottom": "0.75rem", "fontWeight": "500"}
+                                ),
+                                html.Label("Preset Sequences", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
+                                dcc.Dropdown(
+                                    id="preset-sequences",
+                                    options=[{"label": k, "value": v} for k, v in PRESET_SEQUENCES.items()],
+                                    multi=True,
+                                    placeholder="Pick common sequences...",
+                                    style={"marginBottom": "0.75rem"},
+                                ),
+                                html.Label("Custom Sequences (one per line)", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "marginTop": "0.25rem"}),
+                                dcc.Textarea(
+                                    id="custom-sequences-input",
+                                    placeholder="5R -> 3G\n2R -> Doji -> 1G\n3R -> * -> 2G",
+                                    style={
+                                        "width": "100%", "height": "80px", "borderRadius": "10px",
+                                        "padding": "0.75rem", "border": "1.5px solid #e5e7eb",
+                                        "fontSize": "0.85rem", "fontFamily": "monospace",
+                                    },
+                                ),
+                                html.Small(
+                                    [
+                                        "Syntax: NR = N red, NG = N green. ",
+                                        html.A(
+                                            [html.I(className="bi bi-question-circle"), " Full reference"],
+                                            id="syntax-help-btn",
+                                            href="#",
+                                            style={"color": "#6366f1", "cursor": "pointer", "textDecoration": "none", "fontWeight": "600"},
+                                        ),
+                                    ],
+                                    style={"color": "#9ca3af", "display": "block", "marginTop": "4px", "fontSize": "0.7rem"},
+                                ),
+                                dbc.Popover(
+                                    dbc.PopoverBody([
+                                        html.H6("Sequence Syntax Cheat-Sheet", style={"fontWeight": "800", "marginBottom": "0.5rem"}),
+                                        html.Table([
+                                            html.Tbody([
+                                                html.Tr([html.Td(html.Code("NR"), style={"paddingRight": "0.75rem"}), html.Td("N consecutive red (bearish) candles")]),
+                                                html.Tr([html.Td(html.Code("NG"), style={"paddingRight": "0.75rem"}), html.Td("N consecutive green (bullish) candles")]),
+                                                html.Tr([html.Td(html.Code("Doji"), style={"paddingRight": "0.75rem"}), html.Td("Doji candle (open \u2248 close)")]),
+                                                html.Tr([html.Td(html.Code("Hammer"), style={"paddingRight": "0.75rem"}), html.Td("Hammer candle pattern")]),
+                                                html.Tr([html.Td(html.Code("->"), style={"paddingRight": "0.75rem"}), html.Td("Separator between elements")]),
+                                                html.Tr([html.Td(html.Code("*"), style={"paddingRight": "0.75rem"}), html.Td("Wildcard (1-3 candles)")]),
+                                            ])
+                                        ], style={"fontSize": "0.8rem", "width": "100%", "marginBottom": "0.5rem"}),
+                                        html.Hr(style={"margin": "0.5rem 0"}),
+                                        html.P("Examples:", style={"fontWeight": "700", "marginBottom": "0.25rem", "fontSize": "0.8rem"}),
+                                        html.Code("5R -> 3G", style={"display": "block", "fontSize": "0.78rem"}),
+                                        html.Code("2R -> Doji -> 1G", style={"display": "block", "fontSize": "0.78rem"}),
+                                        html.Code("3R -> * -> 2G", style={"display": "block", "fontSize": "0.78rem"}),
+                                    ]),
+                                    target="syntax-help-btn",
+                                    trigger="hover",
+                                    placement="right",
+                                    style={"maxWidth": "360px"},
+                                ),
+                                dbc.Button(
+                                    [html.I(className="bi bi-play-fill"), " Scan Sequences"],
+                                    id="scan-sequences-btn",
+                                    color="primary",
+                                    className="w-100 mt-3",
+                                    style={"fontWeight": "700", "padding": "0.85rem 1.5rem"},
+                                ),
+                                html.Div(id="scan-results-summary", style={"marginTop": "0.75rem"}),
+                            ],
+                            title="Sequence Scanner",
+                            item_id="acc-scanner",
+                        ),
+
+                        # --- History ---
+                        dbc.AccordionItem(
+                            [
+                                dcc.Dropdown(
+                                    id="history-select",
+                                    placeholder="Select a past upload...",
+                                    clearable=True,
+                                    style={"marginTop": "0.5rem"}
+                                ),
+                            ],
+                            title="Load from History",
+                            item_id="acc-history",
+                        ),
+
+                        # --- Maintenance ---
+                        dbc.AccordionItem(
+                            [
+                                dbc.Button(
+                                    [html.I(className="bi bi-trash"), " Run Cleanup"],
+                                    id="cleanup-btn",
+                                    color="danger",
+                                    size="sm",
+                                    className="w-100",
+                                    style={"fontWeight": "700", "padding": "0.65rem 1rem"}
+                                ),
+                                dcc.ConfirmDialog(
+                                    id="cleanup-confirm",
+                                    message="This will permanently delete uploads older than 30 days. Continue?",
+                                ),
+                                html.Div(
+                                    id="cleanup-result",
+                                    style={"marginTop": "10px", "fontSize": "0.9em", "color": "#6b7280", "fontWeight": "500"}
+                                ),
+                            ],
+                            title="Maintenance",
+                            item_id="acc-maintenance",
+                        ),
+
+                        # --- Export ---
+                        dbc.AccordionItem(
+                            [
+                                dbc.Button(
+                                    [html.I(className="bi bi-table"), " Matches CSV"],
+                                    id="export-detections-btn",
+                                    color="info",
+                                    size="sm",
+                                    className="w-100 mb-2",
+                                    style={"fontWeight": "700", "padding": "0.65rem 1rem"}
+                                ),
+                                dbc.Button(
+                                    [html.I(className="bi bi-bar-chart"), " Discovery CSV"],
+                                    id="export-aggregated-btn",
+                                    color="info",
+                                    size="sm",
+                                    className="w-100",
+                                    style={"fontWeight": "700", "padding": "0.65rem 1rem"}
+                                ),
+                                dcc.Download(id="download-asset"),
+                                html.Div(id="export-status", style={"marginTop": "0.5rem"}),
+                            ],
+                            title="Export Data",
+                            item_id="acc-export",
+                        ),
+                    ],
+                    always_open=True,
+                    active_item=["acc-data-source", "acc-scanner"],
+                    flush=True,
+                    style={"marginTop": "0.5rem"},
+                ),
+
+                # Statistics cards always visible at bottom
                 html.Hr(className="hr-style"),
-                
-                # Date range filter
-                html.Div([
-                    html.H6([html.I(className="bi bi-calendar-range"), " Date Range Filter"]),
-                    dcc.DatePickerRange(
-                        id="date-range",
-                        display_format="YYYY-MM-DD",
-                        start_date_placeholder_text="Start",
-                        end_date_placeholder_text="End",
-                        style={"width": "100%"}
-                    ),
-                ], style={"marginBottom": "1.5rem"}),
-                
-                html.Hr(className="hr-style"),
-                
-                # ==========================================
-                # SEQUENCE SCANNER — the main feature
-                # ==========================================
-                html.Div([
-                    html.H6([html.I(className="bi bi-search"), " Sequence Scanner"]),
-                    html.Small(
-                        "Define colour sequences and scan 200 candles for matches.",
-                        style={"color": "#6b7280", "display": "block", "marginBottom": "0.75rem", "fontWeight": "500"}
-                    ),
-                    
-                    # Preset sequences (multi-select dropdown)
-                    html.Label("Preset Sequences", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
-                    dcc.Dropdown(
-                        id="preset-sequences",
-                        options=[{"label": k, "value": v} for k, v in PRESET_SEQUENCES.items()],
-                        multi=True,
-                        placeholder="Pick common sequences...",
-                        style={"marginBottom": "0.75rem"},
-                    ),
-                    
-                    # Custom sequences textarea
-                    html.Label("Custom Sequences (one per line)", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "marginTop": "0.25rem"}),
-                    dcc.Textarea(
-                        id="custom-sequences-input",
-                        placeholder="5R -> 3G\n2R -> Doji -> 1G\n3R -> * -> 2G",
-                        style={
-                            "width": "100%", "height": "80px", "borderRadius": "10px",
-                            "padding": "0.75rem", "border": "1.5px solid #e5e7eb",
-                            "fontSize": "0.85rem", "fontFamily": "monospace",
-                        },
-                    ),
-                    html.Small(
-                        "Syntax: NR = N red, NG = N green, Doji, Hammer. Arrow separators: ->. Wildcard: * (matches 1-3 candles)",
-                        style={"color": "#9ca3af", "display": "block", "marginTop": "4px", "fontSize": "0.7rem"},
-                    ),
-                    
-                    # Scan button
-                    dbc.Button(
-                        [html.I(className="bi bi-play-fill"), " Scan Sequences"],
-                        id="scan-sequences-btn",
-                        color="primary",
-                        className="w-100 mt-3",
-                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem"},
-                    ),
-                    
-                    # Results summary
-                    html.Div(id="scan-results-summary", style={"marginTop": "0.75rem"}),
-                ], style={"marginBottom": "1.5rem"}),
-                
-                html.Hr(className="hr-style"),
-                
-                # History section
-                html.Div([
-                    html.H6([html.I(className="bi bi-clock-history"), " Load from History"]),
-                    dcc.Dropdown(
-                        id="history-select",
-                        placeholder="Select a past upload...",
-                        clearable=True,
-                        style={"marginTop": "0.5rem"}
-                    ),
-                ], style={"marginBottom": "1.5rem"}),
-                
-                html.Hr(className="hr-style"),
-                
-                # Maintenance section
-                html.Div([
-                    html.H6([html.I(className="bi bi-wrench"), " Maintenance"]),
-                    dbc.Button(
-                        [html.I(className="bi bi-trash"), " Run Cleanup"],
-                        id="cleanup-btn",
-                        color="danger",
-                        size="sm",
-                        className="w-100",
-                        style={"fontWeight": "700", "padding": "0.65rem 1rem"}
-                    ),
-                    dcc.ConfirmDialog(
-                        id="cleanup-confirm",
-                        message="This will permanently delete uploads older than 30 days. Continue?",
-                    ),
-                    html.Div(
-                        id="cleanup-result",
-                        style={"marginTop": "10px", "fontSize": "0.9em", "color": "#6b7280", "fontWeight": "500"}
-                    ),
-                ], style={"marginBottom": "1.5rem"}),
-                
-                html.Hr(className="hr-style"),
-                
-                # Export section
-                html.Div([
-                    html.H6([html.I(className="bi bi-download"), " Export Data"]),
-                    dbc.Button(
-                        [html.I(className="bi bi-table"), " Matches CSV"],
-                        id="export-detections-btn",
-                        color="info",
-                        size="sm",
-                        className="w-100 mb-2",
-                        style={"fontWeight": "700", "padding": "0.65rem 1rem"}
-                    ),
-                    dbc.Button(
-                        [html.I(className="bi bi-bar-chart"), " Discovery CSV"],
-                        id="export-aggregated-btn",
-                        color="info",
-                        size="sm",
-                        className="w-100",
-                        style={"fontWeight": "700", "padding": "0.65rem 1rem"}
-                    ),
-                    dcc.Download(id="download-asset"),
-                    html.Div(id="export-status", style={"marginTop": "0.5rem"}),
-                ], style={"marginBottom": "1.5rem"}),
-                
-                html.Hr(className="hr-style"),
-                
-                # Statistics cards
                 html.Div(id="stats-cards"),
             ]
         )
@@ -1180,10 +1255,14 @@ main_content = dbc.Tabs(
             children=[
                 dbc.Container(
                     [
+                        html.Div(
+                            id="candle-count-badge",
+                            style={"textAlign": "right", "marginTop": "0.75rem", "minHeight": "1.5rem"},
+                        ),
                         dcc.Loading(
                             dcc.Graph(
                                 id="candle-chart",
-                                style={"marginTop": "1.5rem"},
+                                style={"marginTop": "0.25rem"},
                                 config={"responsive": True, "displayModeBar": True, "displaylogo": False}
                             ),
                             type="circle", color="#6366f1"
@@ -1300,7 +1379,13 @@ main_content = dbc.Tabs(
                                 ),
                             ], width=3),
                         ], className="g-3 mb-3", style={"marginTop": "1rem"}),
-                        dcc.Loading(html.Div(id="reverse-content"), type="circle", color="#6366f1"),
+                        dcc.Loading(html.Div(id="reverse-content", children=[
+                            html.Div([
+                                html.I(className="bi bi-arrow-repeat", style={"fontSize": "2rem", "color": "#c7d2fe"}),
+                                html.P("Set parameters above and click Find Patterns to discover sequences preceding big price moves.",
+                                       style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600", "maxWidth": "420px", "margin": "0.5rem auto 0"}),
+                            ], style={"padding": "3rem", "textAlign": "center"}),
+                        ]), type="circle", color="#6366f1"),
                     ],
                     fluid=True
                 )
@@ -1338,7 +1423,13 @@ main_content = dbc.Tabs(
                                 ),
                             ], width=3),
                         ], className="g-3 mb-3", style={"marginTop": "1rem"}),
-                        dcc.Loading(html.Div(id="backtest-content"), type="circle", color="#10b981"),
+                        dcc.Loading(html.Div(id="backtest-content", children=[
+                            html.Div([
+                                html.I(className="bi bi-graph-up-arrow", style={"fontSize": "2rem", "color": "#bbf7d0"}),
+                                html.P("Load data and scan sequences first, then click Run Backtest to see equity curves and performance metrics.",
+                                       style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600", "maxWidth": "420px", "margin": "0.5rem auto 0"}),
+                            ], style={"padding": "3rem", "textAlign": "center"}),
+                        ]), type="circle", color="#10b981"),
                     ],
                     fluid=True,
                 )
@@ -1386,7 +1477,13 @@ main_content = dbc.Tabs(
                                 ),
                             ], width=3),
                         ], className="g-3 mb-3", style={"marginTop": "1rem"}),
-                        dcc.Loading(html.Div(id="mtf-content"), type="circle", color="#6366f1"),
+                        dcc.Loading(html.Div(id="mtf-content", children=[
+                            html.Div([
+                                html.I(className="bi bi-layers", style={"fontSize": "2rem", "color": "#c7d2fe"}),
+                                html.P("Enter a symbol, select timeframes, and click Analyse to check sequence alignment across intervals.",
+                                       style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600", "maxWidth": "420px", "margin": "0.5rem auto 0"}),
+                            ], style={"padding": "3rem", "textAlign": "center"}),
+                        ]), type="circle", color="#6366f1"),
                     ],
                     fluid=True,
                 )
@@ -1542,7 +1639,13 @@ main_content = dbc.Tabs(
                                 ),
                             ], width=3),
                         ], className="g-3 mb-3", style={"marginTop": "1rem"}),
-                        dcc.Loading(html.Div(id="ml-predict-content"), type="circle", color="#6366f1"),
+                        dcc.Loading(html.Div(id="ml-predict-content", children=[
+                            html.Div([
+                                html.I(className="bi bi-robot", style={"fontSize": "2rem", "color": "#c7d2fe"}),
+                                html.P("Load data first, then click Train & Predict to build a model and see outcome predictions.",
+                                       style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600", "maxWidth": "420px", "margin": "0.5rem auto 0"}),
+                            ], style={"padding": "3rem", "textAlign": "center"}),
+                        ]), type="circle", color="#6366f1"),
                     ],
                     fluid=True,
                 )
@@ -1740,6 +1843,56 @@ app.layout = html.Div(
             },
         ),
         pattern_modal,
+
+        # ---- Form-control Tooltips (Phase 9 UX) ----
+        dbc.Tooltip("Choose a trading pair / ticker symbol to fetch from Yahoo Finance.",
+                    target="yf-symbol-select", placement="right"),
+        dbc.Tooltip("How far back to fetch data (e.g. 6mo = six months).",
+                    target="yf-period", placement="right"),
+        dbc.Tooltip("Candle interval / timeframe for the fetched data.",
+                    target="yf-interval", placement="right"),
+        dbc.Tooltip("Filter the chart to a specific date window.",
+                    target="date-range", placement="right"),
+        dbc.Tooltip("Pick from commonly-used candle sequences.",
+                    target="preset-sequences", placement="right"),
+        dbc.Tooltip("Write custom candle sequences, one per line. Syntax: NR (N red), NG (N green), Doji, Hammer. Use -> as separator and * as wildcard.",
+                    target="custom-sequences-input", placement="right"),
+        dbc.Tooltip("Reload a previously uploaded dataset.",
+                    target="history-select", placement="right"),
+        dbc.Tooltip("How many candles ahead to analyse for move statistics.",
+                    target="lookahead-slider", placement="top"),
+        dbc.Tooltip("Minimum price move (%) that qualifies as a 'big move'.",
+                    target="reverse-threshold", placement="top"),
+        dbc.Tooltip("Look for big gains, big losses, or both.",
+                    target="reverse-direction", placement="top"),
+        dbc.Tooltip("How many candles to look back before the big move for pattern discovery.",
+                    target="reverse-lookback", placement="top"),
+        dbc.Tooltip("Number of candles to hold each trade in the backtest.",
+                    target="bt-hold-slider", placement="top"),
+        dbc.Tooltip("Starting portfolio value for the backtest simulation.",
+                    target="bt-capital", placement="top"),
+        dbc.Tooltip("Ticker symbol to fetch multi-timeframe data for (e.g. AAPL, BTC-USD).",
+                    target="mtf-symbol", placement="top"),
+        dbc.Tooltip("Select one or more timeframes to compare sequence alignment.",
+                    target="mtf-intervals", placement="top"),
+        dbc.Tooltip("Number of recent candles to scan on each timeframe.",
+                    target="mtf-lookback", placement="top"),
+        dbc.Tooltip("A friendly name for this watchlist entry.",
+                    target="wl-label", placement="top"),
+        dbc.Tooltip("Comma-separated sequences to watch (e.g. 3R -> 2G, 5R -> 3G).",
+                    target="wl-sequences", placement="top"),
+        dbc.Tooltip("Optional ticker to associate with these sequences.",
+                    target="wl-symbol", placement="top"),
+        dbc.Tooltip("A name for this alert rule.",
+                    target="alert-rule-name", placement="top"),
+        dbc.Tooltip("Comma-separated sequences that trigger the alert.",
+                    target="alert-sequences", placement="top"),
+        dbc.Tooltip("Optional ticker filter for the alert.",
+                    target="alert-symbol", placement="top"),
+        dbc.Tooltip("Optional webhook URL to POST alert payloads to.",
+                    target="alert-webhook", placement="top"),
+        dbc.Tooltip("How many candles ahead the ML model predicts.",
+                    target="ml-hold-slider", placement="top"),
     ],
     style={
         "background": "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)",
@@ -1916,6 +2069,7 @@ def scan_sequences(n_clicks, presets, custom_text, data):
 @app.callback(
     Output("candle-chart", "figure"),
     Output("matches-content", "children"),
+    Output("candle-count-badge", "children"),
     Input("current-data", "data"),
     Input("scan-results", "data"),
     Input("date-range", "start_date"),
@@ -1946,7 +2100,7 @@ def update_chart(data, scan_results, start_date, end_date):
              html.P("No data loaded", style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
             style={"padding": "3rem", "textAlign": "center"},
         )
-        return fig, empty
+        return fig, empty, ""
 
     # ---- process data ----
     try:
@@ -2066,6 +2220,27 @@ def update_chart(data, scan_results, start_date, end_date):
                         html.Strong(seq_str, style={"fontFamily": "monospace"}),
                         badge,
                         html.Span(f"  ({res.get('length', '?')} candles)", style={"color": "#9ca3af", "fontSize": "0.8rem", "marginLeft": "0.5rem"}),
+                        # Quick-action buttons
+                        html.Span([
+                            dbc.Button(
+                                [html.I(className="bi bi-bar-chart-steps me-1"), "Backtest"],
+                                id={"type": "goto-tab-btn", "tab": "tab-backtest", "idx": idx},
+                                color="link", size="sm",
+                                style={"fontSize": "0.7rem", "padding": "0.15rem 0.4rem", "fontWeight": "600"},
+                            ),
+                            dbc.Button(
+                                [html.I(className="bi bi-grid-3x3 me-1"), "Heatmap"],
+                                id={"type": "goto-tab-btn", "tab": "tab-heatmap", "idx": idx},
+                                color="link", size="sm",
+                                style={"fontSize": "0.7rem", "padding": "0.15rem 0.4rem", "fontWeight": "600"},
+                            ),
+                            dbc.Button(
+                                [html.I(className="bi bi-graph-up me-1"), "Stats"],
+                                id={"type": "goto-tab-btn", "tab": "tab-stats", "idx": idx},
+                                color="link", size="sm",
+                                style={"fontSize": "0.7rem", "padding": "0.15rem 0.4rem", "fontWeight": "600"},
+                            ),
+                        ], style={"float": "right"}),
                     ]),
                     dbc.CardBody(body),
                 ], className="mb-3")
@@ -2074,7 +2249,12 @@ def update_chart(data, scan_results, start_date, end_date):
 
             matches_div = html.Div(cards)
 
-        return fig, matches_div
+        candle_badge = dbc.Badge(
+            [html.I(className="bi bi-bar-chart-steps me-1"), f"{len(df)} candles"],
+            color="light", text_color="secondary",
+            style={"fontSize": "0.78rem", "fontWeight": "600"},
+        )
+        return fig, matches_div, candle_badge
 
     except Exception as e:
         logger.exception("[CALLBACK ERROR] update_chart: %s", e)
@@ -2083,7 +2263,25 @@ def update_chart(data, scan_results, start_date, end_date):
                                x=0.5, y=0.5, showarrow=False, font=dict(size=14, color='#ef4444'))
         err_fig.update_layout(height=400, template='plotly_white')
         err_div = html.Div(f"Error: {str(e)[:100]}", style={"color": "#ef4444", "padding": "1rem"})
-        return err_fig, err_div
+        return err_fig, err_div, ""
+
+
+# Quick-action tab-switch from match cards ----------------------------
+@app.callback(
+    Output("tabs", "active_tab", allow_duplicate=True),
+    Input({"type": "goto-tab-btn", "tab": ALL, "idx": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def switch_tab_from_match(n_clicks_list):
+    """Switch to the target tab when a quick-action button is clicked."""
+    ctx = callback_context
+    if not ctx.triggered or not any(n_clicks_list):
+        return dash.no_update
+    # Extract which button was clicked
+    triggered_id = ctx.triggered[0]["prop_id"].rsplit(".", 1)[0]
+    import json as _json
+    btn_info = _json.loads(triggered_id)
+    return btn_info["tab"]
 
 
 # Auto-Discovery tab — discover common R/G sequences ------------------
@@ -2957,28 +3155,34 @@ def run_backtest(n_clicks, hold_periods, initial_capital, scan_results, data):
                     html.H6(html.Code(seq_str), className="mb-2"),
                     dbc.Row([
                         dbc.Col(html.Div([
-                            html.Small("Trades", style={"color": "#6b7280"}),
+                            html.Small("Trades", style={"color": "#6b7280"},
+                                       title="Total number of simulated trades"),
                             html.H5(str(len(trades)), style={"fontWeight": "700"}),
                         ]), width=2),
                         dbc.Col(html.Div([
-                            html.Small("Win Rate", style={"color": "#6b7280"}),
+                            html.Small("Win Rate", style={"color": "#6b7280"},
+                                       title="Percentage of trades that ended in profit"),
                             html.H5(f"{win_rate:.1%}", style={"fontWeight": "700", "color": wr_color}),
                         ]), width=2),
                         dbc.Col(html.Div([
-                            html.Small("Sharpe", style={"color": "#6b7280"}),
+                            html.Small("Sharpe", style={"color": "#6b7280"},
+                                       title="Risk-adjusted return (Sharpe Ratio). >1 is good, >2 is excellent"),
                             html.H5(f"{sharpe:.2f}", style={"fontWeight": "700", "color": sh_color}),
                         ]), width=2),
                         dbc.Col(html.Div([
-                            html.Small("Max DD", style={"color": "#6b7280"}),
+                            html.Small("Max DD", style={"color": "#6b7280"},
+                                       title="Maximum drawdown — largest peak-to-trough decline"),
                             html.H5(f"{max_dd:.1%}", style={"fontWeight": "700", "color": "#ef4444"}),
                         ]), width=2),
                         dbc.Col(html.Div([
-                            html.Small("Profit Factor", style={"color": "#6b7280"}),
+                            html.Small("Profit Factor", style={"color": "#6b7280"},
+                                       title="Gross profit / Gross loss. >1 means profitable, >2 is strong"),
                             html.H5(f"{pf:.2f}" if pf != float("inf") else "∞",
                                     style={"fontWeight": "700", "color": "#6366f1"}),
                         ]), width=2),
                         dbc.Col(html.Div([
-                            html.Small("Final Equity", style={"color": "#6b7280"}),
+                            html.Small("Final Equity", style={"color": "#6b7280"},
+                                       title="Portfolio value at the end of the backtest"),
                             html.H5(f"${eq.iloc[-1]:,.0f}", style={"fontWeight": "700"}),
                         ]), width=2),
                     ]),

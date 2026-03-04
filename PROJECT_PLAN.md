@@ -884,6 +884,19 @@ candle-patterns/
 
 ### Future Roadmap
 
+#### Dashboard UX Enhancements (Phase 9)
+
+- [x] **Tab icons** — Add Bootstrap Icons to all 12 tab labels for faster visual scanning
+- [x] **Empty-state guidance** — Friendly placeholders with call-to-action on Backtesting, Multi-TF, Reverse Finder, Heatmap, ML Predict tabs
+- [x] **Form control tooltips** — `dbc.Tooltip` on all 25 slider/input labels (Hold Period, Lookback, Threshold, Capital, etc.)
+- [x] **Sequence syntax popover** — Clickable `(?)` cheat-sheet for colour sequence syntax (NR, NG, Doji, ->, *)
+- [x] **Chart candle count badge** — `dbc.Badge` showing candle count at top-right of chart tab
+- [x] **Backtest stat card tooltips** — Explain Win Rate, Sharpe, Max DD, Profit Factor, Final Equity on hover
+- [x] **Sidebar accordion** — Convert 7 sidebar sections into collapsible `dbc.Accordion` to reduce scrolling
+- [x] **Quick-action match buttons** — "Backtest", "Heatmap", "Stats" per match card in Sequence Matches tab
+
+#### Infrastructure & Advanced Features
+
 - [ ] E2E Playwright test suite
 - [ ] WebSocket live candle streaming (real-time market data)
 - [ ] Neural network sequence predictor (deep learning upgrade)
