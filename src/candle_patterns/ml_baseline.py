@@ -12,7 +12,7 @@ Includes:
 import logging
 import pickle
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Dict, List, Tuple, Union
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
@@ -20,7 +20,7 @@ from sklearn.model_selection import TimeSeriesSplit, cross_validate
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
-    roc_auc_score, confusion_matrix, classification_report
+    roc_auc_score, confusion_matrix
 )
 
 logger = logging.getLogger(__name__)
@@ -185,7 +185,7 @@ class PatternMLModel:
             for key in ['accuracy', 'precision', 'recall', 'f1', 'roc_auc']
         }
         
-        logger.info(f"CV Results (mean ± std):")
+        logger.info("CV Results (mean ± std):")
         for metric, (mean, std) in cv_results.items():
             logger.info(f"  {metric}: {mean:.3f} ± {std:.3f}")
         

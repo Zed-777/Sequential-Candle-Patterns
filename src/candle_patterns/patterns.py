@@ -77,7 +77,7 @@ def match_named_token(df: pd.DataFrame, idx: int, token: str) -> bool:
 
     # import helpers here to avoid circular imports
 
-    from .detection import is_doji, is_hammer, candle_color
+    from .detection import is_doji, is_hammer
 
     token_low = token.lower()
 
@@ -368,7 +368,6 @@ def what_comes_next(
     n = len(syms)
 
     dist: List[dict] = []
-    continuations: List[tuple] = []
 
     for pos in range(lookahead):
         counter: dict = {"R": 0, "G": 0, "Doji": 0}
@@ -523,7 +522,6 @@ def discover_color_sequences(
 
         [{"sequence": "3R -> 2G", "count": 12, "length": 5, "support": 0.061}, ...]
     """
-    from .detection import is_doji, candle_color  # local import to avoid circular
 
     syms = symbol_sequence(df)
     n = len(syms)

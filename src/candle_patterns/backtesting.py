@@ -9,7 +9,7 @@ Calculates:
 """
 
 import logging
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 import pandas as pd
 import numpy as np
 
@@ -308,7 +308,6 @@ def evaluate_pattern_profitability(
     }
     
     if total_trades > 0:
-        all_returns = []
         for _, row in pattern_results.iterrows():
             # Reconstruct returns for overall calculation
             pass  # Would need original trades

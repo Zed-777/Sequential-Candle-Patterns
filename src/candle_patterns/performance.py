@@ -141,7 +141,7 @@ def process_in_chunks(
     dict[str, list[int]]
         Mapping ``seq_str -> list_of_end_indices`` (global indices).
     """
-    from .patterns import parse_sequence, find_sequence_occurrences
+    from .patterns import find_sequence_occurrences
 
     n = len(df)
     results: Dict[str, List[int]] = {s: [] for s in seq_strs}

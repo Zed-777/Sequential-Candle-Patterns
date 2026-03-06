@@ -4,7 +4,7 @@
 
 A **sequential colour-based candle pattern scanner** that lets you define candlestick colour sequences (e.g. `3R -> 2G`, `5R -> Doji -> 3G`), scan historical OHLCV data for matches, auto-discover recurring patterns, and predict likely continuations — all from an interactive 12-tab Dash web dashboard or CLI.
 
-**v1.0.0** — 225 tests passing, 15 named tokens, 12 dashboard tabs, Yahoo Finance integration, ML prediction, sequence alerts, performance optimization.
+**v1.3.0** — 279 tests passing, 15 named tokens, 12 dashboard tabs, Yahoo Finance integration, ML prediction, sequence alerts, performance optimization.
 
 ---
 
@@ -96,7 +96,7 @@ source .venv/bin/activate
 ### 2. Run the Dashboard
 
 ```bash
-python -m candle_patterns.cli run
+python scripts/run_dash.py
 # Opens at http://localhost:8050
 ```
 
@@ -104,7 +104,7 @@ python -m candle_patterns.cli run
 
 ```bash
 pytest tests/ -q
-# 225 passed, 4 skipped
+# 279 passed, 4 skipped
 ```
 
 ### 4. Docker
@@ -153,7 +153,7 @@ Examples:
 
 ## Project Structure
 
-```
+```text
 candle-patterns/
 ├── src/candle_patterns/
 │   ├── patterns.py ............. Core sequence engine (15 named tokens)

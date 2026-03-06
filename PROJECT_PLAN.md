@@ -1,8 +1,8 @@
 # Sequential Candle Pattern Analysis System — Development Plan & Progress
 
-**Last Updated**: March 3, 2026 (Phase 8 Sprint — REST API, Portfolio Scanner, CI Modernisation)  
-**Project Status**: PHASE 8 COMPLETE — v1.2.0 — REST API + Portfolio Scanner + 15 Named Tokens + Email Alerts  
-**Overall Progress**: MVP + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 + Phase 7 + Phase 8 Done
+**Last Updated**: March 3, 2026 (Phase 10 Sprint — Audit, Lint Cleanup, Type Safety, Documentation)  
+**Project Status**: PHASE 10 COMPLETE — v1.3.0 — Full Audit + Lint Fixes + Type Safety + Doc Accuracy  
+**Overall Progress**: MVP + Phase 2–9 + Phase 10 Done
 
 ---
 
@@ -895,6 +895,16 @@ candle-patterns/
 - [x] **Sidebar accordion** — Convert 7 sidebar sections into collapsible `dbc.Accordion` to reduce scrolling
 - [x] **Quick-action match buttons** — "Backtest", "Heatmap", "Stats" per match card in Sequence Matches tab
 
+#### Code Quality Audit (Phase 10)
+
+- [x] **Unused import cleanup** — Removed 30 unused imports across 10 modules (dashboard, backtesting, ml_baseline, ml_sequence, multi_timeframe, patterns, performance, portfolio, watchlist)
+- [x] **Unused variable cleanup** — Removed 4 dead variable assignments (backtesting.all_returns, dashboard.entry, dashboard.rule, patterns.continuations)
+- [x] **Type safety fixes** — alerts.py record_alert return type (int|None → int), ml_sequence.py None-model guard + float() wrapping for numpy metrics
+- [x] **f-string fix** — ml_baseline.py f-string without placeholders converted to plain string
+- [x] **Yahoo Finance dropdown fix** — Replaced broken two-dropdown category→symbol approach with single pre-populated 48-symbol dropdown (emoji-prefixed categories)
+- [x] **README accuracy** — Updated version (v1.3.0), test count (279), CLI run command (scripts/run_dash.py), added language to fenced code block
+- [x] **PROJECT_PLAN update** — Phase 10 section, version history, header update
+
 #### Infrastructure & Advanced Features
 
 - [ ] E2E Playwright test suite
@@ -933,7 +943,16 @@ candle-patterns/
   - 6 dashboard tabs, 17 callbacks
   - **127 tests** (100% pass rate)
 
-- **v1.2.0** — Phase 8 (Mar 3, 2026) ✅ CURRENT
+- **v1.3.0** — Phase 9 + 10 (Mar 6, 2026) ✅ CURRENT
+  - **Phase 9: Dashboard UX** — tab icons, empty-state guidance, 25 tooltips, syntax popover, candle badge, sidebar accordion, quick-action match buttons
+  - **Phase 10: Code Quality Audit** — removed 30 unused imports + 4 dead variables across 10 modules
+  - **Type safety** — alerts.py return type fix, ml_sequence.py None-guard + float() wrapping
+  - **Yahoo Finance dropdown** — single pre-populated 48-symbol dropdown replacing broken two-dropdown approach
+  - **Documentation** — README version/test count/CLI accuracy, PROJECT_PLAN audit section
+  - 12 dashboard tabs, ~31 callbacks, 5 API endpoints
+  - **279 tests** (100% pass rate)
+
+- **v1.2.0** — Phase 8 (Mar 3, 2026) ✅
   - **REST API** — 5 JSON endpoints: health, scan, discover, portfolio/scan, symbols/search
   - **Portfolio Scanner** — threaded multi-symbol scanning, ranking by matches/win_rate/return, aggregate summary
   - **API auto-registration** — routes mounted on Dash's Flask server at startup

@@ -194,7 +194,7 @@ def record_alert(
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         (rule_id, rule_name, sequence, symbol, match_count, message, severity, now),
     )
-    alert_id = c.lastrowid
+    alert_id: int = c.lastrowid or 0
     conn.commit()
     conn.close()
     return alert_id

@@ -31,7 +31,6 @@ from sklearn.metrics import (
     recall_score,
     f1_score,
     roc_auc_score,
-    classification_report,
 )
 from sklearn.calibration import CalibratedClassifierCV
 
@@ -245,14 +244,15 @@ class SequencePredictor:
             self.model = base_model  # type: ignore[assignment]
 
         # Evaluate
+        assert self.model is not None  # assigned above in all branches
         y_pred = self.model.predict(X_test_scaled)
         y_proba = self.model.predict_proba(X_test_scaled)[:, 1]
 
         self.metrics = {
-            "accuracy": round(accuracy_score(y_test, y_pred), 4),
-            "precision": round(precision_score(y_test, y_pred, zero_division=0), 4),
-            "recall": round(recall_score(y_test, y_pred, zero_division=0), 4),
-            "f1": round(f1_score(y_test, y_pred, zero_division=0), 4),
+            "accuracy": round(float(accuracy_score(y_test, y_pred)), 4),
+            "precision": round(float(precision_score(y_test, y_pred, zero_division=0)), 4),
+            "recall": round(float(recall_score(y_test, y_pred, zero_division=0)), 4),
+            "f1": round(float(f1_score(y_test, y_pred, zero_division=0)), 4),
             "roc_auc": round(roc_auc_score(y_test, y_proba), 4) if len(set(y_test)) > 1 else 0.5,
             "test_samples": len(X_test),
             "train_samples": len(X_train),

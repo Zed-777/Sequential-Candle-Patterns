@@ -15,12 +15,10 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-from candle_patterns.ingestion import load_csv
 
 from candle_patterns.patterns import (
     find_sequence_occurrences,
     find_wildcard_sequence,
-    parse_sequence,
     sequence_length,
     discover_color_sequences,
     what_comes_next,
@@ -32,17 +30,13 @@ from candle_patterns.patterns import (
 
 from candle_patterns.data_feeds import (
     fetch_yahoo_data,
-    search_symbols,
     POPULAR_SYMBOLS,
     VALID_INTERVALS,
     VALID_PERIODS,
-    cache_clear,
-    cache_stats,
 )
 
 from candle_patterns.multi_timeframe import (
     multi_timeframe_summary,
-    TIMEFRAME_ORDER,
 )
 
 from candle_patterns.watchlist import (
@@ -50,9 +44,6 @@ from candle_patterns.watchlist import (
     add_to_watchlist,
     remove_from_watchlist,
     update_last_used,
-    clear_watchlist,
-    export_watchlist,
-    import_watchlist,
 )
 
 from candle_patterns.backtesting import BacktestEngine
@@ -64,28 +55,21 @@ from candle_patterns.alerts import (
     list_alert_rules,
     remove_alert_rule,
     get_alert_history,
-    acknowledge_alert,
     clear_alert_history,
-    check_and_trigger,
     get_unread_count,
 )
 
 from candle_patterns.ml_sequence import (
     train_sequence_predictor,
-    SequencePredictor,
 )
 
 from candle_patterns.preferences import (
     load_preferences,
     save_preferences,
-    set_preference,
-    add_recent_symbol,
-    add_recent_sequence,
     reset_preferences,
 )
 
 from candle_patterns.performance import (
-    downsample_ohlcv,
     dataset_info,
 )
 
@@ -961,28 +945,38 @@ sidebar = dbc.Card(
                                     "Fetch real stock, crypto, or index data directly.",
                                     style={"color": "#6b7280", "display": "block", "marginBottom": "0.75rem", "fontWeight": "500"}
                                 ),
-                                html.Label("Symbol", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
+                                html.Label("Quick Pick Symbol", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
+                                dcc.Dropdown(
+                                    id="yf-symbol-select",
+                                    options=[
+                                        {"label": f"\U0001F4C8 {s}", "value": s}
+                                        for s in POPULAR_SYMBOLS["Stocks"]
+                                    ] + [
+                                        {"label": f"\U0001FA99 {s}", "value": s}
+                                        for s in POPULAR_SYMBOLS["Crypto"]
+                                    ] + [
+                                        {"label": f"\U0001F4CA {s}", "value": s}
+                                        for s in POPULAR_SYMBOLS["Indices"]
+                                    ] + [
+                                        {"label": f"\U0001F4E6 {s}", "value": s}
+                                        for s in POPULAR_SYMBOLS["ETFs"]
+                                    ] + [
+                                        {"label": f"\U0001F4B1 {s}", "value": s}
+                                        for s in POPULAR_SYMBOLS["Forex"]
+                                    ],
+                                    placeholder="Search or pick a symbol...",
+                                    searchable=True,
+                                    clearable=True,
+                                    style={"marginBottom": "0.75rem", "fontSize": "0.85rem"},
+                                ),
+                                html.Hr(style={"margin": "0.5rem 0", "borderColor": "#e5e7eb"}),
+                                html.Label("Or type any symbol", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
                                 dcc.Input(
                                     id="yf-symbol-input",
                                     type="text",
                                     placeholder="e.g. AAPL, BTC-USD, ^GSPC",
                                     style={"width": "100%", "marginBottom": "0.5rem"},
                                     debounce=True,
-                                ),
-                                html.Label("Quick Pick", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "marginTop": "0.25rem"}),
-                                dcc.Dropdown(
-                                    id="yf-popular-dropdown",
-                                    options=[
-                                        {"label": f"{cat}: {', '.join(syms[:5])}...", "value": cat}
-                                        for cat, syms in POPULAR_SYMBOLS.items()
-                                    ],
-                                    placeholder="Browse popular symbols...",
-                                    style={"marginBottom": "0.5rem"},
-                                ),
-                                dcc.Dropdown(
-                                    id="yf-symbol-select",
-                                    placeholder="Select symbol...",
-                                    style={"marginBottom": "0.75rem"},
                                 ),
                                 dbc.Row([
                                     dbc.Col([
@@ -1757,7 +1751,6 @@ main_content = dbc.Tabs(
 @server.route('/api/load-sample')  # type: ignore[union-attr]
 def api_load_sample():
     """API endpoint to load sample data directly."""
-    import json
     from flask import jsonify
     from pathlib import Path
     from candle_patterns.detection import detect_patterns as _detect
@@ -2774,7 +2767,6 @@ def export_data(n_matches, n_discovery, n_chart, scan_results, data):
 def load_from_history(upload_id):
     if not upload_id:
         return None, "", None
-    from pathlib import Path
     from candle_patterns.storage import get_upload
 
     rec = get_upload(upload_id)
@@ -2793,18 +2785,6 @@ def load_from_history(upload_id):
 # =========================================================================
 # YAHOO FINANCE CALLBACKS
 # =========================================================================
-
-# Populate symbol list when category is selected
-@app.callback(
-    Output("yf-symbol-select", "options"),
-    Input("yf-popular-dropdown", "value"),
-    prevent_initial_call=True,
-)
-def update_yf_symbol_list(category):
-    if not category or category not in POPULAR_SYMBOLS:
-        return []
-    return [{"label": s, "value": s} for s in POPULAR_SYMBOLS[category]]
-
 
 # Set symbol input when a popular symbol is selected
 @app.callback(
@@ -3348,7 +3328,7 @@ def save_watchlist_entry(n_clicks, label, sequences_str, symbol, trigger):
 
     seqs = [s.strip() for s in sequences_str.split(",") if s.strip()]
     try:
-        entry = add_to_watchlist(label=label, sequences=seqs, symbol=symbol or "")
+        add_to_watchlist(label=label, sequences=seqs, symbol=symbol or "")
         msg = html.Div(
             [html.I(className="bi bi-check-circle me-1"), f"Saved '{label}' ({len(seqs)} sequences)"],
             style={"color": "#10b981", "fontWeight": "600"},
@@ -3494,8 +3474,8 @@ def on_add_alert_rule(n_clicks, name, sequences_str, symbol, webhook, trigger):
         return html.Div("Enter at least one sequence.", style={"color": "#ef4444"}), trigger
     seqs = [s.strip() for s in sequences_str.split(",") if s.strip()]
     try:
-        rule = add_alert_rule(name=name.strip(), sequences=seqs,
-                              symbol=symbol or "", webhook_url=webhook or "")
+        add_alert_rule(name=name.strip(), sequences=seqs,
+                       symbol=symbol or "", webhook_url=webhook or "")
         msg = html.Div(
             [html.I(className="bi bi-check-circle me-1"),
              f"Alert rule '{name}' created ({len(seqs)} sequences)"],

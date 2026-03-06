@@ -9,7 +9,7 @@ the same directional bias appears across timeframes simultaneously.
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import pandas as pd
 
