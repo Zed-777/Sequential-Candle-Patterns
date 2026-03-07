@@ -1,8 +1,8 @@
 # Sequential Candle Pattern Analysis System — Development Plan & Progress
 
-**Last Updated**: March 3, 2026 (Phase 10 Sprint — Audit, Lint Cleanup, Type Safety, Documentation)  
-**Project Status**: PHASE 10 COMPLETE — v1.3.0 — Full Audit + Lint Fixes + Type Safety + Doc Accuracy  
-**Overall Progress**: MVP + Phase 2–9 + Phase 10 Done
+**Last Updated**: March 7, 2026 (Phase 11 — E2E Playwright Test Suite)  
+**Project Status**: PHASE 11 COMPLETE — v1.4.0 — E2E Playwright Test Suite  
+**Overall Progress**: MVP + Phase 2–10 + Phase 11 Done
 
 ---
 
@@ -46,7 +46,8 @@ The Candle Patterns system is a **sequential colour-based candle pattern scanner
 - ✅ **SQLite persistence** with 30-day cleanup
 - ✅ **CLI tools** (run, cleanup, train, predict, backtest)
 - ✅ **Docker containerization** + GitHub Actions CI/CD
-- ✅ **279 tests** (279 passing, 4 skipped) — 100% pass rate
+- ✅ **315 tests** (279 unit + 36 E2E Playwright, all passing) — 100% pass rate
+- ✅ **E2E Playwright test suite** — 36 browser-based tests (Chromium), 11 test classes, full dashboard UI coverage
 
 ---
 
@@ -905,9 +906,16 @@ candle-patterns/
 - [x] **README accuracy** — Updated version (v1.3.0), test count (279), CLI run command (scripts/run_dash.py), added language to fenced code block
 - [x] **PROJECT_PLAN update** — Phase 10 section, version history, header update
 
+#### E2E Playwright Test Suite (Phase 11)
+
+- [x] **Playwright infrastructure** — `tests/e2e/conftest.py` with session-scoped `dash_server` fixture (subprocess launch, port wait, auto-cleanup)
+- [x] **36 E2E tests across 11 classes** — TestDashboardLoads (5), TestTabNavigation (12 parametrized), TestSampleDataFlow (5), TestYahooFinanceSection (4), TestSidebarAccordion (2), TestEmptyStateGuidance (1), TestExportSection (2), TestWatchlistTab (1), TestAlertsTab (1), TestSettingsTab (1), TestVisualSnapshot (2)
+- [x] **run_dash.py encoding fix** — replaced Unicode `✓`/`✗` with ASCII `[OK]`/`[ERROR]` for Windows cp1252 compatibility
+- [x] **Plugin isolation** — pytest-playwright registered only for `tests/e2e/` to avoid loading Chromium for unit tests
+- [x] **Visual regression baseline** — screenshots saved to `artifacts/` (e2e_homepage.png, e2e_chart_loaded.png)
+
 #### Infrastructure & Advanced Features
 
-- [ ] E2E Playwright test suite
 - [ ] WebSocket live candle streaming (real-time market data)
 - [ ] Neural network sequence predictor (deep learning upgrade)
 - [ ] Multi-user support with authentication
@@ -943,7 +951,14 @@ candle-patterns/
   - 6 dashboard tabs, 17 callbacks
   - **127 tests** (100% pass rate)
 
-- **v1.3.0** — Phase 9 + 10 (Mar 6, 2026) ✅ CURRENT
+- **v1.4.0** — Phase 11 (Mar 7, 2026) ✅ CURRENT
+  - **E2E Playwright test suite** — 36 browser-based tests covering all 12 tabs, sidebar accordion, data loading, form inputs, visual snapshots
+  - **Infrastructure** — `tests/e2e/conftest.py` with dash_server fixture, plugin isolation, 60s startup timeout
+  - **Encoding fix** — `scripts/run_dash.py` Unicode → ASCII for Windows compatibility
+  - **Old skeleton removed** — `tests/e2e/test_ui_smoke.py` deleted
+  - **315 tests total** (279 unit + 36 E2E, 100% pass rate)
+
+- **v1.3.0** — Phase 9 + 10 (Mar 6, 2026) ✅
   - **Phase 9: Dashboard UX** — tab icons, empty-state guidance, 25 tooltips, syntax popover, candle badge, sidebar accordion, quick-action match buttons
   - **Phase 10: Code Quality Audit** — removed 30 unused imports + 4 dead variables across 10 modules
   - **Type safety** — alerts.py return type fix, ml_sequence.py None-guard + float() wrapping

@@ -8,7 +8,8 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-pytest_plugins = ["pytest_playwright.pytest_playwright", "pytest_asyncio.plugin"]
+# Playwright is registered only in tests/e2e/conftest.py (not here)
+pytest_plugins = ["pytest_asyncio.plugin"]
 
 
 @pytest.fixture(scope="session")
