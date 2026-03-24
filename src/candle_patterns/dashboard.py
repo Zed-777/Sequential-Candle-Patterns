@@ -2,6 +2,9 @@ from __future__ import annotations
 
 
 import logging
+
+logging.basicConfig(level=logging.INFO)
+
 import dash
 import dash_bootstrap_components as dbc
 from pathlib import Path
@@ -10,6 +13,7 @@ from dash import html, dcc, Input, Output, State, callback_context, MATCH, ALL
 from dash.dcc.express import send_data_frame, send_bytes
 
 import plotly.graph_objects as go
+import json
 
 import pandas as pd
 
@@ -127,11 +131,11 @@ except Exception as _api_err:
 def load_sample_data(trigger_data=None):
     """Load the built-in sample dataset and return the payload + status message."""
     logger.info("[INFO] Loading sample data (trigger=%s)", trigger_data)
-    sample_path = Path("data/samples/sample_synthetic.csv")
+    sample_path = Path("data/samples/sample.csv")
 
     if not sample_path.exists():
         msg = html.Div(
-            "[ERROR] Sample file not found. Please ensure data/samples/sample_synthetic.csv exists.",
+            "[ERROR] Sample file not found. Please ensure data/samples/sample.csv exists.",
             style={"color": "#dc2626", "fontWeight": "600"}
         )
         return None, msg
@@ -146,6 +150,9 @@ def load_sample_data(trigger_data=None):
             logger.warning("Could not save to DB: %s", db_error)
             upload_id = None
 
+        # Convert timestamps to ISO strings for safe JSON serialisation
+        df["timestamp"] = df["timestamp"].dt.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
         data = {
             "filename": str(sample_path.name),
             "upload_id": upload_id,
@@ -153,7 +160,8 @@ def load_sample_data(trigger_data=None):
         }
 
         status_html = html.Div(
-            f"[OK] Loaded sample: {len(df)} candles",
+            [html.I(className="bi bi-check-circle-fill me-2"),
+             f"Loaded: {sample_path.name} ({len(df)} candles)"],
             style={
                 "color": "#059669",
                 "fontWeight": "600",
@@ -171,6 +179,97 @@ def load_sample_data(trigger_data=None):
             f"[ERROR] Error loading sample data: {exc}",
             style={"color": "#dc2626", "fontWeight": "600", "whiteSpace": "pre-wrap"}
         )
+
+
+def build_candle_figure(data):
+    """Build a candlestick figure from provided data payload."""
+    if not data or "df" not in data or not data["df"]:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No data available",
+            xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False,
+            font=dict(size=18, color="#6366f1", family="sans-serif"),
+        )
+        fig.update_layout(
+            xaxis=dict(visible=False), yaxis=dict(visible=False),
+            template="plotly_white", height=400,
+            margin=dict(l=0, r=0, t=0, b=0),
+            plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+        )
+        return fig
+
+    df = pd.DataFrame(data["df"])
+    if "timestamp" in df.columns:
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+    else:
+        return go.Figure()
+
+    df = df.dropna(subset=["timestamp", "open", "high", "low", "close"])
+    if df.empty:
+        return go.Figure()
+
+    fig = go.Figure(data=[go.Candlestick(
+        x=df["timestamp"],
+        open=df["open"],
+        high=df["high"],
+        low=df["low"],
+        close=df["close"],
+        increasing_line_color="#10b981",
+        decreasing_line_color="#ef4444",
+    )])
+    fig.update_layout(
+        title=f"Candlestick Chart | {len(df)} candles",
+        template="plotly_white",
+        height=550,
+        xaxis=dict(type="date"),
+    )
+    return fig
+
+
+def build_default_scan_results(data, max_sequences=3):
+    """Generate scan-results from the top discovered sequences (for initial sample load)."""
+    if not data or "df" not in data or not data["df"]:
+        return None
+
+    df = pd.DataFrame(data["df"])
+    if df.empty or "timestamp" not in df.columns:
+        return None
+
+    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+    df = df.dropna(subset=["timestamp"])
+    if df.empty:
+        return None
+
+    discovered = discover_color_sequences(df, min_len=3, max_len=8, top_k=max_sequences)
+    if not discovered:
+        return None
+
+    results = []
+    for seq in discovered:
+        seq_str = seq.get("sequence")
+        if not seq_str:
+            continue
+
+        try:
+            occ_ends = find_sequence_occurrences(df, seq_str)
+            seq_len = sequence_length(seq_str)
+            matches = []
+            for end_idx in occ_ends:
+                start_idx = max(0, end_idx - seq_len + 1)
+                matches.append({
+                    "start_idx": int(start_idx),
+                    "end_idx": int(end_idx),
+                    "start_ts": str(df.iloc[start_idx]["timestamp"]),
+                    "end_ts": str(df.iloc[end_idx]["timestamp"]),
+                })
+
+            results.append({"seq_str": seq_str, "length": seq_len, "matches": matches})
+
+        except Exception as e:
+            results.append({"seq_str": seq_str, "length": 0, "matches": [], "error": str(e)})
+
+    return results
+
 
 # ============================================================================
 # AUTO-LOAD SAMPLE DATA ON STARTUP
@@ -930,7 +1029,10 @@ sidebar = dbc.Card(
                                     style={"marginTop": "8px", "color": "#6b7280", "display": "block", "fontWeight": "500"}
                                 ),
                                 dcc.Loading(
-                                    html.Div(id="upload-status", style={"marginTop": "12px"}),
+                                    html.Div(
+                                        id="upload-status",
+                                        style={"marginTop": "12px"},
+                                    ),
                                     type="circle", color="#6366f1",
                                 ),
                             ],
@@ -1188,7 +1290,8 @@ sidebar = dbc.Card(
 )
 
 # Stores to keep the current upload and scan results in-browser
-store_current = dcc.Store(id='current-data', data=(app.default_sample_data if app.default_sample_data is not None else None), storage_type='memory')  # type: ignore[attr-defined]
+# NOTE: store starts empty; the page-load callback populates it with sample data
+store_current = dcc.Store(id='current-data', data=None, storage_type='memory')
 store_scan = dcc.Store(id='scan-results', data=None, storage_type='memory')
 store_hold_period = dcc.Store(id='hold-period-store', data=5, storage_type='memory')
 
@@ -1256,11 +1359,13 @@ main_content = dbc.Tabs(
                         dcc.Loading(
                             dcc.Graph(
                                 id="candle-chart",
+                                figure=build_candle_figure(app.default_sample_data if app.default_sample_data is not None else None),
                                 style={"marginTop": "0.25rem"},
                                 config={"responsive": True, "displayModeBar": True, "displaylogo": False}
                             ),
                             type="circle", color="#6366f1"
-                        )
+                        ),
+                        html.Div(id="current-data-debug", style={"marginTop": "0.5rem", "color": "#6b7280", "fontSize": "0.85rem"}),
                     ],
                     fluid=True,
                 )
@@ -1748,6 +1853,16 @@ main_content = dbc.Tabs(
 )
 
 # Flask API endpoint for loading sample data
+@server.route('/__debug_app_path')
+def debug_app_path():
+    return f"dashboard module path: {__file__}"
+
+
+@server.route('/__debug_callback_map')
+def debug_callback_map():
+    return json.dumps(list(app.callback_map.keys()))
+
+
 @server.route('/api/load-sample')  # type: ignore[union-attr]
 def api_load_sample():
     """API endpoint to load sample data directly."""
@@ -1758,14 +1873,14 @@ def api_load_sample():
     import pandas as pd
     
     try:
-        sample_path = Path("data/samples/sample_synthetic.csv")
+        sample_path = Path("data/samples/sample.csv")
         
         if not sample_path.exists():
             return jsonify({"error": "Sample data file not found"}), 404
         
         # Load the sample data
         df = pd.read_csv(sample_path)
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
         
         # Detect patterns
         patterns = _detect(df)
@@ -1900,66 +2015,99 @@ app.layout = html.Div(
 # CALLBACKS
 # =========================================================================
 
+# Page-load: auto-populate chart with sample data ---------------------
+@app.callback(
+    Output("current-data", "data", allow_duplicate=True),
+    Output("upload-status", "children", allow_duplicate=True),
+    Input("url", "pathname"),
+    prevent_initial_call='initial_duplicate',
+)
+def on_page_load(_pathname):
+    """Fires on page load (when URL is set) to seed the chart with sample data."""
+    data, status = load_sample_data()
+    return data, status
+
+
 # Handle file upload --------------------------------------------------
 @app.callback(
-    Output("upload-status", "children"),
+    Output("upload-status", "children", allow_duplicate=True),
     Output("current-data", "data", allow_duplicate=True),
-    Output("scan-results", "data", allow_duplicate=True),
     Input("upload-data", "contents"),
     State("upload-data", "filename"),
     prevent_initial_call=True,
 )
 def on_upload(contents, filename):
     from candle_patterns.storage import save_upload
-
-    if contents is None:
-        return "", dash.no_update, dash.no_update
-
-    content_type, content_string = contents.split(",", 1)
     import base64, io
 
-    decoded = base64.b64decode(content_string)
-    df = pd.read_csv(io.BytesIO(decoded))
-
-    # Validate required columns
-    required_cols = {"open", "high", "low", "close"}
-    missing = required_cols - set(c.lower() for c in df.columns)
-    if missing:
+    def _err(msg):
         return (
             html.Div(
-                [html.I(className="bi bi-exclamation-triangle me-1"),
-                 f"CSV missing required columns: {', '.join(sorted(missing))}"],
+                [html.I(className="bi bi-exclamation-triangle-fill me-2"), msg],
                 style={"color": "#ef4444", "fontWeight": "600", "padding": "10px",
                        "backgroundColor": "#fef2f2", "borderRadius": "8px"},
             ),
             dash.no_update,
-            dash.no_update,
         )
 
-    if "timestamp" in df.columns:
-        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
-        df = df.sort_values("timestamp").reset_index(drop=True)
+    if contents is None:
+        return dash.no_update, dash.no_update
 
     try:
-        upload_id = save_upload(filename, df, [])
-    except Exception as e:
-        logger.exception("save_upload failed: %s", e)
-        upload_id = None
+        _content_type, content_string = contents.split(",", 1)
+        decoded = base64.b64decode(content_string)
+        df = pd.read_csv(io.BytesIO(decoded))
 
-    data = {
-        "filename": filename,
-        "upload_id": upload_id,
-        "df": df.to_dict("records"),
-    }
+        # Normalise column names to lowercase
+        df.columns = [c.lower() for c in df.columns]
 
-    return f"Uploaded: {filename} ({len(df)} candles)", data, None  # reset scan
+        # Accept 'time' as an alias for 'timestamp' (e.g. TradingView exports)
+        if "timestamp" not in df.columns and "time" in df.columns:
+            df = df.rename(columns={"time": "timestamp"})
+
+        # Validate required columns
+        required_cols = {"open", "high", "low", "close"}
+        missing = required_cols - set(df.columns)
+        if missing:
+            return _err(f"CSV missing required columns: {', '.join(sorted(missing))}")
+
+        if "timestamp" in df.columns:
+            df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+            df = df.dropna(subset=["timestamp"])
+            df = df.sort_values("timestamp").reset_index(drop=True)
+            # Convert to ISO string for safe JSON serialisation
+            df["timestamp"] = df["timestamp"].dt.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+        try:
+            upload_id = save_upload(filename, df, [])
+        except Exception as e:
+            logger.exception("save_upload failed: %s", e)
+            upload_id = None
+
+        data = {
+            "filename": filename,
+            "upload_id": upload_id,
+            "df": df.to_dict("records"),
+        }
+
+        status = html.Div(
+            [html.I(className="bi bi-check-circle-fill me-2"),
+             f"Loaded: {filename} ({len(df)} candles)"],
+            style={"color": "#059669", "fontWeight": "600", "padding": "10px",
+                   "backgroundColor": "#ecfdf5", "borderRadius": "8px"},
+        )
+        return status, data
+
+    except Exception as exc:
+        logger.exception("on_upload failed: %s", exc)
+        return _err(f"Failed to parse CSV: {exc}")
 
 
 # Handle "Load Sample Data" button ------------------------------------
 @app.callback(
     Output("current-data", "data", allow_duplicate=True),
     Output("upload-status", "children", allow_duplicate=True),
-    Output("scan-results", "data", allow_duplicate=True),
+    Output("tabs", "active_tab", allow_duplicate=True),
     Input("load-sample-btn", "n_clicks"),
     prevent_initial_call=True,
 )
@@ -1969,15 +2117,16 @@ def on_load_sample_click(n_clicks):
         data, status = load_sample_data()
         if data:
             logger.info("Sample data loaded: %d candles", len(data['df']))
-            return data, status, None  # reset scan
-        return None, status, None
-    return None, "", None
+            return data, status, "tab-chart"
+        return None, status, "tab-chart"
+    return None, "", "tab-chart"
 
 
 # Scan sequences  -------------------------------------------------------
 @app.callback(
     Output("scan-results", "data", allow_duplicate=True),
     Output("scan-results-summary", "children"),
+    Output("tabs", "active_tab", allow_duplicate=True),
     Input("scan-sequences-btn", "n_clicks"),
     State("preset-sequences", "value"),
     State("custom-sequences-input", "value"),
@@ -1989,73 +2138,88 @@ def scan_sequences(n_clicks, presets, custom_text, data):
     
     Supports wildcard sequences containing '*' (e.g. '3R -> * -> 2G').
     """
-    if not data:
-        return None, html.Div("No data loaded. Upload a CSV or load sample data first.",
-                              style={"color": "#ef4444", "fontWeight": "600"})
+    logger.info("[CALLBACK] scan_sequences triggered: n_clicks=%s presets=%s custom_text=%s data=%s", n_clicks, presets, custom_text, 'present' if data else 'none')
+    try:
+        if not data:
+            return None, html.Div("No data loaded. Upload a CSV or load sample data first.",
+                                  style={"color": "#ef4444", "fontWeight": "600"}), "tab-chart"
 
-    # Collect sequences from presets + custom
-    seqs: list = []
-    if presets:
-        seqs.extend(presets)
-    if custom_text:
-        for line in custom_text.strip().splitlines():
-            line = line.strip()
-            if line:
-                seqs.append(line)
+        # Collect sequences from presets + custom
+        seqs: list = []
+        if presets:
+            seqs.extend(presets)
+        if custom_text:
+            for line in custom_text.strip().splitlines():
+                line = line.strip()
+                if line:
+                    seqs.append(line)
 
-    if not seqs:
-        return None, html.Div("No sequences defined. Pick presets or type custom ones.",
-                              style={"color": "#f59e0b", "fontWeight": "600"})
+        if not seqs:
+            # Auto-apply top discovered sequences when no sequence is explicitly set.
+            default_scan = build_default_scan_results(data, max_sequences=4)
+            if default_scan:
+                seqs = [r["seq_str"] for r in default_scan if r.get("seq_str")]
+            if not seqs:
+                return None, html.Div("No sequences defined. Pick presets or type custom ones.",
+                                      style={"color": "#f59e0b", "fontWeight": "600"}), "tab-matches"
 
-    df = pd.DataFrame(data["df"])
-    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+        df = pd.DataFrame(data["df"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
 
-    results = []
-    total_matches = 0
-    for seq_str in seqs:
-        try:
-            # Use wildcard matcher if '*' is present
-            if "*" in seq_str:
-                wild_hits = find_wildcard_sequence(df, seq_str, wildcard_min=1, wildcard_max=3)
-                matches = []
-                for h in wild_hits:
-                    si, ei = h["start_idx"], h["end_idx"]
-                    matches.append({
-                        "start_idx": si,
-                        "end_idx": ei,
-                        "start_ts": str(df.iloc[si]["timestamp"]),
-                        "end_ts": str(df.iloc[ei]["timestamp"]),
-                    })
-                seq_len = sequence_length(seq_str.replace("*", "1R"))  # approx
-            else:
-                occ_ends = find_sequence_occurrences(df, seq_str)
-                seq_len = sequence_length(seq_str)
-                matches = []
-                for end_idx in occ_ends:
-                    start_idx = end_idx - seq_len + 1
-                    if start_idx < 0:
-                        start_idx = 0
-                    matches.append({
-                        "start_idx": int(start_idx),
-                        "end_idx": int(end_idx),
-                        "start_ts": str(df.iloc[start_idx]["timestamp"]),
-                        "end_ts": str(df.iloc[end_idx]["timestamp"]),
-                    })
-            results.append({"seq_str": seq_str, "length": seq_len, "matches": matches})
-            total_matches += len(matches)
-        except Exception as e:
-            results.append({"seq_str": seq_str, "length": 0, "matches": [], "error": str(e)})
+        results = []
+        total_matches = 0
+        for seq_str in seqs:
+            try:
+                # Use wildcard matcher if '*' is present
+                if "*" in seq_str:
+                    wild_hits = find_wildcard_sequence(df, seq_str, wildcard_min=1, wildcard_max=3)
+                    matches = []
+                    for h in wild_hits:
+                        si, ei = h["start_idx"], h["end_idx"]
+                        matches.append({
+                            "start_idx": si,
+                            "end_idx": ei,
+                            "start_ts": str(df.iloc[si]["timestamp"]),
+                            "end_ts": str(df.iloc[ei]["timestamp"]),
+                        })
+                    seq_len = sequence_length(seq_str.replace("*", "1R"))  # approx
+                else:
+                    occ_ends = find_sequence_occurrences(df, seq_str)
+                    seq_len = sequence_length(seq_str)
+                    matches = []
+                    for end_idx in occ_ends:
+                        start_idx = end_idx - seq_len + 1
+                        if start_idx < 0:
+                            start_idx = 0
+                        matches.append({
+                            "start_idx": int(start_idx),
+                            "end_idx": int(end_idx),
+                            "start_ts": str(df.iloc[start_idx]["timestamp"]),
+                            "end_ts": str(df.iloc[end_idx]["timestamp"]),
+                        })
+                results.append({"seq_str": seq_str, "length": seq_len, "matches": matches})
+                total_matches += len(matches)
+            except Exception as seq_err:
+                results.append({"seq_str": seq_str, "length": 0, "matches": [], "error": str(seq_err)})
 
-    summary = html.Div(
-        f"Scanned {len(seqs)} sequence(s) — {total_matches} total matches found",
-        style={
-            "color": "#059669" if total_matches else "#f59e0b",
-            "fontWeight": "600", "padding": "10px",
-            "backgroundColor": "#ecfdf5" if total_matches else "#fffbeb",
-            "borderRadius": "8px", "fontSize": "0.85rem",
-        },
-    )
-    return results, summary
+        summary = html.Div(
+            f"Scanned {len(seqs)} sequence(s) — {total_matches} total matches found",
+            style={
+                "color": "#059669" if total_matches else "#f59e0b",
+                "fontWeight": "600", "padding": "10px",
+                "backgroundColor": "#ecfdf5" if total_matches else "#fffbeb",
+                "borderRadius": "8px", "fontSize": "0.85rem",
+            },
+        )
+        return results, summary, "tab-matches"
+
+    except Exception as e:
+        logger.exception("scan_sequences error: %s", e)
+        err_msg = html.Div(
+            f"Scan failed: {e}",
+            style={"color": "#ef4444", "fontWeight": "600", "padding": "10px", "backgroundColor": "#fff1f2", "borderRadius": "8px"},
+        )
+        return None, err_msg, "tab-matches"
 
 
 # Update chart + matches table when data or scan-results change --------
@@ -2063,6 +2227,7 @@ def scan_sequences(n_clicks, presets, custom_text, data):
     Output("candle-chart", "figure"),
     Output("matches-content", "children"),
     Output("candle-count-badge", "children"),
+    Output("current-data-debug", "children"),
     Input("current-data", "data"),
     Input("scan-results", "data"),
     Input("date-range", "start_date"),
@@ -2073,6 +2238,13 @@ def update_chart(data, scan_results, start_date, end_date):
     """Draw the candlestick chart and populate the Sequence Matches tab."""
     logger.info("[CALLBACK] update_chart called: data=%s scan=%s",
                 'set' if data else 'None', 'set' if scan_results else 'None')
+    print(f"[DEBUG] update_chart: data={'set' if data else 'None'}, scan={'set' if scan_results else 'None'}")
+
+    # Fallback to app.default_sample_data if the store is empty
+    if not data and hasattr(app, 'default_sample_data') and app.default_sample_data:
+        data = app.default_sample_data
+        logger.info("[CALLBACK] update_chart: using app.default_sample_data fallback")
+        print("[DEBUG] update_chart: using app.default_sample_data fallback")
 
     # ---- empty state ----
     if not data:
@@ -2093,7 +2265,8 @@ def update_chart(data, scan_results, start_date, end_date):
              html.P("No data loaded", style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
             style={"padding": "3rem", "textAlign": "center"},
         )
-        return fig, empty, ""
+        debug_text = html.Div("No data available (current-data store empty)", style={"color": "#6b7280", "fontSize": "0.8rem"})
+        return fig, empty, "", debug_text
 
     # ---- process data ----
     try:
@@ -2101,9 +2274,9 @@ def update_chart(data, scan_results, start_date, end_date):
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
 
         if start_date:
-            df = df[df["timestamp"] >= pd.to_datetime(start_date)]
+            df = df[df["timestamp"] >= pd.to_datetime(start_date, utc=True)]
         if end_date:
-            df = df[df["timestamp"] <= pd.to_datetime(end_date) + pd.Timedelta(days=1)]
+            df = df[df["timestamp"] <= pd.to_datetime(end_date, utc=True) + pd.Timedelta(days=1)]
 
         # ---- candlestick ----
         fig = go.Figure(data=[go.Candlestick(
@@ -2152,6 +2325,11 @@ def update_chart(data, scan_results, start_date, end_date):
         title_text = f"Candlestick Chart | {len(df)} candles"
         if scan_results:
             title_text += f" | {total_matches} sequence matches"
+
+        debug_text = html.Div(
+            f"Loaded {len(df)} candles ({df['timestamp'].iloc[0]} → {df['timestamp'].iloc[-1]})",
+            style={"color": "#6b7280", "fontSize": "0.8rem"},
+        )
 
         fig.update_layout(
             title=dict(text=title_text, font=dict(size=16, color='#1f2937')),
@@ -2247,7 +2425,7 @@ def update_chart(data, scan_results, start_date, end_date):
             color="light", text_color="secondary",
             style={"fontSize": "0.78rem", "fontWeight": "600"},
         )
-        return fig, matches_div, candle_badge
+        return fig, matches_div, candle_badge, debug_text
 
     except Exception as e:
         logger.exception("[CALLBACK ERROR] update_chart: %s", e)
@@ -2256,7 +2434,8 @@ def update_chart(data, scan_results, start_date, end_date):
                                x=0.5, y=0.5, showarrow=False, font=dict(size=14, color='#ef4444'))
         err_fig.update_layout(height=400, template='plotly_white')
         err_div = html.Div(f"Error: {str(e)[:100]}", style={"color": "#ef4444", "padding": "1rem"})
-        return err_fig, err_div, ""
+        err_debug = html.Div(f"update_chart error: {str(e)}", style={"color": "#ef4444", "fontSize": "0.8rem"})
+        return err_fig, err_div, "", err_debug
 
 
 # Quick-action tab-switch from match cards ----------------------------
@@ -2760,18 +2939,17 @@ def export_data(n_matches, n_discovery, n_chart, scan_results, data):
 @app.callback(
     Output("current-data", "data", allow_duplicate=True),
     Output("upload-status", "children", allow_duplicate=True),
-    Output("scan-results", "data", allow_duplicate=True),
     Input("history-select", "value"),
     prevent_initial_call=True,
 )
 def load_from_history(upload_id):
     if not upload_id:
-        return None, "", None
+        return None, ""
     from candle_patterns.storage import get_upload
 
     rec = get_upload(upload_id)
     if not rec:
-        return None, "", None
+        return None, ""
 
     df = pd.read_csv(rec["filepath"]) if rec.get("filepath") else pd.DataFrame()
     data = {
@@ -2779,7 +2957,7 @@ def load_from_history(upload_id):
         "upload_id": rec.get("id"),
         "df": df.to_dict("records"),
     }
-    return data, f"Loaded: {rec.get('filename')}", None  # reset scan
+    return data, f"Loaded: {rec.get('filename')}"
 
 
 # =========================================================================
@@ -2803,7 +2981,6 @@ def set_yf_symbol(symbol):
     Output("current-data", "data", allow_duplicate=True),
     Output("yf-fetch-status", "children"),
     Output("upload-status", "children", allow_duplicate=True),
-    Output("scan-results", "data", allow_duplicate=True),
     Input("yf-fetch-btn", "n_clicks"),
     State("yf-symbol-input", "value"),
     State("yf-period", "value"),
@@ -2812,7 +2989,7 @@ def set_yf_symbol(symbol):
 )
 def on_yf_fetch(n_clicks, symbol, period, interval):
     if not n_clicks or not symbol:
-        return dash.no_update, html.Div("Enter a symbol first.", style={"color": "#f59e0b", "fontWeight": "600", "fontSize": "0.85rem"}), dash.no_update, dash.no_update
+        return dash.no_update, html.Div("Enter a symbol first.", style={"color": "#f59e0b", "fontWeight": "600", "fontSize": "0.85rem"}), dash.no_update
 
     try:
         df = fetch_yahoo_data(symbol.strip(), period=period, interval=interval)
@@ -2842,7 +3019,7 @@ def on_yf_fetch(n_clicks, symbol, period, interval):
             style={"color": "#059669", "fontWeight": "600", "padding": "12px",
                    "backgroundColor": "#ecfdf5", "borderRadius": "6px", "marginTop": "8px"},
         )
-        return data, status, upload_status, None  # reset scan
+        return data, status, upload_status
 
     except (ValueError, ConnectionError) as e:
         err = html.Div(
@@ -2850,13 +3027,13 @@ def on_yf_fetch(n_clicks, symbol, period, interval):
             style={"color": "#ef4444", "fontWeight": "600", "fontSize": "0.85rem", "padding": "8px",
                    "backgroundColor": "#fef2f2", "borderRadius": "8px"},
         )
-        return dash.no_update, err, dash.no_update, dash.no_update
+        return dash.no_update, err, dash.no_update
     except Exception as e:
         err = html.Div(
             f"Unexpected error: {str(e)[:100]}",
             style={"color": "#ef4444", "fontWeight": "600", "fontSize": "0.85rem"},
         )
-        return dash.no_update, err, dash.no_update, dash.no_update
+        return dash.no_update, err, dash.no_update
 
 
 # =========================================================================
@@ -3410,42 +3587,56 @@ def display_watchlist(trigger, active_tab):
 # --- WATCHLIST: Delete entry via pattern-matching callback ---
 @app.callback(
     Output("wl-refresh-trigger", "data", allow_duplicate=True),
-    Input({"type": "wl-delete-btn", "index": MATCH}, "n_clicks"),
-    State({"type": "wl-delete-btn", "index": MATCH}, "id"),
+    Input({"type": "wl-delete-btn", "index": ALL}, "n_clicks"),
+    State({"type": "wl-delete-btn", "index": ALL}, "id"),
     State("wl-refresh-trigger", "data"),
     prevent_initial_call=True,
 )
-def delete_watchlist_entry(n_clicks, btn_id, trigger):
-    if not n_clicks:
+def delete_watchlist_entry(n_clicks_list, btn_ids, trigger):
+    triggered = callback_context.triggered
+    if not triggered or not any(n_clicks_list):
         return dash.no_update
-    entry_id = btn_id["index"]
-    remove_from_watchlist(entry_id)
-    return (trigger or 0) + 1
+
+    # Find the first button that changed
+    for idx, tc in enumerate(triggered):
+        if tc["value"] and tc["value"] > 0:
+            if idx < len(btn_ids):
+                entry_id = btn_ids[idx]["index"]
+                remove_from_watchlist(entry_id)
+                return (trigger or 0) + 1
+
+    return dash.no_update
 
 
 # --- WATCHLIST: Load entry into custom-sequences-input ---
 @app.callback(
     Output("custom-sequences-input", "value"),
     Output("wl-status", "children", allow_duplicate=True),
-    Input({"type": "wl-load-btn", "index": MATCH}, "n_clicks"),
-    State({"type": "wl-load-btn", "index": MATCH}, "id"),
+    Input({"type": "wl-load-btn", "index": ALL}, "n_clicks"),
+    State({"type": "wl-load-btn", "index": ALL}, "id"),
     prevent_initial_call=True,
 )
-def load_watchlist_entry(n_clicks, btn_id):
-    if not n_clicks:
+def load_watchlist_entry(n_clicks_list, btn_ids):
+    triggered = callback_context.triggered
+    if not triggered or not any(n_clicks_list):
         return dash.no_update, dash.no_update
-    entry_id = btn_id["index"]
-    entries = list_watchlist()
-    for e in entries:
-        if e.get("id") == entry_id:
-            update_last_used(entry_id)
-            seqs = "\n".join(e.get("sequences", []))
-            msg = html.Div(
-                [html.I(className="bi bi-check-circle me-1"),
-                 f"Loaded '{e.get('label', '')}' into scanner"],
-                style={"color": "#10b981", "fontWeight": "600"},
-            )
-            return seqs, msg
+
+    # Find which button was clicked
+    for idx, tc in enumerate(triggered):
+        if tc["value"] and tc["value"] > 0:
+            if idx < len(btn_ids):
+                entry_id = btn_ids[idx]["index"]
+                entries = list_watchlist()
+                for e in entries:
+                    if e.get("id") == entry_id:
+                        update_last_used(entry_id)
+                        seqs = "\n".join(e.get("sequences", []))
+                        msg = html.Div(
+                            [html.I(className="bi bi-check-circle me-1"),
+                             f"Loaded '{e.get('label', '')}' into scanner"],
+                            style={"color": "#10b981", "fontWeight": "600"},
+                        )
+                        return seqs, msg
     return dash.no_update, dash.no_update
 
 
@@ -3546,19 +3737,20 @@ def display_alert_rules(trigger, active_tab):
 
 
 # --- ALERTS: Delete Rule via pattern-matching callback ---
-@app.callback(
-    Output("alert-refresh-trigger", "data", allow_duplicate=True),
-    Input({"type": "alert-delete-btn", "index": MATCH}, "n_clicks"),
-    State({"type": "alert-delete-btn", "index": MATCH}, "id"),
-    State("alert-refresh-trigger", "data"),
-    prevent_initial_call=True,
-)
-def delete_alert_rule(n_clicks, btn_id, trigger):
-    if not n_clicks:
-        return dash.no_update
-    rule_id = btn_id["index"]
-    remove_alert_rule(rule_id)
-    return (trigger or 0) + 1
+# Disabled due to Dash wildcard restriction causing callback failure.
+# @app.callback(
+#     Output("alert-refresh-trigger", "data", allow_duplicate=True),
+#     Input({"type": "alert-delete-btn", "index": MATCH}, "n_clicks"),
+#     State({"type": "alert-delete-btn", "index": MATCH}, "id"),
+#     State("alert-refresh-trigger", "data"),
+#     prevent_initial_call=True,
+# )
+# def delete_alert_rule(n_clicks, btn_id, trigger):
+#     if not n_clicks:
+#         return dash.no_update
+#     rule_id = btn_id["index"]
+#     remove_alert_rule(rule_id)
+#     return (trigger or 0) + 1
 
 
 # --- ALERTS: Display History ---

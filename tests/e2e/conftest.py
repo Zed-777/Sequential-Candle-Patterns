@@ -16,8 +16,7 @@ from pathlib import Path
 
 import pytest
 
-# Register the Playwright plugin only for e2e tests
-pytest_plugins = ["pytest_playwright.pytest_playwright"]
+# Playwright plugin is registered in the root conftest (tests/conftest.py)
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 SERVER_SCRIPT = ROOT / "scripts" / "run_dash.py"
@@ -86,5 +85,6 @@ def dash_server():
 def page(dash_server, page):
     """Override pytest-playwright's page fixture to inject the base URL."""
     page.goto(dash_server)
-    page.wait_for_load_state("networkidle")
+    # networkidle can fail in complex Dash apps; use load with generous timeout.
+    page.wait_for_load_state("load", timeout=60000)
     return page

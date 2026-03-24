@@ -151,6 +151,36 @@ class TestSampleDataFlow:
         scan_btn = page.locator("#scan-sequences-btn")
         assert scan_btn.count() == 1
 
+    def test_scan_sequences_empty_prompts_auto_scan(self, page):
+        """Click Scan without custom or preset; should auto-scan and show results."""
+        _load_sample(page)
+        # locate graph placeholder (candle-chart component)
+        page.wait_for_selector("#candle-chart", timeout=15000, state="attached")
+        # Chart rendering can vary; wait a brief moment for Plotly canvas attach.
+        page.wait_for_timeout(3000)
+
+        # Ensure scanner panel is expanded so scan-summary becomes visible
+        page.locator(".accordion-button", has_text="Sequence Scanner").first.click()
+        page.wait_for_timeout(300)
+
+        scan_btn = page.locator("#scan-sequences-btn")
+        scan_btn.click()
+
+        # Wait for scan summary to update with auto-scanned info
+        summary = page.locator("#scan-results-summary")
+        summary.wait_for(state="visible", timeout=5000)
+        summary.wait_for(state="attached", timeout=5000)
+        page.wait_for_timeout(1200)
+
+        text = summary.first.inner_text().strip()
+        assert "Scanned" in text and "matches found" in text
+
+        # The Sequence Matches tab should become active
+        _click_tab(page, "Sequence Matches")
+        active = page.locator("#tabs .nav-link.active")
+        assert active.count() == 1
+        assert "sequence matches" in active.first.inner_text().lower()
+
     def test_preset_sequences_dropdown(self, page):
         """The preset sequences dropdown should exist."""
         dropdown = page.locator("#preset-sequences")
