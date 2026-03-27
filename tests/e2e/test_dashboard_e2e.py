@@ -52,6 +52,17 @@ def _load_sample(page, *, wait_ms: int = 3000):
     page.wait_for_timeout(wait_ms)
 
 
+def _ensure_section_open(page, section, selector):
+    """Open an accordion section if its target selector is not already visible."""
+    target = page.locator(selector)
+    if not target.is_visible():
+        header = page.locator(".accordion-button", has_text=section).first
+        header.click()
+        page.wait_for_timeout(800)
+    # Wait for the relevant content to be present (visible if possible)
+    page.wait_for_selector(selector, state="attached", timeout=15000)
+
+
 # ============================================================================
 # 1. SMOKE — page loads, title, core layout present
 # ============================================================================
@@ -72,15 +83,19 @@ class TestDashboardLoads:
 
     def test_tabs_visible(self, page):
         """All 12 tab links should be rendered."""
+        page.wait_for_selector("#tabs .nav-link", timeout=20000)
         tabs = page.locator("#tabs .nav-link")
         assert tabs.count() == 12
 
     def test_upload_button_exists(self, page):
         """The Upload CSV button should be present in the Data Source accordion."""
-        assert page.locator("#upload-data").count() == 1
+        page.wait_for_selector("#upload-data", timeout=20000)
+        uploader = page.locator("#upload-data")
+        assert uploader.count() == 1
 
     def test_load_sample_button_exists(self, page):
         """The Load Sample Data button should be present."""
+        page.wait_for_selector("#load-sample-btn", timeout=20000)
         btn = page.locator("#load-sample-btn")
         assert btn.count() == 1
         assert btn.is_visible()
@@ -122,6 +137,7 @@ class TestSampleDataFlow:
     def test_chart_already_rendered(self, page):
         """Dashboard auto-loads sample data — chart should be present on load."""
         # The server auto-loads sample data at startup, so a chart should exist
+        page.wait_for_selector(".js-plotly-plot", timeout=25000)
         plots = page.locator(".js-plotly-plot")
         assert plots.count() >= 1, "Expected at least one Plotly chart (auto-loaded data)"
 
@@ -145,9 +161,11 @@ class TestSampleDataFlow:
 
     def test_scan_sequences_input_exists(self, page):
         """The custom sequence input and scan button should be present."""
+        page.wait_for_selector("#custom-sequences-input", timeout=15000)
         textarea = page.locator("#custom-sequences-input")
         assert textarea.count() == 1
 
+        page.wait_for_selector("#scan-sequences-btn", timeout=15000)
         scan_btn = page.locator("#scan-sequences-btn")
         assert scan_btn.count() == 1
 
@@ -161,16 +179,19 @@ class TestSampleDataFlow:
 
         # Ensure scanner panel is expanded so scan-summary becomes visible
         page.locator(".accordion-button", has_text="Sequence Scanner").first.click()
-        page.wait_for_timeout(300)
+        page.wait_for_selector("#scan-sequences-btn", timeout=10000, state="visible")
 
         scan_btn = page.locator("#scan-sequences-btn")
         scan_btn.click()
 
         # Wait for scan summary to update with auto-scanned info
         summary = page.locator("#scan-results-summary")
-        summary.wait_for(state="visible", timeout=5000)
-        summary.wait_for(state="attached", timeout=5000)
-        page.wait_for_timeout(1200)
+        summary.wait_for(state="attached", timeout=30000)
+
+        page.wait_for_function(
+            "() => document.querySelector('#scan-results-summary') && document.querySelector('#scan-results-summary').innerText.includes('Scanned')",
+            timeout=30000,
+        )
 
         text = summary.first.inner_text().strip()
         assert "Scanned" in text and "matches found" in text
@@ -183,6 +204,7 @@ class TestSampleDataFlow:
 
     def test_preset_sequences_dropdown(self, page):
         """The preset sequences dropdown should exist."""
+        page.wait_for_selector("#preset-sequences", timeout=15000)
         dropdown = page.locator("#preset-sequences")
         assert dropdown.count() == 1
 
@@ -197,27 +219,31 @@ class TestYahooFinanceSection:
 
     def test_yf_dropdown_has_options(self, page):
         """The yf-symbol-select dropdown should exist."""
+        _ensure_section_open(page, "Yahoo", "#yf-symbol-select")
         dropdown = page.locator("#yf-symbol-select")
         assert dropdown.count() == 1
 
     def test_yf_symbol_input_exists(self, page):
         """The manual symbol input should exist."""
+        yf_header = page.locator(".accordion-button", has_text="Yahoo")
+        if yf_header.count() > 0:
+            yf_header.first.click()
+            page.wait_for_timeout(600)
+
+        page.wait_for_selector("#yf-symbol-input", state="attached", timeout=15000)
         symbol_input = page.locator("#yf-symbol-input")
         assert symbol_input.count() == 1
 
     def test_yf_fetch_button_exists(self, page):
         """The Fetch Data button should be present."""
+        _ensure_section_open(page, "Yahoo", "#yf-fetch-btn")
         fetch_btn = page.locator("#yf-fetch-btn")
         assert fetch_btn.count() == 1
 
     def test_yf_type_symbol(self, page):
         """Typing a symbol into the input field should update the value."""
         # Open Yahoo Finance accordion so input becomes visible
-        yf_header = page.locator(".accordion-button", has_text="Yahoo")
-        if yf_header.count() > 0:
-            yf_header.first.click()
-            page.wait_for_timeout(600)
-
+        _ensure_section_open(page, "Yahoo", "#yf-symbol-input")
         symbol_input = page.locator("#yf-symbol-input")
         symbol_input.fill("AAPL")
         assert symbol_input.input_value() == "AAPL"
@@ -243,6 +269,7 @@ class TestSidebarAccordion:
 
     def test_accordion_sections_exist(self, page):
         """All 7 accordion sections should be present."""
+        page.wait_for_selector("text=Data Source", timeout=20000)
         for section_title in self.ACCORDION_SECTIONS:
             locator = page.locator(f"text={section_title}")
             assert locator.count() >= 1, f"Accordion section '{section_title}' not found"
