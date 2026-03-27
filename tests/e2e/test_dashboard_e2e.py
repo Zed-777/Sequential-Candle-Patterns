@@ -42,7 +42,7 @@ TAB_LABELS: dict[str, str] = {
 
 def _click_tab(page, label: str):
     """Click a tab by its visible text label."""
-    page.locator(f"#tabs .nav-link", has_text=label).first.click()
+    page.locator("#tabs .nav-link", has_text=label).first.click()
     page.wait_for_timeout(600)
 
 

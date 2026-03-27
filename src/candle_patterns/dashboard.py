@@ -11,6 +11,8 @@ import logging
 import base64
 import io
 import pandas as pd
+from flask import Flask
+from typing import Any, cast
 
 from candle_patterns.patterns import (
     find_sequence_occurrences,
@@ -106,13 +108,20 @@ external_stylesheets = [
 ]
 external_scripts = ['https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js']
 
-app = dash.Dash(
+class CustomDash(dash.Dash):
+    default_sample_data: Any = None
+
+
+app = CustomDash(
     __name__, 
     external_stylesheets=external_stylesheets,
     external_scripts=external_scripts
 )
 
-server = app.server  # type: ignore[assignment]
+if app.server is None:
+    raise RuntimeError("Dash server is unavailable")
+
+server: Flask = cast(Flask, app.server)
 
 # Register REST API endpoints on the Flask server
 try:
@@ -265,6 +274,19 @@ def build_default_scan_results(data, max_sequences=3):
     return results
 
 
+def section_banner(title: str, description: str):
+    """Create an info banner with tooltip at the top of a tab section."""
+    return html.Div(
+        [
+            html.Strong(title + ": ", style={"fontWeight": "700"}),
+            html.Span(description)
+        ],
+        className="alert alert-info mb-3",
+        style={"fontSize": "0.95rem", "padding": "0.7rem 0.9rem", "borderRadius": "10px", "marginBottom": "1rem"},
+        title=description,
+    )
+
+
 # ============================================================================
 # AUTO-LOAD SAMPLE DATA ON STARTUP
 # ============================================================================
@@ -272,7 +294,7 @@ print("\n" + "="*80)
 print("AUTO-LOADING SAMPLE DATA ON STARTUP...")
 print("="*80 + "\n")
 
-app.default_sample_data = None  # type: ignore[attr-defined]
+app.default_sample_data = None
 
 try:
     data, _ = load_sample_data()
@@ -1346,6 +1368,10 @@ main_content = dbc.Tabs(
             children=[
                 dbc.Container(
                     [
+                        section_banner(
+                            "Candlestick Chart",
+                            "Explore loaded candle data in an interactive chart. Zoom, pan, and verify data quality before running scans; this is your baseline view for price action and support/resistance context."
+                        ),
                         html.Div(
                             id="candle-count-badge",
                             style={"textAlign": "right", "marginTop": "0.75rem", "minHeight": "1.5rem"},
@@ -1371,7 +1397,13 @@ main_content = dbc.Tabs(
             tab_id="tab-matches",
             children=[
                 dbc.Container(
-                    [dcc.Loading(html.Div(id="matches-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
+                    [
+                        section_banner(
+                            "Sequence Matches",
+                            "Displays all matched sequences found in the current dataset with details on start/end points and confidence. Use the filter controls in the scan panel to refine results in real time."
+                        ),
+                        dcc.Loading(html.Div(id="matches-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")
+                    ],
                     fluid=True
                 )
             ],
@@ -1382,7 +1414,13 @@ main_content = dbc.Tabs(
             tab_id="tab-discovery",
             children=[
                 dbc.Container(
-                    [dcc.Loading(html.Div(id="discovery-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
+                    [
+                        section_banner(
+                            "Auto-Discovery",
+                            "Automatically identifies the most frequent and statistically significant sequences for the current data. Use this first to discover candidate patterns and then drill into matching and backtesting."
+                        ),
+                        dcc.Loading(html.Div(id="discovery-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")
+                    ],
                     fluid=True
                 )
             ],
@@ -1394,6 +1432,10 @@ main_content = dbc.Tabs(
             children=[
                 dbc.Container(
                     [
+                        section_banner(
+                            "Statistics & Predictions",
+                            "Set your lookahead and hold period, then inspect outcome charts, expected returns, and prediction probabilities. This section quantifies sequence performance and helps choose trading parameters."
+                        ),
                         dbc.Row([
                             dbc.Col([
                                 html.Label("Hold Period (candles)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
@@ -1426,7 +1468,13 @@ main_content = dbc.Tabs(
             tab_id="tab-heatmap",
             children=[
                 dbc.Container(
-                    [dcc.Loading(html.Div(id="heatmap-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")],
+                    [
+                        section_banner(
+                            "Heatmap",
+                            "Visualize frequency and confidence of sequence occurrences in a heatmap matrix. Use this for spotting high-probability clusters and regime shifts in the data."
+                        ),
+                        dcc.Loading(html.Div(id="heatmap-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")
+                    ],
                     fluid=True
                 )
             ],
@@ -1438,6 +1486,10 @@ main_content = dbc.Tabs(
             children=[
                 dbc.Container(
                     [
+                        section_banner(
+                            "Reverse Finder",
+                            "Search for patterns that showed up before large price moves. Configure direction, move threshold, and candle lookback to identify high-impact pre-move signatures."
+                        ),
                         dbc.Row([
                             dbc.Col([
                                 html.Label("Move Threshold (%)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
@@ -1494,6 +1546,10 @@ main_content = dbc.Tabs(
             children=[
                 dbc.Container(
                     [
+                        section_banner(
+                            "Backtesting",
+                            "Run historical simulation on sequence trades. Choose hold period, capital allocation, and entry signals; review equity curve, win rate, drawdown, and return metrics."
+                        ),
                         dbc.Row([
                             dbc.Col([
                                 html.Label("Hold Period (candles)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
@@ -1538,6 +1594,10 @@ main_content = dbc.Tabs(
             children=[
                 dbc.Container(
                     [
+                        section_banner(
+                            "Multi-TF",
+                            "Analyze the same patterns across multiple timeframes in one place. Select intervals, symbol, and lookback to reveal cross-timeframe confirmations and stronger setups."
+                        ),
                         dbc.Row([
                             dbc.Col([
                                 html.Label("Symbol", style={"fontWeight": "700", "fontSize": "0.8rem"}),
@@ -1592,6 +1652,10 @@ main_content = dbc.Tabs(
             children=[
                 dbc.Container(
                     [
+                        section_banner(
+                            "Watchlist",
+                            "Create reusable sequence filters and symbol watchlists. Save rules for fast recall and automated scanning in other tabs; this supports ongoing strategy tracking."
+                        ),
                         dbc.Row([
                             dbc.Col([
                                 html.Label("Label", style={"fontWeight": "700", "fontSize": "0.8rem"}),
@@ -1638,6 +1702,10 @@ main_content = dbc.Tabs(
             children=[
                 dbc.Container(
                     [
+                        section_banner(
+                            "Alerts",
+                            "Configure condition-based alerts for sequences and optional webhook destinations. Monitor active rules and review trigger history to validate signal timing and reliability."
+                        ),
                         html.H5(
                             [html.I(className="bi bi-bell me-2"), "Sequence Alerts"],
                             style={"fontWeight": "800", "marginTop": "1rem", "marginBottom": "1rem"},
@@ -1706,6 +1774,10 @@ main_content = dbc.Tabs(
             children=[
                 dbc.Container(
                     [
+                        section_banner(
+                            "ML Predict",
+                            "Build a machine learning model on historical sequence outcomes; train, score, and inspect predicted next-step moves along with probability/confidence. This helps evaluate whether ML can improve signal timing."
+                        ),
                         html.H5(
                             [html.I(className="bi bi-robot me-2"), "Sequence Outcome Predictor"],
                             style={"fontWeight": "800", "marginTop": "1rem", "marginBottom": "0.5rem"},
@@ -1754,6 +1826,10 @@ main_content = dbc.Tabs(
             children=[
                 dbc.Container(
                     [
+                        section_banner(
+                            "Settings",
+                            "Set user preferences for default symbol, interval, refresh behavior, and discovery limits so your workflow is reproducible. Includes reset and dataset info for audit."
+                        ),
                         html.H5(
                             [html.I(className="bi bi-gear me-2"), "Preferences"],
                             style={"fontWeight": "800", "marginTop": "1rem", "marginBottom": "1rem"},
