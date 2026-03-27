@@ -1,24 +1,16 @@
 from __future__ import annotations
 
-
-import logging
-
-logging.basicConfig(level=logging.INFO)
-
 import dash
 import dash_bootstrap_components as dbc
 from pathlib import Path
-
-from dash import html, dcc, Input, Output, State, callback_context, MATCH, ALL
+from dash import html, dcc, Input, Output, State, callback_context, ALL
 from dash.dcc.express import send_data_frame, send_bytes
-
 import plotly.graph_objects as go
 import json
-
+import logging
+import base64
+import io
 import pandas as pd
-
-logger = logging.getLogger(__name__)
-
 
 from candle_patterns.patterns import (
     find_sequence_occurrences,
@@ -57,7 +49,6 @@ from candle_patterns.storage import save_upload
 from candle_patterns.alerts import (
     add_alert_rule,
     list_alert_rules,
-    remove_alert_rule,
     get_alert_history,
     clear_alert_history,
     get_unread_count,
@@ -76,6 +67,9 @@ from candle_patterns.preferences import (
 from candle_patterns.performance import (
     dataset_info,
 )
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # PRESET SEQUENCE LIBRARY — common colour-based candle sequences
@@ -2037,9 +2031,6 @@ def on_page_load(_pathname):
     prevent_initial_call=True,
 )
 def on_upload(contents, filename):
-    from candle_patterns.storage import save_upload
-    import base64, io
-
     def _err(msg):
         return (
             html.Div(

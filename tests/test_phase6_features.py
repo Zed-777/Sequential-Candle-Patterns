@@ -5,10 +5,6 @@ Covers all 4 new Phase 6 modules with comprehensive unit tests.
 """
 
 import json
-import os
-import tempfile
-import time
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -552,7 +548,7 @@ class TestPreferencesExportImport:
     """export_preferences / import_preferences."""
 
     def test_export_json(self, tmp_path):
-        from candle_patterns.preferences import load_preferences, export_preferences
+        from candle_patterns.preferences import export_preferences
         path = str(tmp_path / "exp.json")
         json_str = export_preferences(path)
         parsed = json.loads(json_str)

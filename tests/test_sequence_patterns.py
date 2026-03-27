@@ -7,7 +7,6 @@ Covers: parse_sequence, symbol_sequence, match_named_token,
 from __future__ import annotations
 
 import pandas as pd
-import pytest
 
 from candle_patterns.patterns import (
     parse_sequence,
@@ -196,7 +195,7 @@ class TestDiscoverColorSequences:
         results = discover_color_sequences(df, min_len=3, max_len=5, top_k=10)
         seqs = [r["sequence"] for r in results]
         # At least one sequence containing R and G should be found
-        assert len(results) > 0
+        assert len(seqs) > 0
 
     def test_top_k_limit(self):
         df = _make_candles("RGRGRGRGRGRGRGRG")

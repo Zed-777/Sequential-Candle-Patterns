@@ -9,10 +9,8 @@
 
 from __future__ import annotations
 
-import json
 import os
 import tempfile
-import time
 
 import pandas as pd
 import pytest
@@ -32,8 +30,8 @@ def _make_candles(n: int = 50) -> pd.DataFrame:
         else:
             c = o + 1.0  # green
         h = max(o, c) + 0.5
-        l = min(o, c) - 0.5
-        rows.append({"timestamp": f"2025-01-{(i % 28) + 1:02d}", "open": o, "high": h, "low": l, "close": c, "volume": 1000 + i})
+        low = min(o, c) - 0.5
+        rows.append({"timestamp": f"2025-01-{(i % 28) + 1:02d}", "open": o, "high": h, "low": low, "close": c, "volume": 1000 + i})
     return pd.DataFrame(rows)
 
 
@@ -78,6 +76,10 @@ class TestMultiTimeframeModule:
             TIMEFRAME_ORDER,
             DEFAULT_PERIOD_FOR_INTERVAL,
         )
+        assert callable(fetch_multi_timeframe)
+        assert callable(scan_multi_timeframe)
+        assert callable(detect_alignment)
+        assert callable(multi_timeframe_summary)
         assert "1d" in TIMEFRAME_ORDER
         assert "1d" in DEFAULT_PERIOD_FOR_INTERVAL
 
@@ -306,6 +308,9 @@ class TestDataFeedCache:
     def test_cache_imports(self):
         from candle_patterns.data_feeds import cache_clear, cache_stats, cache_get, cache_put
         assert callable(cache_clear)
+        assert callable(cache_stats)
+        assert callable(cache_get)
+        assert callable(cache_put)
 
     def test_cache_put_get(self):
         from candle_patterns.data_feeds import cache_put, cache_get, cache_clear

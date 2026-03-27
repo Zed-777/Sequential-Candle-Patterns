@@ -1,6 +1,5 @@
 """Unit tests for the 5 new candlestick patterns added in Phase 2."""
 import pandas as pd
-import pytest
 from candle_patterns.detection import detect_patterns
 
 

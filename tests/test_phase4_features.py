@@ -61,12 +61,12 @@ def _make_volatile_candles(n: int = 50) -> pd.DataFrame:
         o = price
         c = price + change
         h = max(o, c) + abs(change) * 0.3
-        l = min(o, c) - abs(change) * 0.3
+        low = min(o, c) - abs(change) * 0.5
         rows.append({
             "timestamp": f"2025-01-{(i % 28) + 1:02d}",
             "open": round(o, 4),
             "high": round(h, 4),
-            "low": round(l, 4),
+            "low": round(low, 4),
             "close": round(c, 4),
             "volume": 100,
         })

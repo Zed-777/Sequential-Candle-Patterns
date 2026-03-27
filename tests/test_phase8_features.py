@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import pandas as pd
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import numpy as np
 
 

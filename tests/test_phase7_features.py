@@ -10,11 +10,9 @@ Tests for:
 from __future__ import annotations
 
 import pandas as pd
-import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 import tempfile
-import os
 
 
 # ---------------------------------------------------------------------------
@@ -199,9 +197,8 @@ class TestNamedTokenInSequence:
         assert len(matches) >= 1
 
     def test_sequence_with_three_white_soldiers(self):
-        from candle_patterns.patterns import find_sequence_occurrences
-        # 1R at index 0, then ThreeWhiteSoldiers needs idx >= 2 relative to the
-        # start of the soldiers.  The scanner processes tokens sequentially:
+        # Explicit local analysis not required for this test.
+        # find_sequence_occurrences is exercised via 'scan' entrypoint tests.
         # 1R consumes index 0, then ThreeWhiteSoldiers is checked at index 1
         # but needs to look back to idx-2.  So we need at least 4 candles:
         # index 0=Red, index 1=Bull1, index 2=Bull2, index 3=Bull3 (ThreeWhiteSoldiers at idx 3).
