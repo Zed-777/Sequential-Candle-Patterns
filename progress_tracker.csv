@@ -1,17 +1,17 @@
 id,title,milestone,priority,owner,estimate_days,start,due,status,pct_complete,RAG,github_issue,notes
-1,CSV ingestion + validator,MVP,P0,@alice,4,2026-02-01,2026-02-05,Done,100,Green,#1,Schema validation, timezone handling
-2,Rule-based pattern engine (expand to 10+ patterns),MVP,P0,@bob,10,2026-02-03,2026-02-20,Done,100,Green,#2,Added detectors: Engulfing, Three Soldiers/Crows, Morning/Evening Star, Doji variants, SpinningTop, ShootingStar, HangingMan, PiercingLine; added unit tests
-3,Minimal Dash prototype (upload + chart),MVP,P0,@carol,5,2026-02-06,2026-02-12,Done,100,Green,#3,Upload + annotate patterns; added aggregated summary & OPP widgets; demo notebook added: `notebooks/dashboard_and_ml_demo.ipynb`; History & persistence added (SQLite), History UI in dashboard; merged (#4); Dashboard running locally at http://localhost:8050 (started by assistant 2026-01-29)
+1,CSV ingestion + validator,MVP,P0,@alice,4,2026-02-01,2026-02-05,Done,100,Green,#1,"Schema validation, timezone handling"
+2,Rule-based pattern engine (expand to 10+ patterns),MVP,P0,@bob,10,2026-02-03,2026-02-20,Done,100,Green,#2,"Added detectors: Engulfing, Three Soldiers/Crows, Morning/Evening Star, Doji variants, SpinningTop, ShootingStar, HangingMan, PiercingLine; added unit tests"
+3,Minimal Dash prototype (upload + chart),MVP,P0,@carol,5,2026-02-06,2026-02-12,Done,100,Green,#3,"Upload + annotate patterns; added aggregated summary & OPP widgets; demo notebook added: `notebooks/dashboard_and_ml_demo.ipynb`; History & persistence added (SQLite), History UI in dashboard; merged (#4); Dashboard running locally at http://localhost:8050 (started by assistant 2026-01-29)"
 4,CLI analyzer run,MVP,P1,@dave,2,2026-02-10,2026-02-12,Done,100,Green,#4,CLI implemented (Typer) and writes pattern CSV report
-5,Unit tests + CI,All,P0,@qa,5,2026-02-03,2026-02-10,Done,100,Green,#5,Unit tests and integration tests passing locally; CI updated and enforces minimum coverage (`--cov-fail-under=80`); Codecov upload removed per user decision
+5,Unit tests + CI,All,P0,@qa,5,2026-02-03,2026-02-10,Done,100,Green,#5,"Unit tests and integration tests passing locally; CI updated and enforces minimum coverage (`--cov-fail-under=80`); Codecov upload removed per user decision"
 6,OPP Miner,P1,@erin,10,2026-02-15,2026-03-01,Done,100,Green,#6,Ordinal encoding + miner (variable length, top-k summarization)
-7,Backtesting module,P1,@frank,8,2026-02-20,2026-03-05,Done,100,Green,#7,Sharpe ratio, max drawdown, win rate, profit factor - BacktestEngine class with 10 comprehensive tests
+7,Backtesting module,P1,@frank,8,2026-02-20,2026-03-05,Done,100,Green,#7,"Sharpe ratio, max drawdown, win rate, profit factor - BacktestEngine class with 10 comprehensive tests"
 8,Session management & export,P2,@gina,4,2026-02-25,2026-03-01,To Do,0,Green,#8,Save/load, export zip
 9,CLI/GUI integration,MVP,P1,@carol,3,2026-02-13,2026-02-16,In Progress,20,Amber,#9,Wire CLI with minimal Dash upload
 10,Document pattern catalog,MVP,P0,@doc,2,2026-01-26,2026-01-28,In Progress,10,Amber,#10,Create PATTERN_CATALOG.md and update PROJECT_PLAN.md
-10,Create repo & open draft PR,DevOps,P0,@Zed-777,1,2026-01-26,2026-01-26,Done,100,Green,https://github.com/Zed-777/candle-patterns/pull/1,Repo created & draft PR opened
-11,OPP demo notebook & tests,Docs,P2,@erin,2,2026-02-18,2026-02-19,Done,100,Green,#11,Added notebook and unit tests
-12,CI coverage integration,All,P1,@qa,1,2026-02-22,2026-02-22,Done,100,Green,#12,Added coverage collection; CI enforces minimum coverage (`--cov-fail-under=80`) and Codecov upload removed
+11,Create repo & open draft PR,DevOps,P0,@Zed-777,1,2026-01-26,2026-01-26,Done,100,Green,https://github.com/Zed-777/candle-patterns/pull/1,Repo created & draft PR opened
+12,OPP demo notebook & tests,Docs,P2,@erin,2,2026-02-18,2026-02-19,Done,100,Green,#11,Added notebook and unit tests
+99,CI coverage integration,All,P1,@qa,1,2026-02-22,2026-02-22,Done,100,Green,#12,Added coverage collection; CI enforces minimum coverage (`--cov-fail-under=80`) and Codecov upload removed
 13,Packaging & Docker,P1,@devops,3,2026-02-23,2026-02-26,Done,100,Green,#13,Dockerfile added and validated in CI build step (image builds), CLI runs in container
 14,Integration tests,P1,@qa,2,2026-02-23,2026-02-25,Done,100,Green,#14,Integration test added (tests/integration/test_end_to_end.py) and passing locally in CI-style suite
 15,DevOps: repo cleanup,DevOps,P0,@Zed-777,1,2026-02-23,2026-02-24,In Progress,100,Green,#15,Adopted non-destructive path: PR from feature/mvp-next-clean; backup branch preserved (backup/feature-mvp-next-bloat)
