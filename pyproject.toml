@@ -33,3 +33,12 @@ markers = [
 	"asyncio: mark a test as asyncio-enabled",
 	"e2e: mark an end-to-end Playwright test"
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-playwright",
+    "playwright",
+    "ruff",
+    "black"
+]
