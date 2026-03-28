@@ -2353,7 +2353,7 @@ def on_load_sample_click(n_clicks):
     State("followup-length", "value"),
     State("current-data", "data"),
     prevent_initial_call=True,
-}
+)
 def scan_sequences(n_clicks, presets, custom_text, followup_seq, followup_length, data):
     """Run all selected sequences against the loaded candle data.
     
