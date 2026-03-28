@@ -348,6 +348,58 @@ custom_css = """
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.theme-light {
+    --background-gradient: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    --panel-bg: #ffffff;
+    --panel-border: #e5e7eb;
+    --text-primary: #1f2937;
+    --text-secondary: #475569;
+    --card-bg: #ffffff;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.theme-dark {
+    --background-gradient: linear-gradient(135deg, #0b1220 0%, #172135 100%);
+    --panel-bg: #0f172a;
+    --panel-border: #334155;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --card-bg: #1e293b;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+
+.theme-blue {
+    --background-gradient: linear-gradient(135deg, #a5c8ff 0%, #3b82f6 100%);
+    --panel-bg: #1e3a8a;
+    --panel-border: #2563eb;
+    --text-primary: #e0f2fe;
+    --text-secondary: #bae6fd;
+    --card-bg: #1e40af;
+    --card-shadow: 0 1px 16px rgba(30, 64, 175, 0.5);
+}
+
+.theme-blue #theme-wrapper .btn-primary {
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
+    border-color: #1d4ed8 !important;
+    color: #e0f2fe !important;
+}
+
+.theme-blue .nav-tabs .nav-link.active {
+    color: #ffffff !important;
+    border-bottom-color: #93c5fd !important;
+}
+
+
+.theme-solar {
+    --background-gradient: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%);
+    --panel-bg: #fffaf0;
+    --panel-border: #facc15;
+    --text-primary: #7c2d12;
+    --text-secondary: #9a3412;
+    --card-bg: #fef3c7;
+    --card-shadow: 0 1px 3px rgba(251, 191, 36, 0.2);
+}
+
 * {
     box-sizing: border-box;
 }
@@ -361,6 +413,44 @@ html, body {
 
 body {
     background-attachment: fixed;
+}
+
+#theme-wrapper {
+    background: var(--background-gradient);
+    color: var(--text-primary);
+}
+
+#theme-wrapper .sidebar-card,
+#theme-wrapper .card,
+#theme-wrapper .chart-card {
+    background: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--panel-border) !important;
+    box-shadow: var(--card-shadow) !important;
+}
+
+#theme-wrapper .accordion-button,
+#theme-wrapper .form-control,
+#theme-wrapper .btn,
+#theme-wrapper .navbar,
+#theme-wrapper .nav-tabs .nav-link {
+    color: var(--text-primary) !important;
+}
+
+#theme-wrapper .navbar {
+    background: linear-gradient(135deg, rgba(99,102,241,0.9) 0%, rgba(139,92,246,0.9) 100%) !important;
+}
+
+.theme-dark .navbar {
+    background: linear-gradient(135deg, #111827 0%, #1f2937 100%) !important;
+}
+
+.theme-blue .navbar {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%) !important;
+}
+
+.theme-solar .navbar {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%) !important;
 }
 
 /* Navbar & Header Styling */
@@ -1189,6 +1279,23 @@ sidebar = dbc.Card(
                                     ],
                                     style={"color": "#9ca3af", "display": "block", "marginTop": "4px", "fontSize": "0.7rem"},
                                 ),
+                                html.Label("Follow-up Sequence (e.g. 5R)", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "marginTop": "0.5rem"}),
+                                dcc.Input(
+                                    id="followup-sequence",
+                                    type="text",
+                                    placeholder="5R",
+                                    style={"width": "100%", "marginBottom": "0.5rem"},
+                                ),
+                                html.Label("Follow-up Length (candles)", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
+                                dcc.Input(
+                                    id="followup-length",
+                                    type="number",
+                                    min=1,
+                                    max=50,
+                                    step=1,
+                                    value=5,
+                                    style={"width": "100%", "marginBottom": "0.75rem"},
+                                ),
                                 dbc.Popover(
                                     dbc.PopoverBody([
                                         html.H6("Sequence Syntax Cheat-Sheet", style={"fontWeight": "800", "marginBottom": "0.5rem"}),
@@ -1320,6 +1427,7 @@ live_interval = dcc.Interval(
 )
 store_live_symbol = dcc.Store(id='live-symbol', data='', storage_type='memory')
 store_ml_model = dcc.Store(id='ml-model-store', data=None, storage_type='memory')
+store_theme = dcc.Store(id='theme-store', data='light', storage_type='local')
 
 # Modal for pattern detail
 pattern_modal = dbc.Modal(
@@ -1830,6 +1938,23 @@ main_content = dbc.Tabs(
                             "Settings",
                             "Set user preferences for default symbol, interval, refresh behavior, and discovery limits so your workflow is reproducible. Includes reset and dataset info for audit."
                         ),
+                        dbc.Row([
+                            dbc.Col([
+                                html.Label("Theme", style={"fontWeight": "700", "fontSize": "0.8rem"}),
+                                dcc.Dropdown(
+                                    id="theme-selector",
+                                    options=[
+                                        {"label": "Light", "value": "theme-light"},
+                                        {"label": "Dark", "value": "theme-dark"},
+                                        {"label": "Ocean Blue", "value": "theme-blue"},
+                                        {"label": "Solar", "value": "theme-solar"},
+                                    ],
+                                    value="theme-light",
+                                    clearable=False,
+                                    style={"width": "100%"},
+                                ),
+                            ], width=3),
+                        ], className="g-3 mb-3"),
                         html.H5(
                             [html.I(className="bi bi-gear me-2"), "Preferences"],
                             style={"fontWeight": "800", "marginTop": "1rem", "marginBottom": "1rem"},
@@ -1979,6 +2104,7 @@ app.layout = html.Div(
         live_interval,
         store_live_symbol,
         store_ml_model,
+        store_theme,
         dcc.Location(id='url', refresh=False),
         html.Div(id='page-load-signal', children=1, style={'display': 'none'}),
         # Main body: sidebar LEFT + content RIGHT, each independently scrollable
@@ -1993,8 +2119,8 @@ app.layout = html.Div(
                         "overflowY": "auto",
                         "height": "calc(100vh - 80px)",
                         "padding": "1rem 1rem 2rem 1rem",
-                        "borderRight": "1px solid #e5e7eb",
-                        "background": "#ffffff",
+                        "borderRight": "1px solid var(--panel-border)",
+                        "background": "var(--panel-bg)",
                     },
                 ),
                 # RIGHT panel — chart + tabs (fills remaining width, scrollable)
@@ -2006,10 +2132,10 @@ app.layout = html.Div(
                         "height": "calc(100vh - 80px)",
                         "padding": "0.75rem 1rem 2rem 1rem",
                         "margin": "0.5rem 0.5rem 0.5rem 0",
-                        "border": "1px solid #e5e7eb",
+                        "border": "1px solid var(--panel-border)",
                         "borderRadius": "12px",
-                        "background": "#ffffff",
-                        "boxShadow": "0 1px 3px rgba(0,0,0,0.04)",
+                        "background": "var(--panel-bg)",
+                        "boxShadow": "var(--card-shadow)",
                     },
                 ),
             ],
@@ -2072,8 +2198,10 @@ app.layout = html.Div(
         dbc.Tooltip("How many candles ahead the ML model predicts.",
                     target="ml-hold-slider", placement="top"),
     ],
+    id="theme-wrapper",
+    className="theme-light",
     style={
-        "background": "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)",
+        "background": "var(--background-gradient, linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%))",
         "height": "100vh",
         "overflow": "hidden",
         "margin": "0",
@@ -2084,6 +2212,30 @@ app.layout = html.Div(
 # =========================================================================
 # CALLBACKS
 # =========================================================================
+
+# Theme switcher: propagate selected theme across UI wrapper ----------
+@app.callback(
+    Output("theme-wrapper", "className"),
+    Output("theme-store", "data"),
+    Input("theme-selector", "value"),
+    prevent_initial_call=True,
+)
+def update_theme(theme_value):
+    if theme_value not in {"theme-light", "theme-dark", "theme-blue", "theme-solar"}:
+        theme_value = "theme-light"
+    return theme_value, theme_value
+
+
+@app.callback(
+    Output("theme-selector", "value"),
+    Input("theme-store", "data"),
+    prevent_initial_call=False,
+)
+def load_theme(saved_theme):
+    if saved_theme in {"theme-light", "theme-dark", "theme-blue", "theme-solar"}:
+        return saved_theme
+    return "theme-light"
+
 
 # Page-load: auto-populate chart with sample data ---------------------
 @app.callback(
@@ -2197,10 +2349,12 @@ def on_load_sample_click(n_clicks):
     Input("scan-sequences-btn", "n_clicks"),
     State("preset-sequences", "value"),
     State("custom-sequences-input", "value"),
+    State("followup-sequence", "value"),
+    State("followup-length", "value"),
     State("current-data", "data"),
     prevent_initial_call=True,
-)
-def scan_sequences(n_clicks, presets, custom_text, data):
+}
+def scan_sequences(n_clicks, presets, custom_text, followup_seq, followup_length, data):
     """Run all selected sequences against the loaded candle data.
     
     Supports wildcard sequences containing '*' (e.g. '3R -> * -> 2G').
@@ -2264,7 +2418,17 @@ def scan_sequences(n_clicks, presets, custom_text, data):
                             "start_ts": str(df.iloc[start_idx]["timestamp"]),
                             "end_ts": str(df.iloc[end_idx]["timestamp"]),
                         })
-                results.append({"seq_str": seq_str, "length": seq_len, "matches": matches})
+                entry = {"seq_str": seq_str, "length": seq_len, "matches": matches}
+                if followup_seq and isinstance(followup_length, int) and followup_length > 0:
+                    follow_stats = count_followup_pattern(df, seq_str, followup_seq, followup_length)
+                    entry.update({
+                        "followup_seq": followup_seq,
+                        "followup_length": followup_length,
+                        "followup_success": follow_stats["followup_success"],
+                        "followup_rate": follow_stats["followup_rate"],
+                        "followup_total": follow_stats["total_matches"],
+                    })
+                results.append(entry)
                 total_matches += len(matches)
             except Exception as seq_err:
                 results.append({"seq_str": seq_str, "length": 0, "matches": [], "error": str(seq_err)})
@@ -2458,6 +2622,7 @@ def update_chart(data, scan_results, start_date, end_date):
                         html.Strong(seq_str, style={"fontFamily": "monospace"}),
                         badge,
                         html.Span(f"  ({res.get('length', '?')} candles)", style={"color": "#9ca3af", "fontSize": "0.8rem", "marginLeft": "0.5rem"}),
+                        (html.Span(f"Followup: {res.get('followup_seq', '')} ({res.get('followup_success', 0)}/{res.get('followup_total', 0)}) {res.get('followup_rate', 0.0):.0%}", style={"color": "#2563eb", "fontSize": "0.75rem", "marginLeft": "0.5rem"}) if res.get('followup_seq') else None),
                         # Quick-action buttons
                         html.Span([
                             dbc.Button(

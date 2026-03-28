@@ -202,60 +202,64 @@ def match_named_token(df: pd.DataFrame, idx: int, token: str) -> bool:
     return False
 
 
+def matches_sequence_at(df: pd.DataFrame, start_idx: int, seq_str: str) -> bool:
+    """Check if sequence seq_str occurs starting at start_idx."""
+    tokens = parse_sequence(seq_str)
+    syms = symbol_sequence(df)
+    n = len(df)
+    i = start_idx
+
+    for cnt, tok in tokens:
+        if tok in ("R", "G"):
+            for k in range(cnt):
+                if i + k >= n or syms[i + k] != tok:
+                    return False
+            i += cnt
+        else:
+            if i >= n or not match_named_token(df, i, tok):
+                return False
+            i += 1
+    return True
+
+
+def count_followup_pattern(df: pd.DataFrame, base_seq: str, follow_seq: str, follow_len: int) -> dict:
+    """Count how many base_seq occurrences are followed by follow_seq within follow_len candles."""
+    occ_ends = find_sequence_occurrences(df, base_seq)
+    total = len(occ_ends)
+    success = 0
+
+    for end_idx in occ_ends:
+        start_follow = end_idx + 1
+        if start_follow + follow_len > len(df):
+            continue
+        if matches_sequence_at(df, start_follow, follow_seq):
+            success += 1
+
+    rate = (success / total) if total > 0 else 0.0
+
+    return {
+        "base_seq": base_seq,
+        "follow_seq": follow_seq,
+        "follow_len": follow_len,
+        "total_matches": total,
+        "followup_success": success,
+        "followup_rate": rate,
+    }
+
+
 def find_sequence_occurrences(df: pd.DataFrame, seq_str: str) -> List[int]:
     """Find all ending indices where the given sequence occurs. Returns list of end indices."""
 
-    tokens = parse_sequence(seq_str)
-
-    syms = symbol_sequence(df)
-
     results: List[int] = []
-
     n = len(df)
 
     for start in range(0, n):
-
-        i = start
-
-        ok = True
-
-        for cnt, tok in tokens:
-
-            # if token is direction 'R'/'G'
-
-            if tok in ("R", "G"):
-
-                # need cnt consecutive tokens of tok starting at i
-
-                for k in range(cnt):
-
-                    if i + k >= n or syms[i + k] != tok:
-
-                        ok = False
-
-                        break
-
-                if not ok:
-
-                    break
-
-                i += cnt
-
-            else:
-
-                # named tokens: must match single candle
-
-                if i >= n or not match_named_token(df, i, tok):
-
-                    ok = False
-
-                    break
-
-                i += 1
-
-        if ok:
-
-            results.append(i - 1)  # end index
+        if matches_sequence_at(df, start, seq_str):
+            tokens = parse_sequence(seq_str)
+            total_len = sum(cnt for cnt, _ in tokens)
+            end_idx = start + total_len - 1
+            if end_idx < n:
+                results.append(end_idx)
 
     return results
 

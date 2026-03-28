@@ -253,6 +253,22 @@ Statistics: win rate, avg return, predictions
    - Total: 169 tests (169 passing, 4 skipped)
    - Status: ✅ COMPLETE
 
+### Phase 5.1 Enhancement — Followup Sequence Outcome Tracking (Apr 2026) ⏳
+1. **Pattern + Followup Counter** (Priority 0)
+   - New helper in `patterns.py`: `count_followup_pattern(df, base_seq, follow_seq, follow_len)`
+   - Uses existing `find_sequence_occurrences()` for `base_seq`, checks `follow_seq` in subsequent `follow_len` candles
+   - Outputs total hits, followup hits, success rate, and failed indices
+2. **Scanner UI Integration** (Priority 0)
+   - Add `followup-sequence` + `followup-length` in `Sequence Matches` tab form
+   - Display computed followup statistics next to existing sequence metrics
+3. **E2E + Unit tests** (Priority 0)
+   - `tests/test_sequence_patterns.py`: synthethic cases for `3R -> 3G` followed by `5R`, assert count/rate
+   - e2e flow: “set followup 5R, run scan, validate follow-up count in output table”
+4. **Optional: aggregated followup analysis** (Priority 1)
+   - Show “Top follow-up outcomes” (e.g. 5R, 4G) for a selected base pattern
+
+(This is the next planned increment after Phase 5 core features.)
+
 ### Phase 4 Sprint — Data & Analytics Enhancement (Feb 24, 2026) ✅
 
 1. **Yahoo Finance Integration** (Priority 0)

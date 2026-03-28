@@ -19,6 +19,7 @@ from candle_patterns.patterns import (
     find_wildcard_sequence,
     what_comes_next,
     sequence_outcome_stats,
+    count_followup_pattern,
 )
 
 
@@ -172,6 +173,21 @@ class TestFindSequenceOccurrences:
         ends = find_sequence_occurrences(df, "2R -> 3G")
         assert len(ends) == 1
         assert ends[0] == 4
+
+
+class TestFollowupPatternCount:
+    def test_followup_5r_after_3r_3g(self):
+        df = _make_candles("RRRGGGRRRGGGG")  # 3R->3G occurs twice, first followed by 2R (not full5), second followed by 5G
+        stats = count_followup_pattern(df, "3R -> 3G", "5R", 5)
+        assert stats["total_matches"] == 2
+        assert stats["followup_success"] == 0
+        assert stats["followup_rate"] == 0.0
+
+    def test_followup_5g_success(self):
+        df = _make_candles("RRRGGGGGGG")  # 3R->3G at idx 0-5, then 5G at 6-10 is not enough (index range ends)
+        stats = count_followup_pattern(df, "3R -> 3G", "5G", 5)
+        assert stats["total_matches"] == 1
+        assert stats["followup_success"] == 0
 
 
 # ---------------------------------------------------------------------------
