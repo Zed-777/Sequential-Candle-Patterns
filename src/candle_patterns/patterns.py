@@ -2,6 +2,7 @@ from __future__ import annotations
 
 
 import re
+from collections import Counter
 
 import pandas as pd
 
@@ -228,11 +229,28 @@ def count_followup_pattern(df: pd.DataFrame, base_seq: str, follow_seq: str, fol
     total = len(occ_ends)
     success = 0
 
+    if not follow_seq or follow_len is None or follow_len <= 0:
+        return {
+            "base_seq": base_seq,
+            "follow_seq": follow_seq,
+            "follow_len": follow_len,
+            "total_matches": total,
+            "followup_success": 0,
+            "followup_rate": 0.0,
+        }
+
+    n = len(df)
     for end_idx in occ_ends:
         start_follow = end_idx + 1
-        if start_follow + follow_len > len(df):
-            continue
-        if matches_sequence_at(df, start_follow, follow_seq):
+        search_end = min(n, start_follow + follow_len)
+        matched = False
+
+        for pos in range(start_follow, search_end):
+            if matches_sequence_at(df, pos, follow_seq):
+                matched = True
+                break
+
+        if matched:
             success += 1
 
     rate = (success / total) if total > 0 else 0.0
@@ -245,6 +263,34 @@ def count_followup_pattern(df: pd.DataFrame, base_seq: str, follow_seq: str, fol
         "followup_success": success,
         "followup_rate": rate,
     }
+
+
+def find_followup_outcomes(df: pd.DataFrame, base_seq: str, max_follow_len: int = 5, top_k: int = 3) -> List[dict]:
+    """Return the top follow-up sequences after base_seq occurrences."""
+    occ_ends = find_sequence_occurrences(df, base_seq)
+    syms = symbol_sequence(df)
+    n = len(syms)
+    counter = Counter()
+
+    for end_idx in occ_ends:
+        start = end_idx + 1
+        if start >= n:
+            continue
+        window = syms[start : min(n, start + max_follow_len)]
+        if not window:
+            continue
+        outcome = _run_length_encode(tuple(window))
+        counter[outcome] += 1
+
+    total = len(occ_ends)
+    return [
+        {
+            "followup": outcome,
+            "count": count,
+            "rate": (count / total if total > 0 else 0.0),
+        }
+        for outcome, count in counter.most_common(top_k)
+    ]
 
 
 def find_sequence_occurrences(df: pd.DataFrame, seq_str: str) -> List[int]:

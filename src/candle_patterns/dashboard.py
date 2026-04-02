@@ -24,6 +24,8 @@ from candle_patterns.patterns import (
     reverse_pattern_finder,
     sequence_confidence,
     sequence_heatmap_data,
+    count_followup_pattern,
+    find_followup_outcomes,
 )
 
 from candle_patterns.data_feeds import (
@@ -1279,14 +1281,79 @@ sidebar = dbc.Card(
                                     ],
                                     style={"color": "#9ca3af", "display": "block", "marginTop": "4px", "fontSize": "0.7rem"},
                                 ),
-                                html.Label("Follow-up Sequence (e.g. 5R)", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "marginTop": "0.5rem"}),
+                                html.Div([
+                                    html.Div([
+                                        html.Span("Enable follow-up match tracking", style={"fontSize": "0.95rem", "fontWeight": "500", "color": "#1f2937", "display": "block", "textAlign": "center", "marginBottom": "0.5rem"}),
+                                        html.Div([
+                                            dbc.Checklist(
+                                                id="followup-enabled",
+                                                options=[{"label": "", "value": "enabled"}],
+                                                value=[],
+                                                switch=True,
+                                                style={"marginBottom": "0rem"},
+                                            ),
+                                            dbc.Tooltip(
+                                                "Check this to analyze what candle patterns follow your base sequence. Example: After finding 3R→2G, what typically comes next?",
+                                                target="followup-enabled",
+                                                placement="bottom",
+                                                style={"fontSize": "0.8rem", "maxWidth": "280px"},
+                                            ),
+                                        ], style={"display": "flex", "justifyContent": "center"}),
+                                    ]),
+                                ], style={"padding": "0.75rem 0", "borderBottom": "2px solid #e5e7eb", "marginBottom": "1rem"}),
+                                dbc.Alert(
+                                    [
+                                        html.I(className="bi bi-info-circle me-2"),
+                                        html.Span("When enabled, the follow-up sequence is searched within the next N candles after each base match (not just the immediate next candle).", style={"fontSize": "0.75rem"}),
+                                    ],
+                                    color="info",
+                                    style={"padding": "0.5rem 0.7rem", "marginBottom": "0.75rem", "fontSize": "0.75rem"},
+                                ),
+                                html.Div([
+                                    html.Label("Follow-up Sequence (e.g. 5R)", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "marginTop": "0.25rem", "display": "inline-block"}),
+                                    html.I(className="bi bi-question-circle", id="followup-seq-help", style={"fontSize": "0.75rem", "color": "#9ca3af", "marginLeft": "0.4rem", "cursor": "pointer"}),
+                                ]),
+                                dbc.Tooltip(
+                                    [
+                                        html.P("The pattern you want to find after the base sequence.", style={"marginBottom": "0.4rem", "fontSize": "0.75rem"}),
+                                        html.Strong("Examples:", style={"fontSize": "0.75rem"}),
+                                        html.Ul([
+                                            html.Li("5R = five consecutive red candles", style={"fontSize": "0.7rem"}),
+                                            html.Li("3G = three consecutive green candles", style={"fontSize": "0.7rem"}),
+                                            html.Li("2R → 1G = two reds then one green", style={"fontSize": "0.7rem"}),
+                                            html.Li("Doji = doji candle pattern", style={"fontSize": "0.7rem"}),
+                                        ], style={"paddingLeft": "1.2rem", "marginBottom": "0.4rem"}),
+                                        html.Small("Uses same syntax as base sequence patterns.", style={"color": "#9ca3af"}),
+                                    ],
+                                    target="followup-seq-help",
+                                    placement="right",
+                                    style={"fontSize": "0.8rem", "maxWidth": "320px"},
+                                ),
                                 dcc.Input(
                                     id="followup-sequence",
                                     type="text",
                                     placeholder="5R",
                                     style={"width": "100%", "marginBottom": "0.5rem"},
                                 ),
-                                html.Label("Follow-up Length (candles)", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
+                                html.Div([
+                                    html.Label("Follow-up Length (candles)", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "display": "inline-block"}),
+                                    html.I(className="bi bi-question-circle", id="followup-len-help", style={"fontSize": "0.75rem", "color": "#9ca3af", "marginLeft": "0.4rem", "cursor": "pointer"}),
+                                ]),
+                                dbc.Tooltip(
+                                    [
+                                        html.P("How many candles to scan after the base match ends.", style={"marginBottom": "0.4rem", "fontSize": "0.75rem"}),
+                                        html.Strong("Examples:", style={"fontSize": "0.75rem"}),
+                                        html.Ul([
+                                            html.Li("Length=5: scan next 5 candles for the follow-up pattern", style={"fontSize": "0.7rem"}),
+                                            html.Li("Length=10: scan next 10 candles (wider window)", style={"fontSize": "0.7rem"}),
+                                            html.Li("If sequence is 5R and length is 3, they're independent", style={"fontSize": "0.7rem"}),
+                                        ], style={"paddingLeft": "1.2rem", "marginBottom": "0.4rem"}),
+                                        html.Small("Larger values catch delayed patterns; smaller values catch immediate reactions.", style={"color": "#9ca3af"}),
+                                    ],
+                                    target="followup-len-help",
+                                    placement="right",
+                                    style={"fontSize": "0.8rem", "maxWidth": "320px"},
+                                ),
                                 dcc.Input(
                                     id="followup-length",
                                     type="number",
@@ -1327,7 +1394,13 @@ sidebar = dbc.Card(
                                     className="w-100 mt-3",
                                     style={"fontWeight": "700", "padding": "0.85rem 1.5rem"},
                                 ),
-                                html.Div(id="scan-results-summary", style={"marginTop": "0.75rem"}),
+                                dcc.Loading(
+                                    html.Div(id="scan-results-summary", style={"marginTop": "0.75rem"}),
+                                    id="scan-loading",
+                                    type="circle",
+                                    color="#6366f1",
+                                    style={"marginTop": "1rem"},
+                                ),
                             ],
                             title="Sequence Scanner",
                             item_id="acc-scanner",
@@ -1489,7 +1562,20 @@ main_content = dbc.Tabs(
                                 id="candle-chart",
                                 figure=build_candle_figure(app.default_sample_data if app.default_sample_data is not None else None),
                                 style={"marginTop": "0.25rem"},
-                                config={"responsive": True, "displayModeBar": True, "displaylogo": False}
+                                config={
+                                    "responsive": True,
+                                    "displayModeBar": True,
+                                    "displaylogo": False,
+                                    "scrollZoom": True,
+                                    "toImageButtonOptions": {
+                                        "format": "png",
+                                        "filename": "candle_chart.png",
+                                        "height": 600,
+                                        "width": 1200,
+                                        "scale": 1,
+                                    },
+                                    "modeBarButtonsToRemove": ["pan2d", "zoom2d", "zoomIn2d", "zoomOut2d", "lasso2d", "select2d", "autoScale2d", "toggleSpikelines"],
+                                }
                             ),
                             type="circle", color="#6366f1"
                         ),
@@ -2349,12 +2435,13 @@ def on_load_sample_click(n_clicks):
     Input("scan-sequences-btn", "n_clicks"),
     State("preset-sequences", "value"),
     State("custom-sequences-input", "value"),
+    State("followup-enabled", "value"),
     State("followup-sequence", "value"),
     State("followup-length", "value"),
     State("current-data", "data"),
     prevent_initial_call=True,
 )
-def scan_sequences(n_clicks, presets, custom_text, followup_seq, followup_length, data):
+def scan_sequences(n_clicks, presets, custom_text, followup_enabled, followup_seq, followup_length, data):
     """Run all selected sequences against the loaded candle data.
     
     Supports wildcard sequences containing '*' (e.g. '3R -> * -> 2G').
@@ -2419,17 +2506,39 @@ def scan_sequences(n_clicks, presets, custom_text, followup_seq, followup_length
                             "end_ts": str(df.iloc[end_idx]["timestamp"]),
                         })
                 entry = {"seq_str": seq_str, "length": seq_len, "matches": matches}
-                if followup_seq and isinstance(followup_length, int) and followup_length > 0:
-                    follow_stats = count_followup_pattern(df, seq_str, followup_seq, followup_length)
-                    entry.update({
-                        "followup_seq": followup_seq,
-                        "followup_length": followup_length,
-                        "followup_success": follow_stats["followup_success"],
-                        "followup_rate": follow_stats["followup_rate"],
-                        "followup_total": follow_stats["total_matches"],
-                    })
+
+                followup_enabled_flag = bool(followup_enabled and "enabled" in followup_enabled)
+                followup_len = None
+                if followup_length is not None:
+                    try:
+                        followup_len = int(followup_length)
+                    except (TypeError, ValueError):
+                        followup_len = None
+
+                if followup_enabled_flag:
+                    if not followup_seq or not isinstance(followup_seq, str) or not followup_seq.strip():
+                        entry.update({
+                            "followup_error": "Enable follow-up with a valid follow-up sequence (e.g. 5R)",
+                        })
+                    elif followup_len is None or followup_len <= 0:
+                        entry.update({
+                            "followup_error": "Enable follow-up with a valid follow-up length (positive integer)",
+                        })
+                    else:
+                        follow_stats = count_followup_pattern(df, seq_str, followup_seq.strip(), followup_len)
+                        followup_outcomes = find_followup_outcomes(df, seq_str, max_follow_len=followup_len, top_k=5)
+                        entry.update({
+                            "followup_seq": followup_seq.strip(),
+                            "followup_length": followup_len,
+                            "followup_success": follow_stats["followup_success"],
+                            "followup_rate": follow_stats["followup_rate"],
+                            "followup_total": follow_stats["total_matches"],
+                            "followup_outcomes": followup_outcomes,
+                        })
+
                 results.append(entry)
                 total_matches += len(matches)
+
             except Exception as seq_err:
                 results.append({"seq_str": seq_str, "length": 0, "matches": [], "error": str(seq_err)})
 
@@ -2490,6 +2599,7 @@ def update_chart(data, scan_results, start_date, end_date):
             template='plotly_white', height=400,
             margin=dict(l=0, r=0, t=0, b=0),
             plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+            dragmode='pan',
         )
         empty = html.Div(
             [html.I(className="bi bi-inbox", style={"fontSize": "2rem", "color": "#c7d2fe"}),
@@ -2564,8 +2674,18 @@ def update_chart(data, scan_results, start_date, end_date):
 
         fig.update_layout(
             title=dict(text=title_text, font=dict(size=16, color='#1f2937')),
-            template='plotly_white', height=550, hovermode='x unified',
-            xaxis=dict(rangeslider=dict(visible=False)),
+            template='plotly_white',
+            height=550,
+            hovermode='x unified',
+            dragmode='pan',
+            xaxis=dict(
+                rangeslider=dict(visible=False),
+                type='date',
+                fixedrange=False,
+            ),
+            yaxis=dict(
+                fixedrange=False,
+            ),
             margin=dict(l=50, r=20, t=70, b=40),
             legend=dict(
                 orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1,
@@ -2606,12 +2726,39 @@ def update_chart(data, scan_results, start_date, end_date):
                             html.Td(m["start_ts"][:19]),
                             html.Td(m["end_ts"][:19]),
                         ]))
-                    body = dbc.Table(
-                        [html.Thead(html.Tr([html.Th("#"), html.Th("Candle Range"), html.Th("Start"), html.Th("End")])),
-                         html.Tbody(rows)],
-                        bordered=True, hover=True, responsive=True, striped=True, size="sm",
-                        style={"fontSize": "0.85rem"},
-                    )
+                    body_children: list = [
+                        dbc.Table(
+                            [html.Thead(html.Tr([html.Th("#"), html.Th("Candle Range"), html.Th("Start"), html.Th("End")])),
+                             html.Tbody(rows)],
+                            bordered=True, hover=True, responsive=True, striped=True, size="sm",
+                            style={"fontSize": "0.85rem"},
+                        )
+                    ]
+                    
+                    # Add followup outcomes table if available
+                    if res.get("followup_outcomes"):
+                        outcomes = res.get("followup_outcomes", [])
+                        if outcomes:
+                            outcome_rows = []
+                            for outcome in outcomes:
+                                outcome_rows.append(html.Tr([
+                                    html.Td(outcome.get("followup", ""), style={"fontFamily": "monospace", "fontWeight": "600"}),
+                                    html.Td(str(outcome.get("count", 0))),
+                                    html.Td(f"{outcome.get('rate', 0.0):.1%}", style={"color": "#2563eb", "fontWeight": "600"}),
+                                ]))
+                            
+                            body_children.append(html.Hr(style={"margin": "0.75rem 0"}))
+                            body_children.append(html.H6("Top Follow-up Outcomes", style={"fontSize": "0.85rem", "fontWeight": "700", "marginBottom": "0.5rem", "color": "#1f2937"}))
+                            body_children.append(
+                                dbc.Table(
+                                    [html.Thead(html.Tr([html.Th("Sequence"), html.Th("Count"), html.Th("Rate")])),
+                                     html.Tbody(outcome_rows)],
+                                    bordered=True, hover=True, responsive=True, striped=True, size="sm",
+                                    style={"fontSize": "0.8rem"},
+                                )
+                            )
+                    
+                    body = html.Div(body_children)
 
                 card = dbc.Card([
                     dbc.CardHeader([
@@ -2623,6 +2770,7 @@ def update_chart(data, scan_results, start_date, end_date):
                         badge,
                         html.Span(f"  ({res.get('length', '?')} candles)", style={"color": "#9ca3af", "fontSize": "0.8rem", "marginLeft": "0.5rem"}),
                         (html.Span(f"Followup: {res.get('followup_seq', '')} ({res.get('followup_success', 0)}/{res.get('followup_total', 0)}) {res.get('followup_rate', 0.0):.0%}", style={"color": "#2563eb", "fontSize": "0.75rem", "marginLeft": "0.5rem"}) if res.get('followup_seq') else None),
+                        (html.Span(res.get('followup_error', ''), style={"color": "#b91c1c", "fontSize": "0.75rem", "marginLeft": "0.5rem"}) if res.get('followup_error') else None),
                         # Quick-action buttons
                         html.Span([
                             dbc.Button(
@@ -2664,7 +2812,7 @@ def update_chart(data, scan_results, start_date, end_date):
         err_fig = go.Figure()
         err_fig.add_annotation(text=f"ERROR: {str(e)[:80]}", xref='paper', yref='paper',
                                x=0.5, y=0.5, showarrow=False, font=dict(size=14, color='#ef4444'))
-        err_fig.update_layout(height=400, template='plotly_white')
+        err_fig.update_layout(height=400, template='plotly_white', dragmode='pan')
         err_div = html.Div(f"Error: {str(e)[:100]}", style={"color": "#ef4444", "padding": "1rem"})
         err_debug = html.Div(f"update_chart error: {str(e)}", style={"color": "#ef4444", "fontSize": "0.8rem"})
         return err_fig, err_div, "", err_debug

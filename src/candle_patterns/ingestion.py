@@ -14,6 +14,9 @@ def validate_schema(df: pd.DataFrame) -> None:
 
 def load_csv(path: str, parse_dates: Optional[str] = "timestamp") -> pd.DataFrame:
     df = pd.read_csv(path)
+    # Normalise common timestamp column name aliases
+    if "timestamp" not in df.columns and "time" in df.columns:
+        df = df.rename(columns={"time": "timestamp"})
     # parse date
     if parse_dates and parse_dates in df.columns:
         df[parse_dates] = pd.to_datetime(df[parse_dates], utc=True, errors="raise")

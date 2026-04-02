@@ -1,0 +1,117 @@
+@startuml component_diagram
+!define STORAGE #Database
+!define PROCESS #Process
+!define EXTERNAL #External
+
+title Candlestick Patterns System - Component Diagram
+
+package "Web Layer" {
+    [Dashboard] as Dashboard
+    [API Endpoints] as API
+}
+
+package "Core Pattern Engine" {
+    [Pattern Matching] as PatternCore
+    [Discovery Engine] as Discovery
+    [Prediction Engine] as Prediction
+    [Confidence Scoring] as Confidence
+}
+
+package "Analysis & ML" {
+    [Backtesting Engine] as Backtesting
+    [ML Sequence Predictor] as MLSeq
+    [Traditional Detectors] as TradDetect
+}
+
+package "Data Layer" {
+    [Yahoo Finance Fetcher] as YahooDL
+    [Data Caching (LRU)] as DataCache
+    [CSV Ingestion] as CSVIngest
+}
+
+package "Optimization" {
+    [Vectorized Scanner] as VectorScan
+    [Chunk Processing] as ChunkProc
+    [Candle Cache] as CandleCache
+}
+
+package "Persistence & Config" {
+    [SQLite Storage] as SQLiteDB
+    [User Preferences] as Prefs
+    [Watchlist Manager] as Watchlist
+}
+
+package "Monitoring" {
+    [Alert Rules Engine] as Alerts
+    [Webhook Dispatcher] as Webhooks
+    [Email Dispatcher] as Email
+}
+
+package "Supporting" {
+    [Multi-TF Analyzer] as MultiTF
+    [Portfolio Scanner] as Portfolio
+    [CLI Interface] as CLI
+}
+
+package "External Services" {
+    [Yahoo Finance API] as YahooAPI
+    [Custom Webhooks] as WebhookExt
+    [SMTP Server] as SMTPExt
+}
+
+' Web Layer connections
+Dashboard --> PatternCore
+Dashboard --> Discovery
+Dashboard --> Prediction
+Dashboard --> Backtesting
+Dashboard --> MLSeq
+Dashboard --> Alerts
+Dashboard --> Prefs
+Dashboard --> Watchlist
+API --> PatternCore
+API --> Portfolio
+API --> YahooDL
+
+' Core Engine connections
+PatternCore --> VectorScan
+PatternCore --> DataCache
+Discovery --> PatternCore
+Prediction --> PatternCore
+Confidence --> PatternCore
+
+' Analysis connections
+Backtesting --> PatternCore
+MLSeq --> PatternCore
+TradDetect --> PatternCore
+MultiTF --> PatternCore
+
+' Data Layer connections
+YahooDL --> DataCache
+DataCache --> YahooAPI
+YahooDL --> CSVIngest
+YahooDL --> CandleCache
+
+' Optimization connections
+PatternCore --> VectorScan
+PatternCore --> ChunkProc
+ChunkProc --> VectorScan
+
+' Persistence connections
+Alerts --> SQLiteDB
+Prefs --> SQLiteDB
+Watchlist --> SQLiteDB
+
+' Monitoring connections
+Alerts --> Webhooks
+Alerts --> Email
+Webhooks --> WebhookExt
+Email --> SMTPExt
+
+' Supporting connections
+Portfolio --> PatternCore
+Portfolio --> YahooDL
+CLI --> PatternCore
+CLI --> Backtesting
+CLI --> MLSeq
+
+@enduml

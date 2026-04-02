@@ -1,0 +1,75 @@
+@startuml sequence_diagram
+title Candlestick Patterns - Pattern Scan Request Lifecycle
+
+actor User as User
+participant "Dashboard UI" as Dashboard
+participant "data_feeds.py" as DataFeed
+participant "Yahoo Finance" as Yahoo
+participant "LRU Cache" as Cache
+participant "patterns.py" as PatternCore
+participant "performance.py" as Perf
+participant "ml_sequence.py" as ML
+participant "SQLite" as DB
+
+User -> Dashboard: Select symbol, period → Click "Fetch Data"
+Dashboard -> DataFeed: fetch_yahoo_data(symbol, period)
+
+DataFeed -> Cache: Check LRU cache for symbol
+alt Cache HIT
+    Cache --> DataFeed: Return cached DataFrame
+else Cache MISS
+    DataFeed -> Yahoo: HTTP GET (OHLCV data)
+    Yahoo --> DataFeed: Return OHLCV JSON
+    DataFeed -> Cache: Store in cache (5-min TTL)
+    Cache --> DataFeed: ✓ Cached
+end
+
+DataFeed --> Dashboard: Return DataFrame
+
+Dashboard -> Dashboard: Generate candlestick chart
+Dashboard -> PatternCore: symbol_sequence(df)
+PatternCore -> Perf: vectorized_symbol_sequence(df)
+Perf --> PatternCore: R/G/Doji array
+PatternCore --> Dashboard: Sequence array
+
+loop For each pattern selected
+    Dashboard -> PatternCore: find_sequence_occurrences(sequence)
+    PatternCore -> Perf: vectorized_find_sequence()
+    Perf --> PatternCore: Match indices
+    
+    PatternCore -> PatternCore: find_wildcard_sequence() if needed
+    PatternCore -> PatternCore: sequence_outcome_stats()
+    PatternCore -> PatternCore: what_comes_next()
+    PatternCore -> PatternCore: sequence_confidence()
+    PatternCore --> Dashboard: Match results + stats
+end
+
+Dashboard -> ML: predict_next_outcome(matches)
+ML --> Dashboard: GradientBoosting predictions
+
+Dashboard -> Dashboard: Render matches table
+Dashboard -> Dashboard: Highlight matches on chart (coloured rectangles)
+Dashboard -> Dashboard: Update statistics tab
+
+Dashboard --> User: Display: Chart + Matches + Statistics
+
+alt User creates alert rule
+    User -> Dashboard: Fill alert form (pattern, webhook)
+    Dashboard -> DB: add_alert_rule(pattern, webhook_url)
+    DB --> Dashboard: ✓ Stored
+end
+
+par Background (every 60s)
+    Dashboard -> DataFeed: Fetch latest data (live refresh)
+    Dashboard -> PatternCore: Scan all alert rules
+    PatternCore -> Dashboard: Match detected?
+    
+    alt Match found
+        Dashboard -> DB: check_and_trigger()
+        DB -> Dashboard: send_webhook(url, json)
+        Dashboard -> Dashboard: send_email(smtp_config)
+        DB -> DB: record_alert(alert_history)
+    end
+end
+
+@enduml

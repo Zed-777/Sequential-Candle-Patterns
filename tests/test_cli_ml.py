@@ -9,7 +9,7 @@ from candle_patterns.cli import app
 
 runner = CliRunner()
 
-SAMPLE_CSV = "data/samples/sample_synthetic.csv"
+SAMPLE_CSV = "tests/data/sample_cli_test.csv"
 
 
 class TestCLITrain:

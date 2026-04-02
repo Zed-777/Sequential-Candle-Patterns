@@ -37,7 +37,7 @@ for i, date in enumerate(dates):
     })
 
 df = pd.DataFrame(data)
-df.to_csv('data/samples/sample_synthetic.csv', index=False)
+df.to_csv('data/samples/sample.csv', index=False)
 
 print(f'✅ Created sample BTC data: {len(df)} days')
 print(f'Date range: {df.iloc[0]["timestamp"]} to {df.iloc[-1]["timestamp"]}')

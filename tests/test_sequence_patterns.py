@@ -20,6 +20,7 @@ from candle_patterns.patterns import (
     what_comes_next,
     sequence_outcome_stats,
     count_followup_pattern,
+    find_followup_outcomes,
 )
 
 
@@ -188,6 +189,46 @@ class TestFollowupPatternCount:
         stats = count_followup_pattern(df, "3R -> 3G", "5G", 5)
         assert stats["total_matches"] == 1
         assert stats["followup_success"] == 0
+
+    def test_followup_within_window(self):
+        df = _make_candles("RRRGGGGGRR")  # base 3R->3G at 0-5; 2G followup at 6-7 appears inside follow_len=5
+        stats = count_followup_pattern(df, "3R -> 3G", "2G", 5)
+        assert stats["total_matches"] == 1
+        assert stats["followup_success"] == 1
+        assert stats["followup_rate"] == 1.0
+
+
+class TestFollowupOutcomes:
+    def test_top_followups(self):
+        df = _make_candles("RRRGGGRRRGGGG")
+        # 3R->3G at positions 0-5 and 6-11, followups: 2R (from first), 1G (from second partial)
+        top = find_followup_outcomes(df, "3R -> 3G", max_follow_len=5, top_k=2)
+        assert isinstance(top, list)
+        assert len(top) >= 1
+        # With this sample, follow-up windows are '3R -> 2G' and '1G'. Accept either order.
+        assert top[0]["followup"] in ("3R -> 2G", "1G")
+        assert "count" in top[0]
+        assert "rate" in top[0]
+
+
+def test_scan_sequences_followup_toggle():
+    from candle_patterns import dashboard
+    df = _make_candles("RRRGGGRRRGGGG")
+    data = {"df": df.to_dict("records")}
+    results, summary, active = dashboard.scan_sequences(
+        1,
+        ["3R -> 3G"],
+        "",
+        ["enabled"],
+        "5R",
+        5,
+        data,
+    )
+    assert active == "tab-matches"
+    assert isinstance(results, list)
+    assert results[0]["seq_str"] == "3R -> 3G"
+    assert results[0]["followup_seq"] == "5R"
+    assert "followup_rate" in results[0]
 
 
 # ---------------------------------------------------------------------------

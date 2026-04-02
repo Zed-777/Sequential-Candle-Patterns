@@ -193,7 +193,7 @@ def fetch_yahoo_data(
     rename_map = {}
     for col in df.columns:
         col_lower = col.lower()
-        if col_lower in ("date", "datetime"):
+        if col_lower in ("date", "datetime", "time"):
             rename_map[col] = "timestamp"
         elif col_lower == "open":
             rename_map[col] = "open"

@@ -1,0 +1,104 @@
+# .dockerignore
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+coverage.xml
+*.cover
+.hypothesis/
+htmlcov/
+.tox/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.sublime-project
+.sublime-workspace
+*.iml
+
+# Git metadata
+.git/
+.gitignore
+.gitattributes
+.github/workflows/  # CI workflows not needed in image
+
+# Build artifacts
+.ruff_cache/
+.black_cache/
+
+# Local data & artifacts (keep data/ for sample data only)
+artifacts/
+*.db
+*.sqlite
+!data/  # Keep data folder
+!data/samples/  # Keep sample data
+.cache/
+*.cache
+
+# Documentation build artifacts
+docs/_build/
+site/
+
+# Temporary files
+*.tmp
+*.temp
+.pytest_tmp/
+
+# OS files
+Thumbs.db
+.DS_Store
+*.log
+
+# Project management
+PROGRESS_SUMMARY.md
+STATUS_REPORT.md
+DASHBOARD_MODERNIZATION.md
+AUTONOMOUS_SESSION_SUMMARY.md
+PHASE_2_AUTONOMY_PLAN.md
+
+# Notebooks (optional: exclude to reduce image size)
+# notebooks/
+# *.ipynb
+
+# Markdown files (optional: exclude for lean image)
+# *.md
+# docs/
+
+# Test data artifacts
+artifacts/detections/
+artifacts/uploads/

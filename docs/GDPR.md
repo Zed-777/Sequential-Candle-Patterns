@@ -10,6 +10,7 @@ This document describes the current GDPR/Privacy approach for the Candle Pattern
 - Audit logs: job-level logs are stored in `logs/` (if enabled).
 
 ## TODO
+
 - Add formal policy text.
 - Add data processing agreement and DPA checklist.
 - Add third-party vendor assessment for Yahoo Finance API usage.
