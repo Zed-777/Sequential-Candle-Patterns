@@ -235,13 +235,13 @@ class SequencePredictor:
             try:
                 cal = CalibratedClassifierCV(base_model, cv=3, method="sigmoid")
                 cal.fit(X_train_scaled, y_train)
-                self.model = cal  # type: ignore[assignment]
+                self.model = cal  # type: ignore[assignment] — Phase-11-sklearn-type-compatibility
                 self.is_calibrated = True
             except Exception:
-                self.model = base_model  # type: ignore[assignment]
+                self.model = base_model  # type: ignore[assignment] — Phase-11-sklearn-type-compatibility
                 self.is_calibrated = False
         else:
-            self.model = base_model  # type: ignore[assignment]
+            self.model = base_model  # type: ignore[assignment] — Phase-11-sklearn-type-compatibility
 
         # Evaluate
         assert self.model is not None  # assigned above in all branches
@@ -335,7 +335,7 @@ class SequencePredictor:
         model = self.model
         if hasattr(model, "calibrated_classifiers_"):
             # CalibratedClassifierCV (scikit-learn >=1.4)
-            model = model.calibrated_classifiers_[0].estimator  # type: ignore[union-attr]
+            model = model.calibrated_classifiers_[0].estimator  # type: ignore[union-attr] — Phase-11-sklearn-type-compatibility
         elif hasattr(model, "estimators_") and not hasattr(model, "feature_importances_"):
             # CalibratedClassifierCV (older scikit-learn)
             base = model.estimators_[0]

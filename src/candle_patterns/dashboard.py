@@ -1,5 +1,27 @@
 from __future__ import annotations
 
+"""
+Interactive web dashboard for candlestick pattern analysis and backtesting.
+
+This module builds and manages the Dash/Plotly web interface, providing:
+- Real-time pattern scanning and visualization
+- Sample data loading and CSV upload
+- Interactive charting with multiple indicators
+- Pattern statistics and outcome analysis
+- Multi-timeframe pattern detection
+- Alert rule management
+- Watchlist management
+
+Configuration and setup:
+- Load sample data on startup
+- Detect built-in pattern sequences
+- Render multi-tab interface (Scan, Pattern Detail, Data Upload, etc.)
+- Support theme switching and data export
+
+Key callbacks handle Inputs/Outputs/State, which map UI interactions
+to backend analysis and charts.
+"""
+
 import dash
 import dash_bootstrap_components as dbc
 from pathlib import Path
@@ -301,7 +323,7 @@ app.default_sample_data = None
 try:
     data, _ = load_sample_data()
     if data:
-        app.default_sample_data = data  # type: ignore[attr-defined]
+        app.default_sample_data = data  # type: ignore[attr-defined] — Phase-11-dash-dynamic-attrs
         logger.info("[OK] Sample auto-loaded for layout")
         try:
             print(f"\n[OK] LOADED: {len(data['df'])} candles\n")
@@ -2144,7 +2166,7 @@ def debug_callback_map():
     return json.dumps(list(app.callback_map.keys()))
 
 
-@server.route('/api/load-sample')  # type: ignore[union-attr]
+@server.route('/api/load-sample')  # type: ignore[union-attr] — Phase-11-dash-flask-type-compat
 def api_load_sample():
     """API endpoint to load sample data directly."""
     from flask import jsonify

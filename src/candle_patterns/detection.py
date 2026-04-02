@@ -1,5 +1,22 @@
 from __future__ import annotations
 
+"""
+Low-level candle feature detection and classification.
+
+This module provides functions to detect specific candlestick patterns
+and features (Doji, Hammer, etc.) from OHLC data.
+
+Key functions:
+- candle_color(): Classify a candle as green (close >= open) or red
+- is_doji(): Detect doji candles (small body, wicks on both sides)
+- is_hammer(): Detect hammer candles (long lower wick, small upper wick)
+- detect_patterns(): Scan DataFrame for all detected patterns
+
+Example:
+    >>> df = pd.read_csv('data.csv')
+    >>> patterns = detect_patterns(df, window_size=3)
+    >>> doji_indices = [i for i in range(len(df)) if is_doji(df.iloc[max(0,i-1):i+1])]
+"""
 
 import logging
 import pandas as pd

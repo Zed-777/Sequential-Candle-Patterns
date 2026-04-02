@@ -1,5 +1,22 @@
 from __future__ import annotations
 
+"""
+Data ingestion and validation utilities.
+
+This module provides functions to load and validate OHLC (candlestick) data
+from CSV files or other sources.
+
+Key functions:
+- validate_schema(): Check that a DataFrame has required OHLC columns
+- load_csv(): Load a CSV file with type conversion and date parsing
+
+Required columns: timestamp (or datetime), open, high, low, close
+
+Example:
+    >>> df = load_csv('data.csv')
+    >>> validate_schema(df)
+"""
+
 import pandas as pd
 from typing import Optional
 

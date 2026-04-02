@@ -1,5 +1,22 @@
 from __future__ import annotations
 
+"""
+Command-line interface for candlestick pattern analysis.
+
+This module provides Typer-based CLI commands for:
+- run: Execute full pipeline (load CSV → detect patterns → save report)
+- cleanup: Remove old artifacts and database references
+- train: Train ML baseline models on detected patterns
+- backtest: Run strategy backtests with various hold periods
+- scan: Scan real-time data from Yahoo Finance
+
+Each command includes full help text (--help) and parameter validation.
+
+Example:
+    $ python -m candle_patterns.cli run data.csv --out report.csv
+    $ python -m candle_patterns.cli train --file data.csv --model-out model.pkl
+"""
+
 import typer
 from candle_patterns.ingestion import load_csv
 from candle_patterns.detection import detect_patterns

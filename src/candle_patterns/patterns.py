@@ -1,5 +1,24 @@
 from __future__ import annotations
 
+"""
+Candlestick pattern recognition via sequence parsing and matching.
+
+This module provides functions to parse user-defined candle color sequences
+(e.g., "3R -> 2G -> Doji"), find all matching occurrences in OHLC data,
+analyze pattern outcomes, and discover repeating color sequences automatically.
+
+Key functions:
+- parse_sequence(): Parse a sequence string into tokens
+- find_sequence_occurrences(): Find all matches in a DataFrame
+- sequence_outcome_stats(): Calculate win rate and returns for pattern matches
+- discover_color_sequences(): Automatically find repeating patterns
+
+Example:
+    >>> df = pd.read_csv('data.csv')
+    >>> tokens = parse_sequence('3R -> 2G')
+    >>> matches = find_sequence_occurrences(df, '3R -> 2G')
+    >>> stats = sequence_outcome_stats(df, matches, hold_period=5)
+"""
 
 import re
 from collections import Counter

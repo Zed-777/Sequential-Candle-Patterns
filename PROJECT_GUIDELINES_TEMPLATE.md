@@ -184,51 +184,51 @@ Follow this exact order to keep repositories predictable:
 
 ---
 
-## Implementation Status (v1.4.0)
+## Implementation Status (vX.Y.Z)
 
-### ✅ Complete: All Required Files Present
+### Project Compliance
 
-As of April 2, 2026, the Candlestick Patterns project implements **100% of tier-1 and tier-2 governance files**:
+**Instructions:** Fill in this section as your project progresses. Track which required files are present and which standard directories have been created.
 
-#### Tier 1: Critical Documentation (12/12 Complete)
+#### Tier 1: Critical Documentation
 
-- ✅ README.md — Comprehensive with all required sections
-- ✅ MPDP.md — Living roadmap and canonical status document
-- ✅ .gitignore — Language and environment-appropriate rules
-- ✅ LICENSE — Full MIT license text with README badge
-- ✅ pyproject.toml + requirements.txt — Pinned dependencies with lock file
-- ✅ Dockerfile + .dockerignore — Multi-stage build, lean image
-- ✅ SECURITY.md — Vulnerability contact, threat model, secret handling
-- ✅ AGENT_HANDOFF.md — Developer onboarding, .env setup, troubleshooting
-- ✅ UML/ + UML/README.md — Component and sequence diagrams
-- ✅ architecture.md — Complete system design (docs/architecture.md)
-- ✅ .github/workflows/ — Automated CI/CD tests, linting, Docker build
-- ✅ CONTRIBUTING.md — Branch strategy, code style, testing, PR workflow
+- [ ] README.md
+- [ ] MPDP.md
+- [ ] .gitignore
+- [ ] LICENSE
+- [ ] Dependency manifest and lock file
+- [ ] Dockerfile and .dockerignore
+- [ ] SECURITY.md
+- [ ] AGENT_HANDOFF.md
+- [ ] UML/ and UML/README.md
+- [ ] architecture.md
+- [ ] .github/workflows/
+- [ ] CONTRIBUTING.md
 
-#### Tier 2: Governance & Community Files (5/5 Complete)
+#### Tier 2: Governance & Community Files
 
-- ✅ CODE_OF_CONDUCT.md — Contributor Covenant 2.1 based
-- ✅ CHANGELOG.md — Detailed version history with semantic versioning
-- ✅ THIRD_PARTY_NOTICES.md — Attribution for all open-source dependencies
-- ✅ MAINTAINERS.md — Active maintainer info and decision-making process
-- ✅ CODEOWNERS — GitHub auto-assignment for code reviews
+- [ ] CODE_OF_CONDUCT.md
+- [ ] CHANGELOG.md
+- [ ] THIRD_PARTY_NOTICES.md
+- [ ] MAINTAINERS.md
+- [ ] CODEOWNERS
 
-#### Standard Directories (5/5 Complete)
+#### Standard Directories
 
-- ✅ tests/ — 315 unit/integration/E2E tests, 100% pass rate
-- ✅ docs/ — Comprehensive guides (architecture, release notes, etc.)
-- ✅ scripts/ — Idempotent setup and utility scripts
-- ✅ data/ — Data/README.md with sample data and format guidance
-- ✅ src/ — Python package structure with 16+ core modules
+- [ ] tests/
+- [ ] docs/
+- [ ] scripts/
+- [ ] data/
+- [ ] src/
 
-**Total Compliance:** **22/22 required files present (100%)**
+**Total Compliance:** __/22 required files present
 
-### Optional Files (Not Applicable)
+### Optional Files
 
-- deploy/ — Not needed for v1.4.0 (local-first, future cloud deployment)
-- MODEL_CARD.md / DATA_CARD.md — Not applicable (no external model/data distribution)
-- PRIVACY.md / DATA_LICENSE.md — Not applicable (local-only, no external data collection)
-- Dependabot/Renovate config — Useful when >10 dependencies, can add later
+- deploy/ — (explain applicability or defer)
+- MODEL_CARD.md / DATA_CARD.md — (explain applicability or defer)
+- PRIVACY.md / DATA_LICENSE.md — (explain applicability or defer)
+- Dependabot/Renovate config — (explain applicability or defer)
 
 ---
 
@@ -241,4 +241,4 @@ As of April 2, 2026, the Candlestick Patterns project implements **100% of tier-
 
 ---
 
-**Last updated:** 2026-04-02
+**Last updated:** [YYYY-MM-DD]

@@ -168,11 +168,32 @@ The repository is **fully compliant and production-ready**.
 
 ---
 
+## Code Documentation Standards (NEW in v1.4.0)
+
+As of April 2, 2026, PROJECT_GUIDELINES.md now includes **Code Documentation Standards** requiring:
+- Module-level docstrings describing purpose and key functions
+- Function/method docstrings with parameter types and return values
+- Type hints on all public APIs
+- Inline comments only for non-obvious logic
+- All `# type: ignore` comments must reference an issue/MPDP task
+
+**Current Status:** 59% compliant  
+**Remediation Plan:** See [CODE_DOCUMENTATION_AUDIT.md](CODE_DOCUMENTATION_AUDIT.md)
+
+**Progress:**
+- ✅ 6/6 core modules now have module-level docstrings
+- ✅ 6/6 `# type: ignore` comments now reference MPDP phases
+- ⏳ ~40 public functions still need docstrings (Tier 2 work)
+- ⏳ ~50 public functions need complete type hints (Tier 2 work)
+
+---
+
 ## Conclusion
 
 ✅ **The repository fully implements PROJECT_GUIDELINES.md standards.**
 
 **What This Means:**
+
 - **Professional:** All required documentation present and complete
 - **Reproducible:** Locked dependencies, setup scripts, clear environment instructions
 - **Secure:** Secret handling, vulnerability contact, dependency scanning enabled

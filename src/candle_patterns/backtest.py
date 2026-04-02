@@ -1,5 +1,26 @@
 from __future__ import annotations
 
+"""
+Strategy backtesting engine for candlestick patterns.
+
+This module provides functions to backtest trading strategies based on
+detected candlestick patterns over historical OHLC data.
+
+Key functions:
+- simple_pattern_backtest(): Naive strategy that enters on pattern detection
+  and holds for a fixed period, then exits
+
+Metrics computed:
+- Total return (%)
+- Average return per trade (%)
+- Win rate (% of trades with positive return)
+
+Example:
+    >>> df = pd.read_csv('data.csv')
+    >>> detections = detect_patterns(df)
+    >>> results = simple_pattern_backtest(df, detections, hold=5)
+"""
+
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any
