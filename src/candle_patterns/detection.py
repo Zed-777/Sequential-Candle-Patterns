@@ -29,39 +29,81 @@ logger = logging.getLogger(__name__)
 
 
 def candle_color(row: pd.Series) -> str:
+    """Classify a candle as green (bullish) or red (bearish).
 
+    A candle is green when close >= open, red otherwise.
+
+    Args:
+        row: A pandas Series with OHLC columns (open, close, high, low).
+
+    Returns:
+        str: Either 'green' (close >= open) or 'red' (close < open).
+
+    Example:
+        >>> row = pd.Series({'open': 100, 'close': 105, 'high': 110, 'low': 95})
+        >>> candle_color(row)
+        'green'
+    """
     return "green" if row["close"] >= row["open"] else "red"
 
 
 def is_doji(window: pd.DataFrame, tol: float = 0.05) -> bool:
+    """Detect a doji candlestick pattern.
 
+    A doji is characterized by a small body (difference between open and close)
+    relative to the total range (high - low), indicating indecision.
+
+    Args:
+        window: A pandas DataFrame with the last row being the candle to check.
+                Must contain 'open', 'close', 'high', 'low' columns.
+        tol: float, tolerance factor (default 0.05). A candle is doji if
+             body <= tol * range. Default 5% of total range.
+
+    Returns:
+        bool: True if the last candle in window is a doji, False otherwise.
+
+    Example:
+        >>> window = pd.DataFrame([{'open': 100, 'close': 101, 'high': 110, 'low': 90}])
+        >>> is_doji(window)  # body=1, range=20, 1 <= 0.05*20 → True
+        True
+    """
     row = window.iloc[-1]
-
     body = abs(row["close"] - row["open"])
-
     rng = row["high"] - row["low"]
-
     if rng == 0:
-
         return False
-
     return body <= tol * rng
 
 
 def is_hammer(window: pd.DataFrame, tol: float = 0.1) -> bool:
+    """Detect a hammer candlestick pattern.
 
+    A hammer has a small body near the top of the range with a long lower wick
+    (at least 2x the body length) and a short or no upper wick. Signals potential
+    bullish reversal.
+
+    Args:
+        window: A pandas DataFrame with the last row being the candle to check.
+                Must contain 'open', 'close', 'high', 'low' columns.
+        tol: float, reserved for future use (not currently applied).
+
+    Returns:
+        bool: True if the last candle is a hammer, False otherwise.
+              Criteria: lower_wick >= 2 * body AND upper_wick <= body
+
+    Example:
+        >>> window = pd.DataFrame([{
+        ...     'open': 100, 'close': 102, 'high': 105, 'low': 85
+        ... }])
+        >>> is_hammer(window)  # body=2, lower_wick=15, upper_wick=3 → True
+        True
+    """
     row = window.iloc[-1]
-
     body = abs(row["close"] - row["open"])
-
     lower_wick = min(row["open"], row["close"]) - row["low"]
-
     upper_wick = row["high"] - max(row["open"], row["close"])
-
     if body == 0:
-
         return False
-
     return lower_wick >= 2 * body and upper_wick <= body
 
 
@@ -168,6 +210,32 @@ def detect_patterns(
     window_size: int = 5,
     custom_sequences: Dict[str, str] | None = None,
 ) -> List[Dict[str, Any]]:
+    """Scan a DataFrame for candlestick patterns and sequences.
+
+    Detects both heuristic patterns (Doji, Hammer, Engulfing, etc.) and
+    sequence-based patterns (Morning Star, Evening Star) at each candle.
+    Can optionally include custom user-defined sequences.
+
+    Args:
+        df: pandas DataFrame with OHLC columns (timestamp, open, high, low, close).
+        window_size: int, lookback window for pattern detection (default 5).
+        custom_sequences: Optional dict mapping pattern names to sequence strings
+                         (e.g., {'my_pattern': '3R -> 2G'}). If provided,
+                         these sequences are also scanned.
+
+    Returns:
+        List[Dict[str, Any]]: List of detected patterns, each dict contains:
+            - 'index': int, row index in DataFrame
+            - 'timestamp': timestamp of the detected pattern
+            - 'pattern': str, name of detected pattern (e.g., 'doji', 'hammer')
+
+    Example:
+        >>> df = pd.read_csv('data.csv')
+        >>> patterns = detect_patterns(df, window_size=5)
+        >>> print(f"Found {len(patterns)} patterns")
+        >>> for p in patterns[:3]:
+        ...     print(p)
+    """
 
     results: List[Dict[str, Any]] = []
 

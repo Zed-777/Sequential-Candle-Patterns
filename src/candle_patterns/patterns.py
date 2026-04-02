@@ -223,7 +223,24 @@ def match_named_token(df: pd.DataFrame, idx: int, token: str) -> bool:
 
 
 def matches_sequence_at(df: pd.DataFrame, start_idx: int, seq_str: str) -> bool:
-    """Check if sequence seq_str occurs starting at start_idx."""
+    """Check if a sequence matches starting at a specific index.
+
+    Validates that a user-defined sequence (e.g., '3R -> 2G') occurs exactly
+    at the given start position in the DataFrame.
+
+    Args:
+        df: pandas DataFrame with OHLC columns.
+        start_idx: int, the starting index to check in the DataFrame.
+        seq_str: str, sequence string (e.g., '3R -> 2G -> Doji').
+
+    Returns:
+        bool: True if the entire sequence matches starting at start_idx,
+              False otherwise.
+
+    Example:
+        >>> df = pd.read_csv('data.csv')
+        >>> matches_sequence_at(df, 10, '2R -> 3G')  → True if match at idx 10
+    """
     tokens = parse_sequence(seq_str)
     syms = symbol_sequence(df)
     n = len(df)
@@ -242,8 +259,34 @@ def matches_sequence_at(df: pd.DataFrame, start_idx: int, seq_str: str) -> bool:
     return True
 
 
-def count_followup_pattern(df: pd.DataFrame, base_seq: str, follow_seq: str, follow_len: int) -> dict:
-    """Count how many base_seq occurrences are followed by follow_seq within follow_len candles."""
+def count_followup_pattern(
+    df: pd.DataFrame, base_seq: str, follow_seq: str, follow_len: int
+) -> dict:
+    """Count how many base sequence occurrences are followed by a follow-up sequence.
+
+    Finds all occurrences of base_seq and checks if follow_seq appears
+    within follow_len candles after each match. Computes success rate.
+
+    Args:
+        df: pandas DataFrame with OHLC columns.
+        base_seq: str, the base pattern sequence (e.g., '3R -> 2G').
+        follow_seq: str, the expected follow-up sequence.
+        follow_len: int, max number of candles to search for follow_seq.
+
+    Returns:
+        dict with keys:
+            - 'base_seq': original base sequence
+            - 'follow_seq': original follow sequence
+            - 'follow_len': lookback length used
+            - 'total_matches': count of base_seq occurrences
+            - 'followup_success': count where follow_seq appeared
+            - 'followup_rate': float, success rate (0.0 to 1.0)
+
+    Example:
+        >>> df = pd.read_csv('data.csv')
+        >>> result = count_followup_pattern(df, '3R', '2G', 5)
+        >>> print(f"Success rate: {result['followup_rate']:.2%}")
+    """
     occ_ends = find_sequence_occurrences(df, base_seq)
     total = len(occ_ends)
     success = 0
@@ -284,8 +327,32 @@ def count_followup_pattern(df: pd.DataFrame, base_seq: str, follow_seq: str, fol
     }
 
 
-def find_followup_outcomes(df: pd.DataFrame, base_seq: str, max_follow_len: int = 5, top_k: int = 3) -> List[dict]:
-    """Return the top follow-up sequences after base_seq occurrences."""
+def find_followup_outcomes(
+    df: pd.DataFrame, base_seq: str, max_follow_len: int = 5, top_k: int = 3
+) -> List[dict]:
+    """Return the top follow-up sequences that occur after a base pattern.
+
+    Finds all occurrences of base_seq and analyzes what color sequences
+    typically follow them. Returns the most common follow-up patterns.
+
+    Args:
+        df: pandas DataFrame with OHLC columns.
+        base_seq: str, the base pattern sequence (e.g., '3R -> 2G').
+        max_follow_len: int, max length of follow-up sequences to analyze (default 5).
+        top_k: int, return top K most common follow-ups (default 3).
+
+    Returns:
+        List[dict]: List of follow-up outcomes, each dict contains:
+            - 'followup': tuple of symbols representing the sequence
+            - 'count': int, how many times this follow-up occurred
+            - 'rate': float, frequency (count / total_matches)
+
+    Example:
+        >>> df = pd.read_csv('data.csv')
+        >>> outcomes = find_followup_outcomes(df, '3R', top_k=5)
+        >>> for outcome in outcomes:
+        ...     print(f"{outcome['followup']}: {outcome['rate']:.1%}")
+    """
     occ_ends = find_sequence_occurrences(df, base_seq)
     syms = symbol_sequence(df)
     n = len(syms)
@@ -313,7 +380,26 @@ def find_followup_outcomes(df: pd.DataFrame, base_seq: str, max_follow_len: int 
 
 
 def find_sequence_occurrences(df: pd.DataFrame, seq_str: str) -> List[int]:
-    """Find all ending indices where the given sequence occurs. Returns list of end indices."""
+    """Find all occurrences of a sequence pattern in historical data.
+
+    Scans the entire DataFrame for matches of the given sequence string
+    and returns the ending index for each match.
+
+    Args:
+        df: pandas DataFrame with OHLC columns.
+        seq_str: str, the sequence pattern to search for (e.g., '3R -> 2G -> Doji').
+
+    Returns:
+        List[int]: List of ending indices where the sequence fully matches.
+                   Empty list if no matches found.
+
+    Example:
+        >>> df = pd.read_csv('data.csv')
+        >>> matches = find_sequence_occurrences(df, '3R -> 2G')
+        >>> print(f"Found {len(matches)} matches at indices: {matches}")
+        >>> for end_idx in matches:
+        ...     print(f"Pattern ends at row {end_idx}: {df.iloc[end_idx]['timestamp']}")
+    """
 
     results: List[int] = []
     n = len(df)

@@ -2367,6 +2367,23 @@ def on_page_load(_pathname):
     prevent_initial_call=True,
 )
 def on_upload(contents, filename):
+    """Handle CSV file upload from the Dashboard.
+
+    Parses uploaded CSV content, validates schema (OHLC columns), and stores
+    the data in the 'current-data' dcc.Store for use by other callbacks.
+
+    Args:
+        contents: The file contents (base64 encoded by dcc.Upload).
+        filename: The uploaded file name (str).
+
+    Returns:
+        Tuple[html.Div, dict]:
+            - status message (success or error) for upload-status
+            - data dict for current-data store (or dash.no_update on error)
+
+    Data dict format:
+        {'filename': str, 'upload_id': str, 'df': list of dicts (records)}
+    """
     def _err(msg):
         return (
             html.Div(
@@ -2464,9 +2481,29 @@ def on_load_sample_click(n_clicks):
     prevent_initial_call=True,
 )
 def scan_sequences(n_clicks, presets, custom_text, followup_enabled, followup_seq, followup_length, data):
-    """Run all selected sequences against the loaded candle data.
-    
-    Supports wildcard sequences containing '*' (e.g. '3R -> * -> 2G').
+    """Execute pattern scanning against loaded data.
+
+    Scans OHLC data for all selected preset and custom sequences, optionally
+    analyzing follow-up patterns. Supports wildcard sequences (e.g. '3R -> * -> 2G').
+    Updates both the scan results store and the summary display.
+
+    Triggers:
+        - 'scan-sequences-btn' button click
+
+    Reads from state:
+        - preset-sequences dropdown (selected preset patterns)
+        - custom-sequences-input textarea (user-defined patterns)
+        - followup-enabled checklist (enable follow-up analysis)
+        - followup-sequence, followup-length (follow-up params)
+        - current-data store (OHLC data)
+
+    Outputs:
+        - scan-results: dict mapping pattern names to match indices
+        - scan-results-summary: HTML summary (count, timing)
+        - tabs: sets active tab to 'tab-results'
+
+    Returns:
+        Tuple[dict, html.Div, str]: (results, summary, active_tab)
     """
     logger.info("[CALLBACK] scan_sequences triggered: n_clicks=%s presets=%s custom_text=%s data=%s", n_clicks, presets, custom_text, 'present' if data else 'none')
     try:
@@ -2597,7 +2634,24 @@ def scan_sequences(n_clicks, presets, custom_text, followup_enabled, followup_se
     prevent_initial_call=False,
 )
 def update_chart(data, scan_results, start_date, end_date):
-    """Draw the candlestick chart and populate the Sequence Matches tab."""
+    """Render candlestick chart and populate pattern match list.
+
+    Creates Plotly candlestick chart from 'current-data' store, highlights
+    detected patterns from 'scan-results', and displays summary of matches
+    in the Sequence Matches tab.
+
+    Triggers:
+        - current-data store updated (new data loaded/uploaded)
+        - scan-results store updated (new patterns detected)
+        - date-range updated (user filters date window)
+
+    Returns:
+        Tuple[go.Figure, list, str, html.Div]:
+            - candle-chart: Plotly figure with candlestick + pattern markers
+            - matches-content: HTML list of detected sequences
+            - candle-count-badge: Badge showing data point count
+            - current-data-debug: Debug info (hidden)
+    """
     logger.info("[CALLBACK] update_chart called: data=%s scan=%s",
                 'set' if data else 'None', 'set' if scan_results else 'None')
     print(f"[DEBUG] update_chart: data={'set' if data else 'None'}, scan={'set' if scan_results else 'None'}")
@@ -3200,6 +3254,21 @@ def run_cleanup(submit_n):
     State("current-data", "data"),
 )
 def show_pattern_detail(clickData, nclose, is_open, current_data):
+    """Display detailed analysis modal when user clicks a candle on the chart.
+
+    On click, retrieves pattern details for that candle from scan results and
+    displays rich statistics (nearby patterns, stats, follow-up outcomes, etc.).
+    Modal can also be closed via the close button.
+
+    Triggers:
+        - candle-chart.clickData (user clicks a candle)
+        - modal-close button (user closes modal)
+
+    Returns:
+        Tuple[bool, html.Div]:
+            - is_open: bool, whether modal should be open
+            - pattern-modal-body: HTML content with pattern details
+    """
     ctx = callback_context
     if not ctx.triggered:
         return False, ""
@@ -3390,6 +3459,25 @@ def set_yf_symbol(symbol):
     prevent_initial_call=True,
 )
 def on_yf_fetch(n_clicks, symbol, period, interval):
+    """Fetch live OHLC data from Yahoo Finance and load into dashboard.
+
+    Uses yfinance to fetch historical data for the specified symbol,
+    period, and interval. Stores result just like file upload.
+
+    Triggers:
+        - 'yf-fetch-btn' button click
+
+    Reads from state:
+        - yf-symbol: Ticker symbol (e.g. 'AAPL')
+        - yf-period: Period ('1mo', '3mo', '1y', etc.)
+        - yf-interval: Interval ('1h', '1d', '1wk', etc.)
+
+    Returns:
+        Tuple[dict, html.Div, str]:
+            - current-data: data store (or dash.no_update on error)
+            - upload-status: status message
+            - tabs: sets active tab to 'tab-chart'
+    """
     if not n_clicks or not symbol:
         return dash.no_update, html.Div("Enter a symbol first.", style={"color": "#f59e0b", "fontWeight": "600", "fontSize": "0.85rem"}), dash.no_update
 
