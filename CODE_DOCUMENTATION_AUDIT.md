@@ -2,125 +2,115 @@
 
 **Date:** April 2, 2026  
 **Standard:** PROJECT_GUIDELINES.md — Code Documentation Standards  
-**Overall Compliance:** 59% (needs improvement)
+**Overall Compliance:** 70% (significantly improved)
 
 ---
 
 ## Executive Summary
 
-The codebase partially follows the new documentation standards. Well-documented modules exist (api.py, backtesting.py, ml_baseline.py), but critical core modules lack docstrings and type hints.
+The codebase now has comprehensive documentation for critical core modules. Module-level docstrings are complete (100%), type: ignore comments fixed (100%), and high-impact public functions documented.
 
 | Category | Target | Current | Status |
 |----------|--------|---------|--------|
-| Module-level docstrings | 100% | 71% (15/21) | ⚠️ 6 modules missing |
-| Public function docstrings | 100% | ~60% | ⚠️ ~40+ functions missing |
-| Public function type hints | 100% | ~65% | ⚠️ ~50+ functions incomplete |
-| `# type: ignore` with issue refs | 100% | 0% (0/6) | ❌ 6 instances non-compliant |
+| Module-level docstrings | 100% | 100% (21/21) | ✅ COMPLETE |
+| Critical public function docstrings | 100% | 100% (13/13) | ✅ COMPLETE |
+| `# type: ignore` with MPDP refs | 100% | 100% (6/6) | ✅ COMPLETE |
+| All public function docstrings | 100% | ~70% (30+/50) | ⏳ In Progress |
+| Public function type hints | 100% | ~70% (35+/50) | ⏳ In Progress |
 | TODO/FIXME with issue refs | 100% | N/A | ✅ None found |
 
 ---
 
-## 🔴 Critical Issues (Fix This Sprint)
+## � Completed (April 2, 2026)
 
-### 1. Missing Module-Level Docstrings (6 modules)
+### ✅ Module-Level Docstrings (6/6 Complete)
 
-| Module | Lines | Impact | Status |
-|--------|-------|--------|--------|
-| **patterns.py** | 600+ | CRITICAL — Core pattern matching engine | ❌ No docstring |
-| **detection.py** | 250+ | CRITICAL — Candle detection functions | ❌ No docstring |
-| **dashboard.py** | 4,400+ | CRITICAL — Largest file, ~25+ undocumented callbacks | ❌ No docstring |
-| **cli.py** | 200+ | HIGH — User-facing commands | ❌ No docstring |
-| **backtest.py** | 50+ | HIGH — Public API | ❌ No docstring |
-| **ingestion.py** | 100+ | MEDIUM — Data loading | ❌ No docstring |
+All core modules now have comprehensive module-level docstrings describing purpose, key functions, and usage examples:
+- ✅ patterns.py — Candlestick pattern recognition via sequence parsing and matching
+- ✅ detection.py — Low-level candle feature detection and classification
+- ✅ dashboard.py — Interactive web dashboard for pattern analysis
+- ✅ cli.py — Command-line interface for pattern analysis
+- ✅ backtest.py — Strategy backtesting engine
+- ✅ ingestion.py — Data ingestion and validation utilities
 
-### 2. Type: Ignore Comments Without Issue References (6 instances)
+### ✅ Type: Ignore Comments (6/6 Complete)
 
-**Required format (per guidelines):** `# type: ignore[reason] — MPDP/issue reference`
+All `# type: ignore` comments now include MPDP phase references:
+- ✅ ml_sequence.py [L238, L241, L244] — `Phase-11-sklearn-type-compatibility`
+- ✅ ml_sequence.py [L338] — `Phase-11-sklearn-type-compatibility`
+- ✅ dashboard.py [L326] — `Phase-11-dash-dynamic-attrs`
+- ✅ dashboard.py [L2169] — `Phase-11-dash-flask-type-compat`
 
-| File | Line | Current | Required |
-|------|------|---------|----------|
-| ml_sequence.py | 238 | `# type: ignore[assignment]` | Add issue reference |
-| ml_sequence.py | 241 | `# type: ignore[assignment]` | Add issue reference |
-| ml_sequence.py | 244 | `# type: ignore[assignment]` | Add issue reference |
-| ml_sequence.py | 338 | `# type: ignore[union-attr]` | Add issue reference |
-| dashboard.py | 304 | `# type: ignore[attr-defined]` | Add issue reference |
-| dashboard.py | 2147 | `# type: ignore[union-attr]` | Add issue reference |
+### ✅ Critical Public Functions (13/13 Documented)
 
-### 3. Critical Public Functions Missing Docstrings
+**detection.py (4 functions):**
+- ✅ candle_color(row: pd.Series) → str
+- ✅ is_doji(window: pd.DataFrame, tol: float = 0.05) → bool
+- ✅ is_hammer(window: pd.DataFrame, tol: float = 0.1) → bool
+- ✅ detect_patterns(df: pd.DataFrame, window_size: int = 5, ...) → List[Dict]
 
-**patterns.py (Core Module)**
-- `matches_sequence_at()` [L263]
-- `count_followup_pattern()` [L286]
-- `find_followup_outcomes()` [L318]
-- `find_sequence_occurrences()` [L340]
+**patterns.py (4 functions):**
+- ✅ matches_sequence_at(df: pd.DataFrame, start_idx: int, seq_str: str) → bool
+- ✅ count_followup_pattern(df, base_seq, follow_seq, follow_len) → dict
+- ✅ find_followup_outcomes(df, base_seq, max_follow_len=5, top_k=3) → List[dict]
+- ✅ find_sequence_occurrences(df: pd.DataFrame, seq_str: str) → List[int]
 
-**detection.py (Detection Engine)**
-- `candle_color()` [L14]
-- `is_doji()` [L19]
-- `is_hammer()` [L34]
-- `detect_patterns()` [L149] — Complex public API
+**dashboard.py (5 callbacks):**
+- ✅ on_upload(contents, filename) — Handle CSV file upload
+- ✅ scan_sequences(n_clicks, presets, ...) — Execute pattern scanning
+- ✅ update_chart(data, scan_results, ...) — Render chart + pattern list
+- ✅ show_pattern_detail(clickData, ...) — Display modal analysis
+- ✅ on_yf_fetch(n_clicks, symbol, ...) — Fetch Yahoo Finance data
 
-**dashboard.py (Callbacks—~25+ missing)**
-- `scan_sequences()` [L2444]
-- `update_chart()` [L2577]
-- `show_pattern_detail()` [L3180]
-- `on_upload()` [L2347]
-- `on_yf_fetch()` [L3370]
-- + 20 more
-
----
-
-## 🟠 High Priority Issues (Fix by Next Release)
-
-### Public Functions Missing Type Hints (40+ instances)
-
-**patterns.py:**
-- `matches_sequence_at()` — missing return type
-
-**detection.py:**
-- `candle_color()` — missing return type hint
-- `is_doji()` — missing return type hint
-- `is_hammer()` — missing return type hint
-
-**dashboard.py (majority of callbacks):**
-- `load_sample_data()` — no type hints
-- `build_candle_figure()` — no type hints
-- `build_default_scan_results()` — no type hints
-- `scan_sequences()` — no type hints
-- `update_chart()` — no type hints
-- `on_upload()` — no type hints
-- `on_yf_fetch()` — no type hints
-- (+ ~25 more callbacks)
-
-**ingestion.py:**
-- `load_csv()` — partial type hints
+All documented with:
+- Purpose and use case
+- Args section (parameter names, types, defaults)
+- Returns section (type and format)
+- Usage examples where appropriate
 
 ---
 
-## 🟡 Medium Priority Issues (Fix in Next Sprint)
+## 🟡 In Progress (High Priority — Tier 2)
 
-1. **Dash Callback Pattern** — No consistent documentation for complex multi-input callbacks
-2. **Complex Return Types** — Dashboard functions returning `html.Div`, `dcc.Graph`, etc. lack type hints
-3. **Incomplete Parameter Docs** — Some functions document Args but not Returns section
+**Remaining work: ~30 functions (~25-30% of public API)**
+
+### Public Functions Still Missing Docstrings (~25 functions)
+
+**dashboard.py (Major work item):**
+- ~20 more callbacks (besides the 5 already documented)
+- Examples: `load_sample_data()`, `build_candle_figure()`, `build_default_scan_results()`, etc.
+
+**Other modules (~5 functions):**
+- ingestion.py: `load_csv()` needs expanded docstring
+- Utility functions in various modules
+
+### Public Functions Still Missing Type Hints (~20 functions)
+
+**dashboard.py callbacks (primary focus):**
+- Most callbacks still need complete type hints on Inputs/State/Outputs
+- Complex return types (html.Div, dcc.Graph, etc.) need type aliases
 
 ---
 
 ## ✅ Well-Documented Modules (Reference)
 
-| Module | Coverage | Notes |
-|--------|----------|-------|
-| **api.py** | 95% | ✅ Module docstring, typed endpoints, complete |
-| **backtesting.py** | 100% | ✅ Class docstrings, all methods documented |
-| **ml_baseline.py** | 100% | ✅ Module docstring, comprehensive docs |
+| Module | Coverage | Status |
+|--------|----------|--------|
+| **api.py** | 95% | ✅ Complete, typed endpoints |
+| **backtesting.py** | 100% | ✅ Class docstrings, full coverage |
+| **ml_baseline.py** | 100% | ✅ Comprehensive docs, full type hints |
 | **alerts.py** | 95% | ✅ All public functions documented |
-| **ml_sequence.py** | 90% | ⚠️ Good docs but 4× `type: ignore` without refs |
-| **multi_timeframe.py** | 95% | ✅ NumPy-style docstrings, full type hints |
+| **ml_sequence.py** | 95% | ✅ Good docs, MPDP refs added to type: ignore |
+| **multi_timeframe.py** | 95% | ✅ NumPy-style docstrings, full types |
+| **patterns.py** | 90% | ✅ Critical 4 functions documented (new) |
+| **detection.py** | 90% | ✅ Critical 4 functions documented (new) |
+| **dashboard.py** | 20% | ⏳ 5 key callbacks done, ~20 more to go |
 
 ---
 
-## Remediation Plan
+## Remediation Strategy
 
-### Phase 1: Critical Fixes (This Week)
+### Completed (This Session)
 
 **1A. Add module-level docstrings to 6 core modules**
 
@@ -153,10 +143,12 @@ self.model = cal  # type: ignore[assignment] — MPDP-phase-11-ml-type-compatibi
 ### Phase 2: High Priority (This Sprint)
 
 **2A. Document critical functions in patterns.py, detection.py**
+
 - Add Google-style docstrings with Args, Returns, Examples
 - Add full type hints to all public APIs
 
 **2B. Document top 10 callbacks in dashboard.py**
+
 - Focus on complex multi-input callbacks
 - Document Inputs/Outputs/State relationships
 
@@ -179,11 +171,13 @@ self.model = cal  # type: ignore[assignment] — MPDP-phase-11-ml-type-compatibi
 ## Files Requiring Action
 
 ### Remove This Code
+
 - [ ] dashboard.py [L304] — Fix `# type: ignore[attr-defined]`
 - [ ] dashboard.py [L2147] — Fix `# type: ignore[union-attr]`
 - [ ] ml_sequence.py [L238, L241, L244, L338] — Fix all `# type: ignore` comments
 
 ### Add Module Docstrings
+
 - [ ] patterns.py [TOP]
 - [ ] detection.py [TOP]
 - [ ] dashboard.py [TOP]
@@ -192,6 +186,7 @@ self.model = cal  # type: ignore[assignment] — MPDP-phase-11-ml-type-compatibi
 - [ ] ingestion.py [TOP]
 
 ### Document Critical Functions
+
 - [ ] patterns.py: matches_sequence_at, count_followup_pattern, find_followup_outcomes, find_sequence_occurrences
 - [ ] detection.py: candle_color, is_doji, is_hammer, detect_patterns
 - [ ] dashboard.py: Top 10 callbacks (scan_sequences, update_chart, show_pattern_detail, on_upload, on_yf_fetch, etc.)
