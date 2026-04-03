@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 # Sequence-aware feature engineering
 # ---------------------------------------------------------------------------
 
+
 def engineer_sequence_features(
     df: pd.DataFrame,
     hold_candles: int = 5,
@@ -141,14 +142,23 @@ def engineer_sequence_features(
 
     # --- Feature selection ---
     feature_cols = [
-        "hl_ratio", "oc_ratio", "body_pct",
-        "upper_wick_ratio", "lower_wick_ratio",
-        "is_green", "streak_length",
-        "mom_3", "mom_5", "mom_10",
+        "hl_ratio",
+        "oc_ratio",
+        "body_pct",
+        "upper_wick_ratio",
+        "lower_wick_ratio",
+        "is_green",
+        "streak_length",
+        "mom_3",
+        "mom_5",
+        "mom_10",
         "rsi_14",
-        "volatility_5", "volatility_10",
-        "volume_ma_5", "volume_ratio",
-        "rolling_green_pct", "doji_density_10",
+        "volatility_5",
+        "volatility_10",
+        "volume_ma_5",
+        "volume_ratio",
+        "rolling_green_pct",
+        "doji_density_10",
     ]
 
     df_clean = df.dropna(subset=feature_cols + ["label"])
@@ -161,6 +171,7 @@ def engineer_sequence_features(
 # ---------------------------------------------------------------------------
 # SequencePredictor — GradientBoosting model
 # ---------------------------------------------------------------------------
+
 
 class SequencePredictor:
     """GradientBoosting classifier for sequence outcome prediction.
@@ -250,10 +261,16 @@ class SequencePredictor:
 
         self.metrics = {
             "accuracy": round(float(accuracy_score(y_test, y_pred)), 4),
-            "precision": round(float(precision_score(y_test, y_pred, zero_division=0)), 4),
+            "precision": round(
+                float(precision_score(y_test, y_pred, zero_division=0)), 4
+            ),
             "recall": round(float(recall_score(y_test, y_pred, zero_division=0)), 4),
             "f1": round(float(f1_score(y_test, y_pred, zero_division=0)), 4),
-            "roc_auc": round(roc_auc_score(y_test, y_proba), 4) if len(set(y_test)) > 1 else 0.5,
+            "roc_auc": (
+                round(roc_auc_score(y_test, y_proba), 4)
+                if len(set(y_test)) > 1
+                else 0.5
+            ),
             "test_samples": len(X_test),
             "train_samples": len(X_train),
             "calibrated": self.is_calibrated,
@@ -289,7 +306,10 @@ class SequencePredictor:
             return {}
 
         return {
-            key: (round(scores[f"test_{key}"].mean(), 4), round(scores[f"test_{key}"].std(), 4))
+            key: (
+                round(scores[f"test_{key}"].mean(), 4),
+                round(scores[f"test_{key}"].std(), 4),
+            )
             for key in scoring
         }
 
@@ -336,15 +356,19 @@ class SequencePredictor:
         if hasattr(model, "calibrated_classifiers_"):
             # CalibratedClassifierCV (scikit-learn >=1.4)
             model = model.calibrated_classifiers_[0].estimator  # type: ignore[union-attr] — Phase-11-sklearn-type-compatibility
-        elif hasattr(model, "estimators_") and not hasattr(model, "feature_importances_"):
+        elif hasattr(model, "estimators_") and not hasattr(
+            model, "feature_importances_"
+        ):
             # CalibratedClassifierCV (older scikit-learn)
             base = model.estimators_[0]
             model = getattr(base, "estimator", getattr(base, "base_estimator", base))
         if hasattr(model, "feature_importances_"):
-            return pd.DataFrame({
-                "feature": self.feature_names or [],
-                "importance": model.feature_importances_,
-            }).sort_values("importance", ascending=False)
+            return pd.DataFrame(
+                {
+                    "feature": self.feature_names or [],
+                    "importance": model.feature_importances_,
+                }
+            ).sort_values("importance", ascending=False)
         return pd.DataFrame()
 
     def save(self, path: Union[str, Path]) -> None:
@@ -380,6 +404,7 @@ class SequencePredictor:
 # Convenience: train from raw DataFrame
 # ---------------------------------------------------------------------------
 
+
 def train_sequence_predictor(
     df: pd.DataFrame,
     hold_candles: int = 5,
@@ -406,7 +431,9 @@ def train_sequence_predictor(
     X, y = engineer_sequence_features(df, hold_candles=hold_candles)
 
     if len(X) < 20:
-        return {"error": f"Insufficient data: only {len(X)} usable samples (need >= 20)"}
+        return {
+            "error": f"Insufficient data: only {len(X)} usable samples (need >= 20)"
+        }
 
     metrics = predictor.train(X, y, calibrate=calibrate)
     n_splits = min(5, max(2, len(X) // 20))
@@ -417,7 +444,9 @@ def train_sequence_predictor(
         "model": predictor,
         "metrics": metrics,
         "cv_results": cv_results,
-        "feature_importance": importance.to_dict("records") if not importance.empty else [],
+        "feature_importance": (
+            importance.to_dict("records") if not importance.empty else []
+        ),
         "n_samples": len(X),
         "n_features": len(predictor.feature_names or []),
     }

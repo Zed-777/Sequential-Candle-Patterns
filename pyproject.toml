@@ -52,12 +52,13 @@ markers = [
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-cov",
+    "pytest-asyncio",
     "pytest-playwright",
     "playwright",
     "ruff",
     "black",
     "mypy",
-    "pytest-cov"
 ]
 
 [tool.mypy]

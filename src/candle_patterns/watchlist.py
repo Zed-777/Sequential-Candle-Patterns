@@ -88,7 +88,9 @@ def add_to_watchlist(
 
     entries.append(entry)
     _save_raw(entries, p)
-    logger.info("Added watchlist entry '%s' (%d sequences)", label, len(entry["sequences"]))
+    logger.info(
+        "Added watchlist entry '%s' (%d sequences)", label, len(entry["sequences"])
+    )
     return entry
 
 
@@ -125,7 +127,9 @@ def clear_watchlist(path: Optional[str] = None) -> int:
     return count
 
 
-def get_watchlist_entry(entry_id: int, path: Optional[str] = None) -> Optional[Dict[str, Any]]:
+def get_watchlist_entry(
+    entry_id: int, path: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
     """Get a single watchlist entry by id."""
     p = Path(path) if path else _DEFAULT_PATH
     for e in _load_raw(p):
@@ -171,7 +175,9 @@ def export_watchlist(path: Optional[str] = None) -> str:
     return json.dumps(entries, indent=2)
 
 
-def import_watchlist(json_str: str, merge: bool = True, path: Optional[str] = None) -> int:
+def import_watchlist(
+    json_str: str, merge: bool = True, path: Optional[str] = None
+) -> int:
     """Import watchlist entries from a JSON string.
 
     Parameters

@@ -17,6 +17,7 @@ Example:
     >>> matches = find_sequence_occurrences(df, '3R -> 2G')
     >>> stats = sequence_outcome_stats(df, matches, hold_period=5)
 """
+
 from __future__ import annotations
 
 import re
@@ -113,34 +114,43 @@ def match_named_token(df: pd.DataFrame, idx: int, token: str) -> bool:
     if token_low == "engulfing" and idx >= 1:
         prev = df.iloc[idx - 1]
         curr = df.iloc[idx]
-        bull = (prev["close"] < prev["open"]
-                and curr["close"] > curr["open"]
-                and (curr["close"] - curr["open"]) >= (prev["open"] - prev["close"]))
-        bear = (prev["close"] > prev["open"]
-                and curr["close"] < curr["open"]
-                and (curr["open"] - curr["close"]) >= (prev["close"] - prev["open"]))
+        bull = (
+            prev["close"] < prev["open"]
+            and curr["close"] > curr["open"]
+            and (curr["close"] - curr["open"]) >= (prev["open"] - prev["close"])
+        )
+        bear = (
+            prev["close"] > prev["open"]
+            and curr["close"] < curr["open"]
+            and (curr["open"] - curr["close"]) >= (prev["close"] - prev["open"])
+        )
         return bool(bull or bear)
 
     if token_low == "bullengulfing" and idx >= 1:
         prev = df.iloc[idx - 1]
         curr = df.iloc[idx]
-        return bool(prev["close"] < prev["open"]
-                     and curr["close"] > curr["open"]
-                     and (curr["close"] - curr["open"]) >= (prev["open"] - prev["close"]))
+        return bool(
+            prev["close"] < prev["open"]
+            and curr["close"] > curr["open"]
+            and (curr["close"] - curr["open"]) >= (prev["open"] - prev["close"])
+        )
 
     if token_low == "bearengulfing" and idx >= 1:
         prev = df.iloc[idx - 1]
         curr = df.iloc[idx]
-        return bool(prev["close"] > prev["open"]
-                     and curr["close"] < curr["open"]
-                     and (curr["open"] - curr["close"]) >= (prev["close"] - prev["open"]))
+        return bool(
+            prev["close"] > prev["open"]
+            and curr["close"] < curr["open"]
+            and (curr["open"] - curr["close"]) >= (prev["close"] - prev["open"])
+        )
 
     # --- Morning Star (need idx-2, idx-1, idx) ---
     if token_low == "morningstar" and idx >= 2:
         c0, c1, c2 = df.iloc[idx - 2], df.iloc[idx - 1], df.iloc[idx]
         return bool(
             c0["close"] < c0["open"]  # bearish
-            and abs(c1["close"] - c1["open"]) <= 0.25 * (c1["high"] - c1["low"])  # small body
+            and abs(c1["close"] - c1["open"])
+            <= 0.25 * (c1["high"] - c1["low"])  # small body
             and c2["close"] > c2["open"]  # bullish
         )
 
@@ -418,6 +428,7 @@ def find_sequence_occurrences(df: pd.DataFrame, seq_str: str) -> List[int]:
 # WILDCARD SEQUENCE MATCHING  —  "3R -> * -> 2G"
 # ============================================================================
 
+
 def find_wildcard_sequence(
     df: pd.DataFrame,
     seq_str: str,
@@ -484,11 +495,13 @@ def find_wildcard_sequence(
     for start in range(n):
         hits = _match_from(start, 0)
         for h in hits:
-            results.append({
-                "start_idx": start,
-                "end_idx": h["end"],
-                "wildcard_span": h["wild_span"],
-            })
+            results.append(
+                {
+                    "start_idx": start,
+                    "end_idx": h["end"],
+                    "wildcard_span": h["wild_span"],
+                }
+            )
 
     return results
 
@@ -496,6 +509,7 @@ def find_wildcard_sequence(
 # ============================================================================
 # WHAT-COMES-NEXT PREDICTION
 # ============================================================================
+
 
 def what_comes_next(
     df: pd.DataFrame,
@@ -556,6 +570,7 @@ def what_comes_next(
 # ============================================================================
 # SEQUENCE OUTCOME STATISTICS  —  price movement after matches
 # ============================================================================
+
 
 def sequence_outcome_stats(
     df: pd.DataFrame,
@@ -623,7 +638,11 @@ def sequence_outcome_stats(
 
     sorted_rets = sorted(returns)
     mid = len(sorted_rets) // 2
-    median = sorted_rets[mid] if len(sorted_rets) % 2 else (sorted_rets[mid - 1] + sorted_rets[mid]) / 2
+    median = (
+        sorted_rets[mid]
+        if len(sorted_rets) % 2
+        else (sorted_rets[mid - 1] + sorted_rets[mid]) / 2
+    )
 
     wins = sum(1 for r in returns if r > 0)
 
@@ -715,6 +734,7 @@ def discover_color_sequences(
 # ============================================================================
 # REVERSE PATTERN FINDER  —  "What sequences preceded big moves?"
 # ============================================================================
+
 
 def reverse_pattern_finder(
     df: pd.DataFrame,
@@ -818,13 +838,15 @@ def reverse_pattern_finder(
     results: List[dict] = []
     for seq_str, moves in sorted_seqs[:top_k]:
         avg_move = sum(moves) / len(moves)
-        results.append({
-            "sequence": seq_str,
-            "count": len(moves),
-            "length": sequence_length(seq_str),
-            "avg_move_pct": round(avg_move, 4),
-            "direction": direction,
-        })
+        results.append(
+            {
+                "sequence": seq_str,
+                "count": len(moves),
+                "length": sequence_length(seq_str),
+                "avg_move_pct": round(avg_move, 4),
+                "direction": direction,
+            }
+        )
 
     return results
 
@@ -832,6 +854,7 @@ def reverse_pattern_finder(
 # ============================================================================
 # SEQUENCE CONFIDENCE SCORING  —  statistical significance
 # ============================================================================
+
 
 def sequence_confidence(
     df: pd.DataFrame,
@@ -883,6 +906,7 @@ def sequence_confidence(
     # Compute baseline: random entry returns
     n = len(df)
     import random
+
     random.seed(42)  # Deterministic for reproducibility
 
     baseline_returns: List[float] = []
@@ -911,7 +935,9 @@ def sequence_confidence(
         }
 
     baseline_avg = sum(baseline_returns) / len(baseline_returns)
-    variance = sum((r - baseline_avg) ** 2 for r in baseline_returns) / (len(baseline_returns) - 1)
+    variance = sum((r - baseline_avg) ** 2 for r in baseline_returns) / (
+        len(baseline_returns) - 1
+    )
     baseline_std = math.sqrt(variance) if variance > 0 else 0.001
 
     # Z-score: how many standard deviations the sequence avg is from baseline
@@ -923,12 +949,16 @@ def sequence_confidence(
     # Abramowitz & Stegun approximation for normal CDF
     t = 1.0 / (1.0 + 0.2316419 * abs_z)
     d = 0.3989422804014327  # 1/sqrt(2*pi)
-    p_tail = d * math.exp(-abs_z * abs_z / 2.0) * (
-        0.319381530 * t
-        - 0.356563782 * t ** 2
-        + 1.781477937 * t ** 3
-        - 1.821255978 * t ** 4
-        + 1.330274429 * t ** 5
+    p_tail = (
+        d
+        * math.exp(-abs_z * abs_z / 2.0)
+        * (
+            0.319381530 * t
+            - 0.356563782 * t**2
+            + 1.781477937 * t**3
+            - 1.821255978 * t**4
+            + 1.330274429 * t**5
+        )
     )
     p_value = 2.0 * p_tail  # two-tailed
 
@@ -957,6 +987,7 @@ def sequence_confidence(
 # ============================================================================
 # SEQUENCE HEATMAP DATA  —  density of matches over time
 # ============================================================================
+
 
 def sequence_heatmap_data(
     df: pd.DataFrame,

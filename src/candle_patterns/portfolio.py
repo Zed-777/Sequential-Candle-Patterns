@@ -16,7 +16,6 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Optional
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -128,7 +127,9 @@ def scan_portfolio(
                 results.append(future.result())
             except Exception as exc:
                 logger.error("Portfolio scan failed for %s: %s", sym, exc)
-                results.append({"symbol": sym, "candles": 0, "matches": [], "error": str(exc)})
+                results.append(
+                    {"symbol": sym, "candles": 0, "matches": [], "error": str(exc)}
+                )
 
     # Sort by symbol for deterministic output
     results.sort(key=lambda r: r["symbol"])
@@ -178,14 +179,16 @@ def rank_symbols(
             if ar is not None:
                 returns.append(ar)
 
-        ranked.append({
-            "symbol": r["symbol"],
-            "total_matches": total,
-            "avg_win_rate": sum(win_rates) / len(win_rates) if win_rates else None,
-            "avg_return": sum(returns) / len(returns) if returns else None,
-            "sequences_matched": sequences_matched,
-            "error": r.get("error"),
-        })
+        ranked.append(
+            {
+                "symbol": r["symbol"],
+                "total_matches": total,
+                "avg_win_rate": sum(win_rates) / len(win_rates) if win_rates else None,
+                "avg_return": sum(returns) / len(returns) if returns else None,
+                "sequences_matched": sequences_matched,
+                "error": r.get("error"),
+            }
+        )
 
     # Sort
     if sort_by == "avg_win_rate":

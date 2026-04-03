@@ -8,6 +8,7 @@ Supports stocks, ETFs, crypto, indices, and forex.
 Includes an in-memory LRU cache (keyed by symbol+period+interval) to avoid
 redundant network round-trips within the same session.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -30,7 +31,9 @@ _CACHE_TTL = 300  # seconds before a cached entry is stale (5 min)
 _cache: OrderedDict = OrderedDict()
 
 
-def _cache_key(symbol: str, period: str, interval: str, start: Optional[str], end: Optional[str]) -> str:
+def _cache_key(
+    symbol: str, period: str, interval: str, start: Optional[str], end: Optional[str]
+) -> str:
     raw = f"{symbol}|{period}|{interval}|{start}|{end}"
     return hashlib.md5(raw.encode()).hexdigest()  # nosec B324 — not security-critical
 
@@ -74,38 +77,98 @@ def cache_stats() -> dict:
         "ttl_seconds": _CACHE_TTL,
     }
 
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
 VALID_INTERVALS = [
-    "1m", "2m", "5m", "15m", "30m", "60m", "90m",
-    "1h", "1d", "5d", "1wk", "1mo", "3mo",
+    "1m",
+    "2m",
+    "5m",
+    "15m",
+    "30m",
+    "60m",
+    "90m",
+    "1h",
+    "1d",
+    "5d",
+    "1wk",
+    "1mo",
+    "3mo",
 ]
 
 VALID_PERIODS = [
-    "1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "max",
+    "1d",
+    "5d",
+    "1mo",
+    "3mo",
+    "6mo",
+    "1y",
+    "2y",
+    "5y",
+    "10y",
+    "max",
 ]
 
 POPULAR_SYMBOLS = {
     "Stocks": [
-        "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA",
-        "JPM", "V", "WMT", "UNH", "MA", "HD", "PG", "JNJ",
+        "AAPL",
+        "MSFT",
+        "GOOGL",
+        "AMZN",
+        "NVDA",
+        "META",
+        "TSLA",
+        "JPM",
+        "V",
+        "WMT",
+        "UNH",
+        "MA",
+        "HD",
+        "PG",
+        "JNJ",
     ],
     "Crypto": [
-        "BTC-USD", "ETH-USD", "SOL-USD", "BNB-USD", "XRP-USD",
-        "ADA-USD", "DOGE-USD", "AVAX-USD", "DOT-USD", "MATIC-USD",
+        "BTC-USD",
+        "ETH-USD",
+        "SOL-USD",
+        "BNB-USD",
+        "XRP-USD",
+        "ADA-USD",
+        "DOGE-USD",
+        "AVAX-USD",
+        "DOT-USD",
+        "MATIC-USD",
     ],
     "Indices": [
-        "^GSPC", "^DJI", "^IXIC", "^RUT", "^VIX",
-        "^FTSE", "^GDAXI", "^N225",
+        "^GSPC",
+        "^DJI",
+        "^IXIC",
+        "^RUT",
+        "^VIX",
+        "^FTSE",
+        "^GDAXI",
+        "^N225",
     ],
     "ETFs": [
-        "SPY", "QQQ", "IWM", "DIA", "VOO",
-        "GLD", "SLV", "TLT", "XLF", "XLE",
+        "SPY",
+        "QQQ",
+        "IWM",
+        "DIA",
+        "VOO",
+        "GLD",
+        "SLV",
+        "TLT",
+        "XLF",
+        "XLE",
     ],
     "Forex": [
-        "EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X", "USDCAD=X",
+        "EURUSD=X",
+        "GBPUSD=X",
+        "USDJPY=X",
+        "AUDUSD=X",
+        "USDCAD=X",
     ],
 }
 
@@ -116,6 +179,7 @@ ALL_POPULAR = [sym for group in POPULAR_SYMBOLS.values() for sym in group]
 # ---------------------------------------------------------------------------
 # Core fetch function
 # ---------------------------------------------------------------------------
+
 
 def fetch_yahoo_data(
     symbol: str,
@@ -159,7 +223,9 @@ def fetch_yahoo_data(
     if not symbol:
         raise ValueError("Symbol cannot be empty")
     if interval not in VALID_INTERVALS:
-        raise ValueError(f"Invalid interval '{interval}'. Must be one of: {VALID_INTERVALS}")
+        raise ValueError(
+            f"Invalid interval '{interval}'. Must be one of: {VALID_INTERVALS}"
+        )
     if period not in VALID_PERIODS and start is None:
         raise ValueError(f"Invalid period '{period}'. Must be one of: {VALID_PERIODS}")
 
@@ -167,10 +233,22 @@ def fetch_yahoo_data(
     ck = _cache_key(symbol, period, interval, start, end)
     cached = cache_get(ck)
     if cached is not None:
-        logger.info("Returning cached data for %s (%s/%s) — %d candles", symbol, period, interval, len(cached))
+        logger.info(
+            "Returning cached data for %s (%s/%s) — %d candles",
+            symbol,
+            period,
+            interval,
+            len(cached),
+        )
         return cached
 
-    logger.info("Fetching %s data: symbol=%s period=%s interval=%s", symbol, symbol, period, interval)
+    logger.info(
+        "Fetching %s data: symbol=%s period=%s interval=%s",
+        symbol,
+        symbol,
+        period,
+        interval,
+    )
 
     try:
         ticker = yf.Ticker(symbol)
@@ -186,7 +264,9 @@ def fetch_yahoo_data(
         raise ConnectionError(f"Failed to fetch data for '{symbol}': {exc}") from exc
 
     if df is None or df.empty:
-        raise ValueError(f"No data returned for symbol '{symbol}'. Check symbol validity.")
+        raise ValueError(
+            f"No data returned for symbol '{symbol}'. Check symbol validity."
+        )
 
     # Standardise column names to match our system expectation
     df = df.reset_index()
@@ -264,12 +344,14 @@ def search_symbols(query: str, max_results: int = 10) -> list[dict]:
         results = []
         # search.quotes contains the matching symbols
         for quote in (search.quotes or [])[:max_results]:
-            results.append({
-                "symbol": quote.get("symbol", ""),
-                "name": quote.get("shortname", quote.get("longname", "")),
-                "type": quote.get("quoteType", ""),
-                "exchange": quote.get("exchange", ""),
-            })
+            results.append(
+                {
+                    "symbol": quote.get("symbol", ""),
+                    "name": quote.get("shortname", quote.get("longname", "")),
+                    "type": quote.get("quoteType", ""),
+                    "exchange": quote.get("exchange", ""),
+                }
+            )
         return results
     except Exception as exc:
         logger.warning("Symbol search failed for '%s': %s", query, exc)
@@ -278,7 +360,9 @@ def search_symbols(query: str, max_results: int = 10) -> list[dict]:
         fallback = []
         for sym in ALL_POPULAR:
             if query_upper in sym:
-                fallback.append({"symbol": sym, "name": sym, "type": "popular", "exchange": ""})
+                fallback.append(
+                    {"symbol": sym, "name": sym, "type": "popular", "exchange": ""}
+                )
         return fallback[:max_results]
 
 

@@ -123,7 +123,9 @@ class TestTabNavigation:
         assert active.count() >= 1, f"No active tab after clicking '{label}'"
         # CSS text-transform: uppercase may be applied, so compare case-insensitively
         active_text = active.first.inner_text().lower()
-        assert label.lower() in active_text, f"Expected '{label}' in active tab text '{active_text}'"
+        assert (
+            label.lower() in active_text
+        ), f"Expected '{label}' in active tab text '{active_text}'"
 
 
 # ============================================================================
@@ -139,7 +141,9 @@ class TestSampleDataFlow:
         # The server auto-loads sample data at startup, so a chart should exist
         page.wait_for_selector(".js-plotly-plot", timeout=25000)
         plots = page.locator(".js-plotly-plot")
-        assert plots.count() >= 1, "Expected at least one Plotly chart (auto-loaded data)"
+        assert (
+            plots.count() >= 1
+        ), "Expected at least one Plotly chart (auto-loaded data)"
 
     def test_load_sample_button_click(self, page):
         """Click Load Sample Data — button should be clickable without errors."""
@@ -157,7 +161,9 @@ class TestSampleDataFlow:
 
         # Plotly chart should render
         plots = page.locator(".js-plotly-plot")
-        assert plots.count() >= 1, "Expected at least one Plotly chart after loading data"
+        assert (
+            plots.count() >= 1
+        ), "Expected at least one Plotly chart after loading data"
 
     def test_scan_sequences_input_exists(self, page):
         """The custom sequence input and scan button should be present."""
@@ -272,7 +278,9 @@ class TestSidebarAccordion:
         page.wait_for_selector("text=Data Source", timeout=20000)
         for section_title in self.ACCORDION_SECTIONS:
             locator = page.locator(f"text={section_title}")
-            assert locator.count() >= 1, f"Accordion section '{section_title}' not found"
+            assert (
+                locator.count() >= 1
+            ), f"Accordion section '{section_title}' not found"
 
     def test_scan_button_accessible(self, page):
         """The scan button should be accessible in the sidebar."""

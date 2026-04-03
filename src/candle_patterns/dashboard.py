@@ -19,6 +19,7 @@ Configuration and setup:
 Key callbacks handle Inputs/Outputs/State, which map UI interactions
 to backend analysis and charts.
 """
+
 from __future__ import annotations
 
 import dash
@@ -100,28 +101,40 @@ logger = logging.getLogger(__name__)
 # PRESET SEQUENCE LIBRARY — common colour-based candle sequences
 # ============================================================================
 PRESET_SEQUENCES = {
-    "3R -> 2G":               "3R -> 2G",
-    "3G -> 2R":               "3G -> 2R",
-    "5R -> 3G":               "5R -> 3G",
-    "5G -> 3R":               "5G -> 3R",
-    "2R -> 1G -> 2R":         "2R -> 1G -> 2R",
-    "2G -> 1R -> 2G":         "2G -> 1R -> 2G",
-    "4R -> 1G -> 3R":         "4R -> 1G -> 3R",
-    "3G -> 1R -> 3G":         "3G -> 1R -> 3G",
-    "2R -> Doji -> 2G":       "2R -> Doji -> 2G",
-    "3G -> Doji -> 3R":       "3G -> Doji -> 3R",
-    "1R -> 1G -> 1R -> 1G":   "1R -> 1G -> 1R -> 1G",
-    "5R -> 5G":               "5R -> 5G",
-    "4G -> 4R":               "4G -> 4R",
-    "3R -> 1G -> 1R -> 1G":   "3R -> 1G -> 1R -> 1G",
-    "2G -> 2R -> 2G":         "2G -> 2R -> 2G",
+    "3R -> 2G": "3R -> 2G",
+    "3G -> 2R": "3G -> 2R",
+    "5R -> 3G": "5R -> 3G",
+    "5G -> 3R": "5G -> 3R",
+    "2R -> 1G -> 2R": "2R -> 1G -> 2R",
+    "2G -> 1R -> 2G": "2G -> 1R -> 2G",
+    "4R -> 1G -> 3R": "4R -> 1G -> 3R",
+    "3G -> 1R -> 3G": "3G -> 1R -> 3G",
+    "2R -> Doji -> 2G": "2R -> Doji -> 2G",
+    "3G -> Doji -> 3R": "3G -> Doji -> 3R",
+    "1R -> 1G -> 1R -> 1G": "1R -> 1G -> 1R -> 1G",
+    "5R -> 5G": "5R -> 5G",
+    "4G -> 4R": "4G -> 4R",
+    "3R -> 1G -> 1R -> 1G": "3R -> 1G -> 1R -> 1G",
+    "2G -> 2R -> 2G": "2G -> 2R -> 2G",
 }
 
 # Distinct colours for up to 15 simultaneous sequences on the chart
 SEQUENCE_COLORS = [
-    "#6366f1", "#ec4899", "#f59e0b", "#10b981", "#3b82f6",
-    "#8b5cf6", "#ef4444", "#14b8a6", "#f97316", "#06b6d4",
-    "#84cc16", "#e879f9", "#fb923c", "#22d3ee", "#a78bfa",
+    "#6366f1",
+    "#ec4899",
+    "#f59e0b",
+    "#10b981",
+    "#3b82f6",
+    "#8b5cf6",
+    "#ef4444",
+    "#14b8a6",
+    "#f97316",
+    "#06b6d4",
+    "#84cc16",
+    "#e879f9",
+    "#fb923c",
+    "#22d3ee",
+    "#a78bfa",
 ]
 
 # Modern professional stylesheet with custom CSS
@@ -129,16 +142,19 @@ external_stylesheets = [
     dbc.themes.BOOTSTRAP,
     "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css",
 ]
-external_scripts = ['https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js']
+external_scripts = [
+    "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+]
+
 
 class CustomDash(dash.Dash):
     default_sample_data: Any = None
 
 
 app = CustomDash(
-    __name__, 
+    __name__,
     external_stylesheets=external_stylesheets,
-    external_scripts=external_scripts
+    external_scripts=external_scripts,
 )
 
 if app.server is None:
@@ -149,6 +165,7 @@ server: Flask = cast(Flask, app.server)
 # Register REST API endpoints on the Flask server
 try:
     from candle_patterns.api import register_api_routes
+
     register_api_routes(server)
 except Exception as _api_err:
     logger.warning("Could not register API routes: %s", _api_err)
@@ -162,7 +179,7 @@ def load_sample_data(trigger_data=None):
     if not sample_path.exists():
         msg = html.Div(
             "[ERROR] Sample file not found. Please ensure data/samples/sample.csv exists.",
-            style={"color": "#dc2626", "fontWeight": "600"}
+            style={"color": "#dc2626", "fontWeight": "600"},
         )
         return None, msg
 
@@ -171,7 +188,11 @@ def load_sample_data(trigger_data=None):
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
         try:
             upload_meta = save_upload(sample_path.name, df, [])
-            upload_id = upload_meta.get("upload_id") if isinstance(upload_meta, dict) else upload_meta
+            upload_id = (
+                upload_meta.get("upload_id")
+                if isinstance(upload_meta, dict)
+                else upload_meta
+            )
         except Exception as db_error:
             logger.warning("Could not save to DB: %s", db_error)
             upload_id = None
@@ -186,16 +207,18 @@ def load_sample_data(trigger_data=None):
         }
 
         status_html = html.Div(
-            [html.I(className="bi bi-check-circle-fill me-2"),
-             f"Loaded: {sample_path.name} ({len(df)} candles)"],
+            [
+                html.I(className="bi bi-check-circle-fill me-2"),
+                f"Loaded: {sample_path.name} ({len(df)} candles)",
+            ],
             style={
                 "color": "#059669",
                 "fontWeight": "600",
                 "padding": "12px",
                 "backgroundColor": "#ecfdf5",
                 "borderRadius": "6px",
-                "marginTop": "8px"
-            }
+                "marginTop": "8px",
+            },
         )
 
         return data, status_html
@@ -203,7 +226,7 @@ def load_sample_data(trigger_data=None):
         logger.exception("[ERROR] Failed to load sample data: %s", exc)
         return None, html.Div(
             f"[ERROR] Error loading sample data: {exc}",
-            style={"color": "#dc2626", "fontWeight": "600", "whiteSpace": "pre-wrap"}
+            style={"color": "#dc2626", "fontWeight": "600", "whiteSpace": "pre-wrap"},
         )
 
 
@@ -213,14 +236,21 @@ def build_candle_figure(data):
         fig = go.Figure()
         fig.add_annotation(
             text="No data available",
-            xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False,
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
             font=dict(size=18, color="#6366f1", family="sans-serif"),
         )
         fig.update_layout(
-            xaxis=dict(visible=False), yaxis=dict(visible=False),
-            template="plotly_white", height=400,
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+            template="plotly_white",
+            height=400,
             margin=dict(l=0, r=0, t=0, b=0),
-            plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
         )
         return fig
 
@@ -234,15 +264,19 @@ def build_candle_figure(data):
     if df.empty:
         return go.Figure()
 
-    fig = go.Figure(data=[go.Candlestick(
-        x=df["timestamp"],
-        open=df["open"],
-        high=df["high"],
-        low=df["low"],
-        close=df["close"],
-        increasing_line_color="#10b981",
-        decreasing_line_color="#ef4444",
-    )])
+    fig = go.Figure(
+        data=[
+            go.Candlestick(
+                x=df["timestamp"],
+                open=df["open"],
+                high=df["high"],
+                low=df["low"],
+                close=df["close"],
+                increasing_line_color="#10b981",
+                decreasing_line_color="#ef4444",
+            )
+        ]
+    )
     fig.update_layout(
         title=f"Candlestick Chart | {len(df)} candles",
         template="plotly_white",
@@ -282,17 +316,21 @@ def build_default_scan_results(data, max_sequences=3):
             matches = []
             for end_idx in occ_ends:
                 start_idx = max(0, end_idx - seq_len + 1)
-                matches.append({
-                    "start_idx": int(start_idx),
-                    "end_idx": int(end_idx),
-                    "start_ts": str(df.iloc[start_idx]["timestamp"]),
-                    "end_ts": str(df.iloc[end_idx]["timestamp"]),
-                })
+                matches.append(
+                    {
+                        "start_idx": int(start_idx),
+                        "end_idx": int(end_idx),
+                        "start_ts": str(df.iloc[start_idx]["timestamp"]),
+                        "end_ts": str(df.iloc[end_idx]["timestamp"]),
+                    }
+                )
 
             results.append({"seq_str": seq_str, "length": seq_len, "matches": matches})
 
         except Exception as e:
-            results.append({"seq_str": seq_str, "length": 0, "matches": [], "error": str(e)})
+            results.append(
+                {"seq_str": seq_str, "length": 0, "matches": [], "error": str(e)}
+            )
 
     return results
 
@@ -302,10 +340,15 @@ def section_banner(title: str, description: str):
     return html.Div(
         [
             html.Strong(title + ": ", style={"fontWeight": "700"}),
-            html.Span(description)
+            html.Span(description),
         ],
         className="alert alert-info mb-3",
-        style={"fontSize": "0.95rem", "padding": "0.7rem 0.9rem", "borderRadius": "10px", "marginBottom": "1rem"},
+        style={
+            "fontSize": "0.95rem",
+            "padding": "0.7rem 0.9rem",
+            "borderRadius": "10px",
+            "marginBottom": "1rem",
+        },
         title=description,
     )
 
@@ -313,9 +356,9 @@ def section_banner(title: str, description: str):
 # ============================================================================
 # AUTO-LOAD SAMPLE DATA ON STARTUP
 # ============================================================================
-logger.info("="*60)
+logger.info("=" * 60)
 logger.info("AUTO-LOADING SAMPLE DATA ON STARTUP...")
-logger.info("="*60)
+logger.info("=" * 60)
 
 app.default_sample_data = None
 
@@ -323,13 +366,13 @@ try:
     data, _ = load_sample_data()
     if data:
         app.default_sample_data = data  # type: ignore[attr-defined] — Phase-11-dash-dynamic-attrs
-        logger.info("[OK] Sample auto-loaded for layout: %d candles", len(data['df']))
+        logger.info("[OK] Sample auto-loaded for layout: %d candles", len(data["df"]))
 except Exception as e:
     logger.exception(f"Failed to auto-load: {e}")
 
-logger.info("="*60)
+logger.info("=" * 60)
 logger.info("DASHBOARD READY")
-logger.info("="*60)
+logger.info("=" * 60)
 
 # NOTE: Clientside callback removed - load-sample-btn handled by on_load_sample_click server callback
 
@@ -1049,7 +1092,7 @@ table tbody tr:last-child td {
 </style>
 """
 
-app.index_string = f'''
+app.index_string = f"""
 <!DOCTYPE html>
 <html>
 <head>
@@ -1068,7 +1111,7 @@ app.index_string = f'''
     </footer>
 </body>
 </html>
-'''
+"""
 
 # Modern gradient navbar
 navbar = dbc.Navbar(
@@ -1081,7 +1124,12 @@ navbar = dbc.Navbar(
                             html.Span(
                                 "Candle Patterns",
                                 className="navbar-brand",
-                                style={"color": "white", "fontWeight": "800", "fontSize": "1.5rem", "letterSpacing": "-0.5px"}
+                                style={
+                                    "color": "white",
+                                    "fontWeight": "800",
+                                    "fontSize": "1.5rem",
+                                    "letterSpacing": "-0.5px",
+                                },
                             )
                         ],
                         width="auto",
@@ -1090,7 +1138,11 @@ navbar = dbc.Navbar(
                         [
                             html.Span(
                                 "Sequential Candle Pattern Scanner",
-                                style={"color": "rgba(255,255,255,0.85)", "fontSize": "0.95rem", "fontWeight": "500"}
+                                style={
+                                    "color": "rgba(255,255,255,0.85)",
+                                    "fontSize": "0.95rem",
+                                    "fontWeight": "500",
+                                },
                             )
                         ],
                         width="auto",
@@ -1123,8 +1175,10 @@ sidebar = dbc.Card(
     [
         dbc.CardBody(
             [
-                html.H5([html.I(className="bi bi-gear-fill"), " Configuration"], className="card-title"),
-
+                html.H5(
+                    [html.I(className="bi bi-gear-fill"), " Configuration"],
+                    className="card-title",
+                ),
                 dbc.Accordion(
                     [
                         # --- Data Source ---
@@ -1133,71 +1187,126 @@ sidebar = dbc.Card(
                                 dcc.Upload(
                                     id="upload-data",
                                     children=dbc.Button(
-                                        [html.I(className="bi bi-upload"), " Upload CSV"],
+                                        [
+                                            html.I(className="bi bi-upload"),
+                                            " Upload CSV",
+                                        ],
                                         color="primary",
                                         className="w-100 mb-3",
-                                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem"}
+                                        style={
+                                            "fontWeight": "700",
+                                            "padding": "0.85rem 1.5rem",
+                                            "fontSize": "0.95rem",
+                                        },
                                     ),
-                                    style={"cursor": "pointer"}
+                                    style={"cursor": "pointer"},
                                 ),
                                 dbc.Button(
-                                    [html.I(className="bi bi-database-fill"), " Load Sample Data"],
+                                    [
+                                        html.I(className="bi bi-database-fill"),
+                                        " Load Sample Data",
+                                    ],
                                     id="load-sample-btn",
                                     color="success",
                                     className="w-100 mb-3",
-                                    style={"fontWeight": "700", "padding": "0.85rem 1.5rem", "fontSize": "0.95rem", "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)", "color": "white", "border": "none", "cursor": "pointer", "borderRadius": "10px"},
-                                    n_clicks=0
+                                    style={
+                                        "fontWeight": "700",
+                                        "padding": "0.85rem 1.5rem",
+                                        "fontSize": "0.95rem",
+                                        "background": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)",
+                                        "color": "white",
+                                        "border": "none",
+                                        "cursor": "pointer",
+                                        "borderRadius": "10px",
+                                    },
+                                    n_clicks=0,
                                 ),
                                 dcc.Store(id="load-sample-data-store"),
                                 html.Small(
                                     "Load sample dataset (200 candlesticks)",
-                                    style={"marginTop": "8px", "color": "#6b7280", "display": "block", "fontWeight": "500"}
+                                    style={
+                                        "marginTop": "8px",
+                                        "color": "#6b7280",
+                                        "display": "block",
+                                        "fontWeight": "500",
+                                    },
                                 ),
                                 dcc.Loading(
                                     html.Div(
                                         id="upload-status",
                                         style={"marginTop": "12px"},
                                     ),
-                                    type="circle", color="#6366f1",
+                                    type="circle",
+                                    color="#6366f1",
                                 ),
                             ],
                             title="Data Source",
                             item_id="acc-data-source",
                         ),
-
                         # --- Yahoo Finance ---
                         dbc.AccordionItem(
                             [
                                 html.Small(
                                     "Fetch real stock, crypto, or index data directly.",
-                                    style={"color": "#6b7280", "display": "block", "marginBottom": "0.75rem", "fontWeight": "500"}
+                                    style={
+                                        "color": "#6b7280",
+                                        "display": "block",
+                                        "marginBottom": "0.75rem",
+                                        "fontWeight": "500",
+                                    },
                                 ),
-                                html.Label("Quick Pick Symbol", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
+                                html.Label(
+                                    "Quick Pick Symbol",
+                                    style={
+                                        "fontWeight": "700",
+                                        "fontSize": "0.8rem",
+                                        "color": "#374151",
+                                    },
+                                ),
                                 dcc.Dropdown(
                                     id="yf-symbol-select",
                                     options=[
-                                        {"label": f"\U0001F4C8 {s}", "value": s}
+                                        {"label": f"\U0001f4c8 {s}", "value": s}
                                         for s in POPULAR_SYMBOLS["Stocks"]
-                                    ] + [
-                                        {"label": f"\U0001FA99 {s}", "value": s}
+                                    ]
+                                    + [
+                                        {"label": f"\U0001fa99 {s}", "value": s}
                                         for s in POPULAR_SYMBOLS["Crypto"]
-                                    ] + [
-                                        {"label": f"\U0001F4CA {s}", "value": s}
+                                    ]
+                                    + [
+                                        {"label": f"\U0001f4ca {s}", "value": s}
                                         for s in POPULAR_SYMBOLS["Indices"]
-                                    ] + [
-                                        {"label": f"\U0001F4E6 {s}", "value": s}
+                                    ]
+                                    + [
+                                        {"label": f"\U0001f4e6 {s}", "value": s}
                                         for s in POPULAR_SYMBOLS["ETFs"]
-                                    ] + [
-                                        {"label": f"\U0001F4B1 {s}", "value": s}
+                                    ]
+                                    + [
+                                        {"label": f"\U0001f4b1 {s}", "value": s}
                                         for s in POPULAR_SYMBOLS["Forex"]
                                     ],
                                     placeholder="Search or pick a symbol...",
                                     searchable=True,
                                     clearable=True,
-                                    style={"marginBottom": "0.75rem", "fontSize": "0.85rem"},
+                                    style={
+                                        "marginBottom": "0.75rem",
+                                        "fontSize": "0.85rem",
+                                    },
                                 ),
-                                html.Hr(style={"margin": "0.5rem 0", "borderColor": "#e5e7eb"}),
-                                html.Label("Or type any symbol", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
+                                html.Hr(
+                                    style={
+                                        "margin": "0.5rem 0",
+                                        "borderColor": "#e5e7eb",
+                                    }
+                                ),
+                                html.Label(
+                                    "Or type any symbol",
+                                    style={
+                                        "fontWeight": "700",
+                                        "fontSize": "0.8rem",
+                                        "color": "#374151",
+                                    },
+                                ),
                                 dcc.Input(
                                     id="yf-symbol-input",
                                     type="text",
@@ -1205,47 +1314,95 @@ sidebar = dbc.Card(
                                     style={"width": "100%", "marginBottom": "0.5rem"},
                                     debounce=True,
                                 ),
-                                dbc.Row([
-                                    dbc.Col([
-                                        html.Label("Period", style={"fontWeight": "700", "fontSize": "0.75rem", "color": "#374151"}),
-                                        dcc.Dropdown(
-                                            id="yf-period",
-                                            options=[{"label": p, "value": p} for p in VALID_PERIODS],
-                                            value="6mo",
-                                            clearable=False,
-                                            style={"fontSize": "0.85rem"},
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            [
+                                                html.Label(
+                                                    "Period",
+                                                    style={
+                                                        "fontWeight": "700",
+                                                        "fontSize": "0.75rem",
+                                                        "color": "#374151",
+                                                    },
+                                                ),
+                                                dcc.Dropdown(
+                                                    id="yf-period",
+                                                    options=[
+                                                        {"label": p, "value": p}
+                                                        for p in VALID_PERIODS
+                                                    ],
+                                                    value="6mo",
+                                                    clearable=False,
+                                                    style={"fontSize": "0.85rem"},
+                                                ),
+                                            ],
+                                            width=6,
                                         ),
-                                    ], width=6),
-                                    dbc.Col([
-                                        html.Label("Interval", style={"fontWeight": "700", "fontSize": "0.75rem", "color": "#374151"}),
-                                        dcc.Dropdown(
-                                            id="yf-interval",
-                                            options=[{"label": i, "value": i} for i in ["1m", "5m", "15m", "30m", "1h", "1d", "1wk", "1mo"]],
-                                            value="1d",
-                                            clearable=False,
-                                            style={"fontSize": "0.85rem"},
+                                        dbc.Col(
+                                            [
+                                                html.Label(
+                                                    "Interval",
+                                                    style={
+                                                        "fontWeight": "700",
+                                                        "fontSize": "0.75rem",
+                                                        "color": "#374151",
+                                                    },
+                                                ),
+                                                dcc.Dropdown(
+                                                    id="yf-interval",
+                                                    options=[
+                                                        {"label": i, "value": i}
+                                                        for i in [
+                                                            "1m",
+                                                            "5m",
+                                                            "15m",
+                                                            "30m",
+                                                            "1h",
+                                                            "1d",
+                                                            "1wk",
+                                                            "1mo",
+                                                        ]
+                                                    ],
+                                                    value="1d",
+                                                    clearable=False,
+                                                    style={"fontSize": "0.85rem"},
+                                                ),
+                                            ],
+                                            width=6,
                                         ),
-                                    ], width=6),
-                                ], className="g-2 mb-2"),
+                                    ],
+                                    className="g-2 mb-2",
+                                ),
                                 dcc.Loading(
                                     dbc.Button(
-                                        [html.I(className="bi bi-cloud-download"), " Fetch Data"],
+                                        [
+                                            html.I(className="bi bi-cloud-download"),
+                                            " Fetch Data",
+                                        ],
                                         id="yf-fetch-btn",
                                         color="info",
                                         className="w-100 mt-2",
-                                        style={"fontWeight": "700", "padding": "0.85rem 1.5rem"},
+                                        style={
+                                            "fontWeight": "700",
+                                            "padding": "0.85rem 1.5rem",
+                                        },
                                     ),
-                                    type="circle", color="#6366f1",
+                                    type="circle",
+                                    color="#6366f1",
                                 ),
                                 dcc.Loading(
-                                    html.Div(id="yf-fetch-status", style={"marginTop": "0.5rem"}),
-                                    type="circle", color="#6366f1",
+                                    html.Div(
+                                        id="yf-fetch-status",
+                                        style={"marginTop": "0.5rem"},
+                                    ),
+                                    type="circle",
+                                    color="#6366f1",
                                 ),
                             ],
                             title="Yahoo Finance",
                             item_id="acc-yahoo",
                         ),
-
                         # --- Date Range Filter ---
                         dbc.AccordionItem(
                             [
@@ -1254,93 +1411,225 @@ sidebar = dbc.Card(
                                     display_format="YYYY-MM-DD",
                                     start_date_placeholder_text="Start",
                                     end_date_placeholder_text="End",
-                                    style={"width": "100%"}
+                                    style={"width": "100%"},
                                 ),
                             ],
                             title="Date Range Filter",
                             item_id="acc-date-range",
                         ),
-
                         # --- Sequence Scanner ---
                         dbc.AccordionItem(
                             [
                                 html.Small(
                                     "Define colour sequences and scan 200 candles for matches.",
-                                    style={"color": "#6b7280", "display": "block", "marginBottom": "0.75rem", "fontWeight": "500"}
+                                    style={
+                                        "color": "#6b7280",
+                                        "display": "block",
+                                        "marginBottom": "0.75rem",
+                                        "fontWeight": "500",
+                                    },
                                 ),
-                                html.Label("Preset Sequences", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151"}),
+                                html.Label(
+                                    "Preset Sequences",
+                                    style={
+                                        "fontWeight": "700",
+                                        "fontSize": "0.8rem",
+                                        "color": "#374151",
+                                    },
+                                ),
                                 dcc.Dropdown(
                                     id="preset-sequences",
-                                    options=[{"label": k, "value": v} for k, v in PRESET_SEQUENCES.items()],
+                                    options=[
+                                        {"label": k, "value": v}
+                                        for k, v in PRESET_SEQUENCES.items()
+                                    ],
                                     multi=True,
                                     placeholder="Pick common sequences...",
                                     style={"marginBottom": "0.75rem"},
                                 ),
-                                html.Label("Custom Sequences (one per line)", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "marginTop": "0.25rem"}),
+                                html.Label(
+                                    "Custom Sequences (one per line)",
+                                    style={
+                                        "fontWeight": "700",
+                                        "fontSize": "0.8rem",
+                                        "color": "#374151",
+                                        "marginTop": "0.25rem",
+                                    },
+                                ),
                                 dcc.Textarea(
                                     id="custom-sequences-input",
                                     placeholder="5R -> 3G\n2R -> Doji -> 1G\n3R -> * -> 2G",
                                     style={
-                                        "width": "100%", "height": "80px", "borderRadius": "10px",
-                                        "padding": "0.75rem", "border": "1.5px solid #e5e7eb",
-                                        "fontSize": "0.85rem", "fontFamily": "monospace",
+                                        "width": "100%",
+                                        "height": "80px",
+                                        "borderRadius": "10px",
+                                        "padding": "0.75rem",
+                                        "border": "1.5px solid #e5e7eb",
+                                        "fontSize": "0.85rem",
+                                        "fontFamily": "monospace",
                                     },
                                 ),
                                 html.Small(
                                     [
                                         "Syntax: NR = N red, NG = N green. ",
                                         html.A(
-                                            [html.I(className="bi bi-question-circle"), " Full reference"],
+                                            [
+                                                html.I(
+                                                    className="bi bi-question-circle"
+                                                ),
+                                                " Full reference",
+                                            ],
                                             id="syntax-help-btn",
                                             href="#",
-                                            style={"color": "#6366f1", "cursor": "pointer", "textDecoration": "none", "fontWeight": "600"},
+                                            style={
+                                                "color": "#6366f1",
+                                                "cursor": "pointer",
+                                                "textDecoration": "none",
+                                                "fontWeight": "600",
+                                            },
                                         ),
                                     ],
-                                    style={"color": "#9ca3af", "display": "block", "marginTop": "4px", "fontSize": "0.7rem"},
+                                    style={
+                                        "color": "#9ca3af",
+                                        "display": "block",
+                                        "marginTop": "4px",
+                                        "fontSize": "0.7rem",
+                                    },
                                 ),
-                                html.Div([
-                                    html.Div([
-                                        html.Span("Enable follow-up match tracking", style={"fontSize": "0.95rem", "fontWeight": "500", "color": "#1f2937", "display": "block", "textAlign": "center", "marginBottom": "0.5rem"}),
-                                        html.Div([
-                                            dbc.Checklist(
-                                                id="followup-enabled",
-                                                options=[{"label": "", "value": "enabled"}],
-                                                value=[],
-                                                switch=True,
-                                                style={"marginBottom": "0rem"},
-                                            ),
-                                            dbc.Tooltip(
-                                                "Check this to analyze what candle patterns follow your base sequence. Example: After finding 3R→2G, what typically comes next?",
-                                                target="followup-enabled",
-                                                placement="bottom",
-                                                style={"fontSize": "0.8rem", "maxWidth": "280px"},
-                                            ),
-                                        ], style={"display": "flex", "justifyContent": "center"}),
-                                    ]),
-                                ], style={"padding": "0.75rem 0", "borderBottom": "2px solid #e5e7eb", "marginBottom": "1rem"}),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Span(
+                                                    "Enable follow-up match tracking",
+                                                    style={
+                                                        "fontSize": "0.95rem",
+                                                        "fontWeight": "500",
+                                                        "color": "#1f2937",
+                                                        "display": "block",
+                                                        "textAlign": "center",
+                                                        "marginBottom": "0.5rem",
+                                                    },
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        dbc.Checklist(
+                                                            id="followup-enabled",
+                                                            options=[
+                                                                {
+                                                                    "label": "",
+                                                                    "value": "enabled",
+                                                                }
+                                                            ],
+                                                            value=[],
+                                                            switch=True,
+                                                            style={
+                                                                "marginBottom": "0rem"
+                                                            },
+                                                        ),
+                                                        dbc.Tooltip(
+                                                            "Check this to analyze what candle patterns follow your base sequence. Example: After finding 3R→2G, what typically comes next?",
+                                                            target="followup-enabled",
+                                                            placement="bottom",
+                                                            style={
+                                                                "fontSize": "0.8rem",
+                                                                "maxWidth": "280px",
+                                                            },
+                                                        ),
+                                                    ],
+                                                    style={
+                                                        "display": "flex",
+                                                        "justifyContent": "center",
+                                                    },
+                                                ),
+                                            ]
+                                        ),
+                                    ],
+                                    style={
+                                        "padding": "0.75rem 0",
+                                        "borderBottom": "2px solid #e5e7eb",
+                                        "marginBottom": "1rem",
+                                    },
+                                ),
                                 dbc.Alert(
                                     [
                                         html.I(className="bi bi-info-circle me-2"),
-                                        html.Span("When enabled, the follow-up sequence is searched within the next N candles after each base match (not just the immediate next candle).", style={"fontSize": "0.75rem"}),
+                                        html.Span(
+                                            "When enabled, the follow-up sequence is searched within the next N candles after each base match (not just the immediate next candle).",
+                                            style={"fontSize": "0.75rem"},
+                                        ),
                                     ],
                                     color="info",
-                                    style={"padding": "0.5rem 0.7rem", "marginBottom": "0.75rem", "fontSize": "0.75rem"},
+                                    style={
+                                        "padding": "0.5rem 0.7rem",
+                                        "marginBottom": "0.75rem",
+                                        "fontSize": "0.75rem",
+                                    },
                                 ),
-                                html.Div([
-                                    html.Label("Follow-up Sequence (e.g. 5R)", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "marginTop": "0.25rem", "display": "inline-block"}),
-                                    html.I(className="bi bi-question-circle", id="followup-seq-help", style={"fontSize": "0.75rem", "color": "#9ca3af", "marginLeft": "0.4rem", "cursor": "pointer"}),
-                                ]),
+                                html.Div(
+                                    [
+                                        html.Label(
+                                            "Follow-up Sequence (e.g. 5R)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                                "color": "#374151",
+                                                "marginTop": "0.25rem",
+                                                "display": "inline-block",
+                                            },
+                                        ),
+                                        html.I(
+                                            className="bi bi-question-circle",
+                                            id="followup-seq-help",
+                                            style={
+                                                "fontSize": "0.75rem",
+                                                "color": "#9ca3af",
+                                                "marginLeft": "0.4rem",
+                                                "cursor": "pointer",
+                                            },
+                                        ),
+                                    ]
+                                ),
                                 dbc.Tooltip(
                                     [
-                                        html.P("The pattern you want to find after the base sequence.", style={"marginBottom": "0.4rem", "fontSize": "0.75rem"}),
-                                        html.Strong("Examples:", style={"fontSize": "0.75rem"}),
-                                        html.Ul([
-                                            html.Li("5R = five consecutive red candles", style={"fontSize": "0.7rem"}),
-                                            html.Li("3G = three consecutive green candles", style={"fontSize": "0.7rem"}),
-                                            html.Li("2R → 1G = two reds then one green", style={"fontSize": "0.7rem"}),
-                                            html.Li("Doji = doji candle pattern", style={"fontSize": "0.7rem"}),
-                                        ], style={"paddingLeft": "1.2rem", "marginBottom": "0.4rem"}),
-                                        html.Small("Uses same syntax as base sequence patterns.", style={"color": "#9ca3af"}),
+                                        html.P(
+                                            "The pattern you want to find after the base sequence.",
+                                            style={
+                                                "marginBottom": "0.4rem",
+                                                "fontSize": "0.75rem",
+                                            },
+                                        ),
+                                        html.Strong(
+                                            "Examples:", style={"fontSize": "0.75rem"}
+                                        ),
+                                        html.Ul(
+                                            [
+                                                html.Li(
+                                                    "5R = five consecutive red candles",
+                                                    style={"fontSize": "0.7rem"},
+                                                ),
+                                                html.Li(
+                                                    "3G = three consecutive green candles",
+                                                    style={"fontSize": "0.7rem"},
+                                                ),
+                                                html.Li(
+                                                    "2R → 1G = two reds then one green",
+                                                    style={"fontSize": "0.7rem"},
+                                                ),
+                                                html.Li(
+                                                    "Doji = doji candle pattern",
+                                                    style={"fontSize": "0.7rem"},
+                                                ),
+                                            ],
+                                            style={
+                                                "paddingLeft": "1.2rem",
+                                                "marginBottom": "0.4rem",
+                                            },
+                                        ),
+                                        html.Small(
+                                            "Uses same syntax as base sequence patterns.",
+                                            style={"color": "#9ca3af"},
+                                        ),
                                     ],
                                     target="followup-seq-help",
                                     placement="right",
@@ -1352,20 +1641,65 @@ sidebar = dbc.Card(
                                     placeholder="5R",
                                     style={"width": "100%", "marginBottom": "0.5rem"},
                                 ),
-                                html.Div([
-                                    html.Label("Follow-up Length (candles)", style={"fontWeight": "700", "fontSize": "0.8rem", "color": "#374151", "display": "inline-block"}),
-                                    html.I(className="bi bi-question-circle", id="followup-len-help", style={"fontSize": "0.75rem", "color": "#9ca3af", "marginLeft": "0.4rem", "cursor": "pointer"}),
-                                ]),
+                                html.Div(
+                                    [
+                                        html.Label(
+                                            "Follow-up Length (candles)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                                "color": "#374151",
+                                                "display": "inline-block",
+                                            },
+                                        ),
+                                        html.I(
+                                            className="bi bi-question-circle",
+                                            id="followup-len-help",
+                                            style={
+                                                "fontSize": "0.75rem",
+                                                "color": "#9ca3af",
+                                                "marginLeft": "0.4rem",
+                                                "cursor": "pointer",
+                                            },
+                                        ),
+                                    ]
+                                ),
                                 dbc.Tooltip(
                                     [
-                                        html.P("How many candles to scan after the base match ends.", style={"marginBottom": "0.4rem", "fontSize": "0.75rem"}),
-                                        html.Strong("Examples:", style={"fontSize": "0.75rem"}),
-                                        html.Ul([
-                                            html.Li("Length=5: scan next 5 candles for the follow-up pattern", style={"fontSize": "0.7rem"}),
-                                            html.Li("Length=10: scan next 10 candles (wider window)", style={"fontSize": "0.7rem"}),
-                                            html.Li("If sequence is 5R and length is 3, they're independent", style={"fontSize": "0.7rem"}),
-                                        ], style={"paddingLeft": "1.2rem", "marginBottom": "0.4rem"}),
-                                        html.Small("Larger values catch delayed patterns; smaller values catch immediate reactions.", style={"color": "#9ca3af"}),
+                                        html.P(
+                                            "How many candles to scan after the base match ends.",
+                                            style={
+                                                "marginBottom": "0.4rem",
+                                                "fontSize": "0.75rem",
+                                            },
+                                        ),
+                                        html.Strong(
+                                            "Examples:", style={"fontSize": "0.75rem"}
+                                        ),
+                                        html.Ul(
+                                            [
+                                                html.Li(
+                                                    "Length=5: scan next 5 candles for the follow-up pattern",
+                                                    style={"fontSize": "0.7rem"},
+                                                ),
+                                                html.Li(
+                                                    "Length=10: scan next 10 candles (wider window)",
+                                                    style={"fontSize": "0.7rem"},
+                                                ),
+                                                html.Li(
+                                                    "If sequence is 5R and length is 3, they're independent",
+                                                    style={"fontSize": "0.7rem"},
+                                                ),
+                                            ],
+                                            style={
+                                                "paddingLeft": "1.2rem",
+                                                "marginBottom": "0.4rem",
+                                            },
+                                        ),
+                                        html.Small(
+                                            "Larger values catch delayed patterns; smaller values catch immediate reactions.",
+                                            style={"color": "#9ca3af"},
+                                        ),
                                     ],
                                     target="followup-len-help",
                                     placement="right",
@@ -1381,38 +1715,165 @@ sidebar = dbc.Card(
                                     style={"width": "100%", "marginBottom": "0.75rem"},
                                 ),
                                 dbc.Popover(
-                                    dbc.PopoverBody([
-                                        html.H6("Sequence Syntax Cheat-Sheet", style={"fontWeight": "800", "marginBottom": "0.5rem"}),
-                                        html.Table([
-                                            html.Tbody([
-                                                html.Tr([html.Td(html.Code("NR"), style={"paddingRight": "0.75rem"}), html.Td("N consecutive red (bearish) candles")]),
-                                                html.Tr([html.Td(html.Code("NG"), style={"paddingRight": "0.75rem"}), html.Td("N consecutive green (bullish) candles")]),
-                                                html.Tr([html.Td(html.Code("Doji"), style={"paddingRight": "0.75rem"}), html.Td("Doji candle (open \u2248 close)")]),
-                                                html.Tr([html.Td(html.Code("Hammer"), style={"paddingRight": "0.75rem"}), html.Td("Hammer candle pattern")]),
-                                                html.Tr([html.Td(html.Code("->"), style={"paddingRight": "0.75rem"}), html.Td("Separator between elements")]),
-                                                html.Tr([html.Td(html.Code("*"), style={"paddingRight": "0.75rem"}), html.Td("Wildcard (1-3 candles)")]),
-                                            ])
-                                        ], style={"fontSize": "0.8rem", "width": "100%", "marginBottom": "0.5rem"}),
-                                        html.Hr(style={"margin": "0.5rem 0"}),
-                                        html.P("Examples:", style={"fontWeight": "700", "marginBottom": "0.25rem", "fontSize": "0.8rem"}),
-                                        html.Code("5R -> 3G", style={"display": "block", "fontSize": "0.78rem"}),
-                                        html.Code("2R -> Doji -> 1G", style={"display": "block", "fontSize": "0.78rem"}),
-                                        html.Code("3R -> * -> 2G", style={"display": "block", "fontSize": "0.78rem"}),
-                                    ]),
+                                    dbc.PopoverBody(
+                                        [
+                                            html.H6(
+                                                "Sequence Syntax Cheat-Sheet",
+                                                style={
+                                                    "fontWeight": "800",
+                                                    "marginBottom": "0.5rem",
+                                                },
+                                            ),
+                                            html.Table(
+                                                [
+                                                    html.Tbody(
+                                                        [
+                                                            html.Tr(
+                                                                [
+                                                                    html.Td(
+                                                                        html.Code("NR"),
+                                                                        style={
+                                                                            "paddingRight": "0.75rem"
+                                                                        },
+                                                                    ),
+                                                                    html.Td(
+                                                                        "N consecutive red (bearish) candles"
+                                                                    ),
+                                                                ]
+                                                            ),
+                                                            html.Tr(
+                                                                [
+                                                                    html.Td(
+                                                                        html.Code("NG"),
+                                                                        style={
+                                                                            "paddingRight": "0.75rem"
+                                                                        },
+                                                                    ),
+                                                                    html.Td(
+                                                                        "N consecutive green (bullish) candles"
+                                                                    ),
+                                                                ]
+                                                            ),
+                                                            html.Tr(
+                                                                [
+                                                                    html.Td(
+                                                                        html.Code(
+                                                                            "Doji"
+                                                                        ),
+                                                                        style={
+                                                                            "paddingRight": "0.75rem"
+                                                                        },
+                                                                    ),
+                                                                    html.Td(
+                                                                        "Doji candle (open \u2248 close)"
+                                                                    ),
+                                                                ]
+                                                            ),
+                                                            html.Tr(
+                                                                [
+                                                                    html.Td(
+                                                                        html.Code(
+                                                                            "Hammer"
+                                                                        ),
+                                                                        style={
+                                                                            "paddingRight": "0.75rem"
+                                                                        },
+                                                                    ),
+                                                                    html.Td(
+                                                                        "Hammer candle pattern"
+                                                                    ),
+                                                                ]
+                                                            ),
+                                                            html.Tr(
+                                                                [
+                                                                    html.Td(
+                                                                        html.Code("->"),
+                                                                        style={
+                                                                            "paddingRight": "0.75rem"
+                                                                        },
+                                                                    ),
+                                                                    html.Td(
+                                                                        "Separator between elements"
+                                                                    ),
+                                                                ]
+                                                            ),
+                                                            html.Tr(
+                                                                [
+                                                                    html.Td(
+                                                                        html.Code("*"),
+                                                                        style={
+                                                                            "paddingRight": "0.75rem"
+                                                                        },
+                                                                    ),
+                                                                    html.Td(
+                                                                        "Wildcard (1-3 candles)"
+                                                                    ),
+                                                                ]
+                                                            ),
+                                                        ]
+                                                    )
+                                                ],
+                                                style={
+                                                    "fontSize": "0.8rem",
+                                                    "width": "100%",
+                                                    "marginBottom": "0.5rem",
+                                                },
+                                            ),
+                                            html.Hr(style={"margin": "0.5rem 0"}),
+                                            html.P(
+                                                "Examples:",
+                                                style={
+                                                    "fontWeight": "700",
+                                                    "marginBottom": "0.25rem",
+                                                    "fontSize": "0.8rem",
+                                                },
+                                            ),
+                                            html.Code(
+                                                "5R -> 3G",
+                                                style={
+                                                    "display": "block",
+                                                    "fontSize": "0.78rem",
+                                                },
+                                            ),
+                                            html.Code(
+                                                "2R -> Doji -> 1G",
+                                                style={
+                                                    "display": "block",
+                                                    "fontSize": "0.78rem",
+                                                },
+                                            ),
+                                            html.Code(
+                                                "3R -> * -> 2G",
+                                                style={
+                                                    "display": "block",
+                                                    "fontSize": "0.78rem",
+                                                },
+                                            ),
+                                        ]
+                                    ),
                                     target="syntax-help-btn",
                                     trigger="hover",
                                     placement="right",
                                     style={"maxWidth": "360px"},
                                 ),
                                 dbc.Button(
-                                    [html.I(className="bi bi-play-fill"), " Scan Sequences"],
+                                    [
+                                        html.I(className="bi bi-play-fill"),
+                                        " Scan Sequences",
+                                    ],
                                     id="scan-sequences-btn",
                                     color="primary",
                                     className="w-100 mt-3",
-                                    style={"fontWeight": "700", "padding": "0.85rem 1.5rem"},
+                                    style={
+                                        "fontWeight": "700",
+                                        "padding": "0.85rem 1.5rem",
+                                    },
                                 ),
                                 dcc.Loading(
-                                    html.Div(id="scan-results-summary", style={"marginTop": "0.75rem"}),
+                                    html.Div(
+                                        id="scan-results-summary",
+                                        style={"marginTop": "0.75rem"},
+                                    ),
                                     id="scan-loading",
                                     type="circle",
                                     color="#6366f1",
@@ -1422,7 +1883,6 @@ sidebar = dbc.Card(
                             title="Sequence Scanner",
                             item_id="acc-scanner",
                         ),
-
                         # --- History ---
                         dbc.AccordionItem(
                             [
@@ -1430,13 +1890,12 @@ sidebar = dbc.Card(
                                     id="history-select",
                                     placeholder="Select a past upload...",
                                     clearable=True,
-                                    style={"marginTop": "0.5rem"}
+                                    style={"marginTop": "0.5rem"},
                                 ),
                             ],
                             title="Load from History",
                             item_id="acc-history",
                         ),
-
                         # --- Maintenance ---
                         dbc.AccordionItem(
                             [
@@ -1446,7 +1905,10 @@ sidebar = dbc.Card(
                                     color="danger",
                                     size="sm",
                                     className="w-100",
-                                    style={"fontWeight": "700", "padding": "0.65rem 1rem"}
+                                    style={
+                                        "fontWeight": "700",
+                                        "padding": "0.65rem 1rem",
+                                    },
                                 ),
                                 dcc.ConfirmDialog(
                                     id="cleanup-confirm",
@@ -1454,13 +1916,17 @@ sidebar = dbc.Card(
                                 ),
                                 html.Div(
                                     id="cleanup-result",
-                                    style={"marginTop": "10px", "fontSize": "0.9em", "color": "#6b7280", "fontWeight": "500"}
+                                    style={
+                                        "marginTop": "10px",
+                                        "fontSize": "0.9em",
+                                        "color": "#6b7280",
+                                        "fontWeight": "500",
+                                    },
                                 ),
                             ],
                             title="Maintenance",
                             item_id="acc-maintenance",
                         ),
-
                         # --- Export ---
                         dbc.AccordionItem(
                             [
@@ -1470,18 +1936,29 @@ sidebar = dbc.Card(
                                     color="info",
                                     size="sm",
                                     className="w-100 mb-2",
-                                    style={"fontWeight": "700", "padding": "0.65rem 1rem"}
+                                    style={
+                                        "fontWeight": "700",
+                                        "padding": "0.65rem 1rem",
+                                    },
                                 ),
                                 dbc.Button(
-                                    [html.I(className="bi bi-bar-chart"), " Discovery CSV"],
+                                    [
+                                        html.I(className="bi bi-bar-chart"),
+                                        " Discovery CSV",
+                                    ],
                                     id="export-aggregated-btn",
                                     color="info",
                                     size="sm",
                                     className="w-100",
-                                    style={"fontWeight": "700", "padding": "0.65rem 1rem"}
+                                    style={
+                                        "fontWeight": "700",
+                                        "padding": "0.65rem 1rem",
+                                    },
                                 ),
                                 dcc.Download(id="download-asset"),
-                                html.Div(id="export-status", style={"marginTop": "0.5rem"}),
+                                html.Div(
+                                    id="export-status", style={"marginTop": "0.5rem"}
+                                ),
                             ],
                             title="Export Data",
                             item_id="acc-export",
@@ -1492,7 +1969,6 @@ sidebar = dbc.Card(
                     flush=True,
                     style={"marginTop": "0.5rem"},
                 ),
-
                 # Statistics cards always visible at bottom
                 html.Hr(className="hr-style"),
                 html.Div(id="stats-cards"),
@@ -1504,20 +1980,20 @@ sidebar = dbc.Card(
 
 # Stores to keep the current upload and scan results in-browser
 # NOTE: store starts empty; the page-load callback populates it with sample data
-store_current = dcc.Store(id='current-data', data=None, storage_type='memory')
-store_scan = dcc.Store(id='scan-results', data=None, storage_type='memory')
-store_hold_period = dcc.Store(id='hold-period-store', data=5, storage_type='memory')
+store_current = dcc.Store(id="current-data", data=None, storage_type="memory")
+store_scan = dcc.Store(id="scan-results", data=None, storage_type="memory")
+store_hold_period = dcc.Store(id="hold-period-store", data=5, storage_type="memory")
 
 # Live-refresh interval component (disabled by default, 60s when enabled)
 live_interval = dcc.Interval(
-    id='live-interval',
+    id="live-interval",
     interval=60 * 1000,  # milliseconds
     n_intervals=0,
     disabled=True,
 )
-store_live_symbol = dcc.Store(id='live-symbol', data='', storage_type='memory')
-store_ml_model = dcc.Store(id='ml-model-store', data=None, storage_type='memory')
-store_theme = dcc.Store(id='theme-store', data='light', storage_type='local')
+store_live_symbol = dcc.Store(id="live-symbol", data="", storage_type="memory")
+store_ml_model = dcc.Store(id="ml-model-store", data=None, storage_type="memory")
+store_theme = dcc.Store(id="theme-store", data="light", storage_type="local")
 
 # Modal for pattern detail
 pattern_modal = dbc.Modal(
@@ -1525,10 +2001,10 @@ pattern_modal = dbc.Modal(
         dbc.ModalHeader(
             dbc.ModalTitle(
                 [html.I(className="bi bi-graph-up"), " Pattern Analysis"],
-                style={"fontWeight": "800", "fontSize": "1.25rem"}
+                style={"fontWeight": "800", "fontSize": "1.25rem"},
             ),
             close_button=True,
-            style={"padding": "1.5rem"}
+            style={"padding": "1.5rem"},
         ),
         dbc.ModalBody(id="pattern-modal-body", style={"padding": "2rem"}),
         dbc.ModalFooter(
@@ -1538,7 +2014,7 @@ pattern_modal = dbc.Modal(
                     id="export-chart-btn",
                     color="info",
                     size="sm",
-                    style={"fontWeight": "700", "padding": "0.65rem 1.2rem"}
+                    style={"fontWeight": "700", "padding": "0.65rem 1.2rem"},
                 ),
                 dbc.Button(
                     [html.I(className="bi bi-x-circle"), " Close"],
@@ -1546,10 +2022,10 @@ pattern_modal = dbc.Modal(
                     color="secondary",
                     size="sm",
                     className="ms-auto",
-                    style={"fontWeight": "700", "padding": "0.65rem 1.2rem"}
+                    style={"fontWeight": "700", "padding": "0.65rem 1.2rem"},
                 ),
             ],
-            style={"padding": "1.5rem"}
+            style={"padding": "1.5rem"},
         ),
     ],
     id="pattern-modal",
@@ -1568,16 +2044,24 @@ main_content = dbc.Tabs(
                     [
                         section_banner(
                             "Candlestick Chart",
-                            "Explore loaded candle data in an interactive chart. Zoom, pan, and verify data quality before running scans; this is your baseline view for price action and support/resistance context."
+                            "Explore loaded candle data in an interactive chart. Zoom, pan, and verify data quality before running scans; this is your baseline view for price action and support/resistance context.",
                         ),
                         html.Div(
                             id="candle-count-badge",
-                            style={"textAlign": "right", "marginTop": "0.75rem", "minHeight": "1.5rem"},
+                            style={
+                                "textAlign": "right",
+                                "marginTop": "0.75rem",
+                                "minHeight": "1.5rem",
+                            },
                         ),
                         dcc.Loading(
                             dcc.Graph(
                                 id="candle-chart",
-                                figure=build_candle_figure(app.default_sample_data if app.default_sample_data is not None else None),
+                                figure=build_candle_figure(
+                                    app.default_sample_data
+                                    if app.default_sample_data is not None
+                                    else None
+                                ),
                                 style={"marginTop": "0.25rem"},
                                 config={
                                     "responsive": True,
@@ -1591,17 +2075,34 @@ main_content = dbc.Tabs(
                                         "width": 1200,
                                         "scale": 1,
                                     },
-                                    "modeBarButtonsToRemove": ["pan2d", "zoom2d", "zoomIn2d", "zoomOut2d", "lasso2d", "select2d", "autoScale2d", "toggleSpikelines"],
-                                }
+                                    "modeBarButtonsToRemove": [
+                                        "pan2d",
+                                        "zoom2d",
+                                        "zoomIn2d",
+                                        "zoomOut2d",
+                                        "lasso2d",
+                                        "select2d",
+                                        "autoScale2d",
+                                        "toggleSpikelines",
+                                    ],
+                                },
                             ),
-                            type="circle", color="#6366f1"
+                            type="circle",
+                            color="#6366f1",
                         ),
-                        html.Div(id="current-data-debug", style={"marginTop": "0.5rem", "color": "#6b7280", "fontSize": "0.85rem"}),
+                        html.Div(
+                            id="current-data-debug",
+                            style={
+                                "marginTop": "0.5rem",
+                                "color": "#6b7280",
+                                "fontSize": "0.85rem",
+                            },
+                        ),
                     ],
                     fluid=True,
                 )
             ],
-            className="p-4"
+            className="p-4",
         ),
         dbc.Tab(
             label="Sequence Matches",
@@ -1611,14 +2112,20 @@ main_content = dbc.Tabs(
                     [
                         section_banner(
                             "Sequence Matches",
-                            "Displays all matched sequences found in the current dataset with details on start/end points and confidence. Use the filter controls in the scan panel to refine results in real time."
+                            "Displays all matched sequences found in the current dataset with details on start/end points and confidence. Use the filter controls in the scan panel to refine results in real time.",
                         ),
-                        dcc.Loading(html.Div(id="matches-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")
+                        dcc.Loading(
+                            html.Div(
+                                id="matches-content", style={"marginTop": "1.5rem"}
+                            ),
+                            type="circle",
+                            color="#6366f1",
+                        ),
                     ],
-                    fluid=True
+                    fluid=True,
                 )
             ],
-            className="p-4"
+            className="p-4",
         ),
         dbc.Tab(
             label="Auto-Discovery",
@@ -1628,14 +2135,20 @@ main_content = dbc.Tabs(
                     [
                         section_banner(
                             "Auto-Discovery",
-                            "Automatically identifies the most frequent and statistically significant sequences for the current data. Use this first to discover candidate patterns and then drill into matching and backtesting."
+                            "Automatically identifies the most frequent and statistically significant sequences for the current data. Use this first to discover candidate patterns and then drill into matching and backtesting.",
                         ),
-                        dcc.Loading(html.Div(id="discovery-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")
+                        dcc.Loading(
+                            html.Div(
+                                id="discovery-content", style={"marginTop": "1.5rem"}
+                            ),
+                            type="circle",
+                            color="#6366f1",
+                        ),
                     ],
-                    fluid=True
+                    fluid=True,
                 )
             ],
-            className="p-4"
+            className="p-4",
         ),
         dbc.Tab(
             label="Statistics & Predictions",
@@ -1645,34 +2158,85 @@ main_content = dbc.Tabs(
                     [
                         section_banner(
                             "Statistics & Predictions",
-                            "Set your lookahead and hold period, then inspect outcome charts, expected returns, and prediction probabilities. This section quantifies sequence performance and helps choose trading parameters."
+                            "Set your lookahead and hold period, then inspect outcome charts, expected returns, and prediction probabilities. This section quantifies sequence performance and helps choose trading parameters.",
                         ),
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label("Hold Period (candles)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Slider(
-                                    id="hold-period-slider",
-                                    min=1, max=20, step=1, value=5,
-                                    marks={1: "1", 3: "3", 5: "5", 10: "10", 15: "15", 20: "20"},
-                                    tooltip={"placement": "bottom", "always_visible": True},
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Hold Period (candles)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Slider(
+                                            id="hold-period-slider",
+                                            min=1,
+                                            max=20,
+                                            step=1,
+                                            value=5,
+                                            marks={
+                                                1: "1",
+                                                3: "3",
+                                                5: "5",
+                                                10: "10",
+                                                15: "15",
+                                                20: "20",
+                                            },
+                                            tooltip={
+                                                "placement": "bottom",
+                                                "always_visible": True,
+                                            },
+                                        ),
+                                    ],
+                                    width=6,
                                 ),
-                            ], width=6),
-                            dbc.Col([
-                                html.Label("Lookahead Candles", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Slider(
-                                    id="lookahead-slider",
-                                    min=1, max=10, step=1, value=3,
-                                    marks={1: "1", 3: "3", 5: "5", 7: "7", 10: "10"},
-                                    tooltip={"placement": "bottom", "always_visible": True},
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Lookahead Candles",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Slider(
+                                            id="lookahead-slider",
+                                            min=1,
+                                            max=10,
+                                            step=1,
+                                            value=3,
+                                            marks={
+                                                1: "1",
+                                                3: "3",
+                                                5: "5",
+                                                7: "7",
+                                                10: "10",
+                                            },
+                                            tooltip={
+                                                "placement": "bottom",
+                                                "always_visible": True,
+                                            },
+                                        ),
+                                    ],
+                                    width=6,
                                 ),
-                            ], width=6),
-                        ], className="g-3 mb-3", style={"marginTop": "1rem"}),
-                        dcc.Loading(html.Div(id="stats-content", style={"marginTop": "0.5rem"}), type="circle", color="#6366f1"),
+                            ],
+                            className="g-3 mb-3",
+                            style={"marginTop": "1rem"},
+                        ),
+                        dcc.Loading(
+                            html.Div(id="stats-content", style={"marginTop": "0.5rem"}),
+                            type="circle",
+                            color="#6366f1",
+                        ),
                     ],
-                    fluid=True
+                    fluid=True,
                 )
             ],
-            className="p-4"
+            className="p-4",
         ),
         dbc.Tab(
             label="Heatmap",
@@ -1682,14 +2246,20 @@ main_content = dbc.Tabs(
                     [
                         section_banner(
                             "Heatmap",
-                            "Visualize frequency and confidence of sequence occurrences in a heatmap matrix. Use this for spotting high-probability clusters and regime shifts in the data."
+                            "Visualize frequency and confidence of sequence occurrences in a heatmap matrix. Use this for spotting high-probability clusters and regime shifts in the data.",
                         ),
-                        dcc.Loading(html.Div(id="heatmap-content", style={"marginTop": "1.5rem"}), type="circle", color="#6366f1")
+                        dcc.Loading(
+                            html.Div(
+                                id="heatmap-content", style={"marginTop": "1.5rem"}
+                            ),
+                            type="circle",
+                            color="#6366f1",
+                        ),
                     ],
-                    fluid=True
+                    fluid=True,
                 )
             ],
-            className="p-4"
+            className="p-4",
         ),
         dbc.Tab(
             label="Reverse Finder",
@@ -1699,54 +2269,145 @@ main_content = dbc.Tabs(
                     [
                         section_banner(
                             "Reverse Finder",
-                            "Search for patterns that showed up before large price moves. Configure direction, move threshold, and candle lookback to identify high-impact pre-move signatures."
+                            "Search for patterns that showed up before large price moves. Configure direction, move threshold, and candle lookback to identify high-impact pre-move signatures.",
                         ),
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label("Move Threshold (%)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="reverse-threshold", type="number", value=1.5, min=0.1, max=20, step=0.1,
-                                          style={"width": "100%"}),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("Direction", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Dropdown(
-                                    id="reverse-direction",
-                                    options=[
-                                        {"label": "Big Gains (Up)", "value": "up"},
-                                        {"label": "Big Losses (Down)", "value": "down"},
-                                        {"label": "Both", "value": "both"},
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Move Threshold (%)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="reverse-threshold",
+                                            type="number",
+                                            value=1.5,
+                                            min=0.1,
+                                            max=20,
+                                            step=0.1,
+                                            style={"width": "100%"},
+                                        ),
                                     ],
-                                    value="up", clearable=False,
+                                    width=3,
                                 ),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("Lookback Candles", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="reverse-lookback", type="number", value=5, min=2, max=20, step=1,
-                                          style={"width": "100%"}),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
-                                dbc.Button(
-                                    [html.I(className="bi bi-search"), " Find Patterns"],
-                                    id="reverse-find-btn",
-                                    color="primary",
-                                    className="w-100",
-                                    style={"fontWeight": "700"},
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Direction",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Dropdown(
+                                            id="reverse-direction",
+                                            options=[
+                                                {
+                                                    "label": "Big Gains (Up)",
+                                                    "value": "up",
+                                                },
+                                                {
+                                                    "label": "Big Losses (Down)",
+                                                    "value": "down",
+                                                },
+                                                {"label": "Both", "value": "both"},
+                                            ],
+                                            value="up",
+                                            clearable=False,
+                                        ),
+                                    ],
+                                    width=3,
                                 ),
-                            ], width=3),
-                        ], className="g-3 mb-3", style={"marginTop": "1rem"}),
-                        dcc.Loading(html.Div(id="reverse-content", children=[
-                            html.Div([
-                                html.I(className="bi bi-arrow-repeat", style={"fontSize": "2rem", "color": "#c7d2fe"}),
-                                html.P("Set parameters above and click Find Patterns to discover sequences preceding big price moves.",
-                                       style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600", "maxWidth": "420px", "margin": "0.5rem auto 0"}),
-                            ], style={"padding": "3rem", "textAlign": "center"}),
-                        ]), type="circle", color="#6366f1"),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Lookback Candles",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="reverse-lookback",
+                                            type="number",
+                                            value=5,
+                                            min=2,
+                                            max=20,
+                                            step=1,
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "\u00a0",
+                                            style={
+                                                "display": "block",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dbc.Button(
+                                            [
+                                                html.I(className="bi bi-search"),
+                                                " Find Patterns",
+                                            ],
+                                            id="reverse-find-btn",
+                                            color="primary",
+                                            className="w-100",
+                                            style={"fontWeight": "700"},
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                            ],
+                            className="g-3 mb-3",
+                            style={"marginTop": "1rem"},
+                        ),
+                        dcc.Loading(
+                            html.Div(
+                                id="reverse-content",
+                                children=[
+                                    html.Div(
+                                        [
+                                            html.I(
+                                                className="bi bi-arrow-repeat",
+                                                style={
+                                                    "fontSize": "2rem",
+                                                    "color": "#c7d2fe",
+                                                },
+                                            ),
+                                            html.P(
+                                                "Set parameters above and click Find Patterns to discover sequences preceding big price moves.",
+                                                style={
+                                                    "marginTop": "0.5rem",
+                                                    "color": "#9ca3af",
+                                                    "fontWeight": "600",
+                                                    "maxWidth": "420px",
+                                                    "margin": "0.5rem auto 0",
+                                                },
+                                            ),
+                                        ],
+                                        style={
+                                            "padding": "3rem",
+                                            "textAlign": "center",
+                                        },
+                                    ),
+                                ],
+                            ),
+                            type="circle",
+                            color="#6366f1",
+                        ),
                     ],
-                    fluid=True
+                    fluid=True,
                 )
             ],
-            className="p-4"
+            className="p-4",
         ),
         # ==========================================
         # BACKTESTING TAB
@@ -1759,37 +2420,112 @@ main_content = dbc.Tabs(
                     [
                         section_banner(
                             "Backtesting",
-                            "Run historical simulation on sequence trades. Choose hold period, capital allocation, and entry signals; review equity curve, win rate, drawdown, and return metrics."
+                            "Run historical simulation on sequence trades. Choose hold period, capital allocation, and entry signals; review equity curve, win rate, drawdown, and return metrics.",
                         ),
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label("Hold Period (candles)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Slider(id="bt-hold-slider", min=1, max=20, step=1, value=5,
-                                           marks={i: str(i) for i in [1, 5, 10, 15, 20]}),
-                            ], width=4),
-                            dbc.Col([
-                                html.Label("Initial Capital ($)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="bt-capital", type="number", value=10000, min=100, step=100,
-                                          style={"width": "100%"}),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
-                                dbc.Button(
-                                    [html.I(className="bi bi-calculator"), " Run Backtest"],
-                                    id="bt-run-btn",
-                                    color="success",
-                                    className="w-100",
-                                    style={"fontWeight": "700"},
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Hold Period (candles)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Slider(
+                                            id="bt-hold-slider",
+                                            min=1,
+                                            max=20,
+                                            step=1,
+                                            value=5,
+                                            marks={
+                                                i: str(i) for i in [1, 5, 10, 15, 20]
+                                            },
+                                        ),
+                                    ],
+                                    width=4,
                                 ),
-                            ], width=3),
-                        ], className="g-3 mb-3", style={"marginTop": "1rem"}),
-                        dcc.Loading(html.Div(id="backtest-content", children=[
-                            html.Div([
-                                html.I(className="bi bi-graph-up-arrow", style={"fontSize": "2rem", "color": "#bbf7d0"}),
-                                html.P("Load data and scan sequences first, then click Run Backtest to see equity curves and performance metrics.",
-                                       style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600", "maxWidth": "420px", "margin": "0.5rem auto 0"}),
-                            ], style={"padding": "3rem", "textAlign": "center"}),
-                        ]), type="circle", color="#10b981"),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Initial Capital ($)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="bt-capital",
+                                            type="number",
+                                            value=10000,
+                                            min=100,
+                                            step=100,
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "\u00a0",
+                                            style={
+                                                "display": "block",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dbc.Button(
+                                            [
+                                                html.I(className="bi bi-calculator"),
+                                                " Run Backtest",
+                                            ],
+                                            id="bt-run-btn",
+                                            color="success",
+                                            className="w-100",
+                                            style={"fontWeight": "700"},
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                            ],
+                            className="g-3 mb-3",
+                            style={"marginTop": "1rem"},
+                        ),
+                        dcc.Loading(
+                            html.Div(
+                                id="backtest-content",
+                                children=[
+                                    html.Div(
+                                        [
+                                            html.I(
+                                                className="bi bi-graph-up-arrow",
+                                                style={
+                                                    "fontSize": "2rem",
+                                                    "color": "#bbf7d0",
+                                                },
+                                            ),
+                                            html.P(
+                                                "Load data and scan sequences first, then click Run Backtest to see equity curves and performance metrics.",
+                                                style={
+                                                    "marginTop": "0.5rem",
+                                                    "color": "#9ca3af",
+                                                    "fontWeight": "600",
+                                                    "maxWidth": "420px",
+                                                    "margin": "0.5rem auto 0",
+                                                },
+                                            ),
+                                        ],
+                                        style={
+                                            "padding": "3rem",
+                                            "textAlign": "center",
+                                        },
+                                    ),
+                                ],
+                            ),
+                            type="circle",
+                            color="#10b981",
+                        ),
                     ],
                     fluid=True,
                 )
@@ -1807,47 +2543,131 @@ main_content = dbc.Tabs(
                     [
                         section_banner(
                             "Multi-TF",
-                            "Analyze the same patterns across multiple timeframes in one place. Select intervals, symbol, and lookback to reveal cross-timeframe confirmations and stronger setups."
+                            "Analyze the same patterns across multiple timeframes in one place. Select intervals, symbol, and lookback to reveal cross-timeframe confirmations and stronger setups.",
                         ),
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label("Symbol", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="mtf-symbol", type="text", placeholder="AAPL",
-                                          style={"width": "100%"}),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("Timeframes", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Dropdown(
-                                    id="mtf-intervals",
-                                    options=[{"label": iv, "value": iv} for iv in ["1h", "4h", "1d", "1wk"]],
-                                    value=["1h", "1d"],
-                                    multi=True,
-                                    placeholder="Select timeframes...",
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Symbol",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="mtf-symbol",
+                                            type="text",
+                                            placeholder="AAPL",
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=3,
                                 ),
-                            ], width=4),
-                            dbc.Col([
-                                html.Label("Lookback (recent candles)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="mtf-lookback", type="number", value=5, min=1, max=50, step=1,
-                                          style={"width": "100%"}),
-                            ], width=2),
-                            dbc.Col([
-                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
-                                dbc.Button(
-                                    [html.I(className="bi bi-layers"), " Analyse"],
-                                    id="mtf-run-btn",
-                                    color="primary",
-                                    className="w-100",
-                                    style={"fontWeight": "700"},
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Timeframes",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Dropdown(
+                                            id="mtf-intervals",
+                                            options=[
+                                                {"label": iv, "value": iv}
+                                                for iv in ["1h", "4h", "1d", "1wk"]
+                                            ],
+                                            value=["1h", "1d"],
+                                            multi=True,
+                                            placeholder="Select timeframes...",
+                                        ),
+                                    ],
+                                    width=4,
                                 ),
-                            ], width=3),
-                        ], className="g-3 mb-3", style={"marginTop": "1rem"}),
-                        dcc.Loading(html.Div(id="mtf-content", children=[
-                            html.Div([
-                                html.I(className="bi bi-layers", style={"fontSize": "2rem", "color": "#c7d2fe"}),
-                                html.P("Enter a symbol, select timeframes, and click Analyse to check sequence alignment across intervals.",
-                                       style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600", "maxWidth": "420px", "margin": "0.5rem auto 0"}),
-                            ], style={"padding": "3rem", "textAlign": "center"}),
-                        ]), type="circle", color="#6366f1"),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Lookback (recent candles)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="mtf-lookback",
+                                            type="number",
+                                            value=5,
+                                            min=1,
+                                            max=50,
+                                            step=1,
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "\u00a0",
+                                            style={
+                                                "display": "block",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dbc.Button(
+                                            [
+                                                html.I(className="bi bi-layers"),
+                                                " Analyse",
+                                            ],
+                                            id="mtf-run-btn",
+                                            color="primary",
+                                            className="w-100",
+                                            style={"fontWeight": "700"},
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                            ],
+                            className="g-3 mb-3",
+                            style={"marginTop": "1rem"},
+                        ),
+                        dcc.Loading(
+                            html.Div(
+                                id="mtf-content",
+                                children=[
+                                    html.Div(
+                                        [
+                                            html.I(
+                                                className="bi bi-layers",
+                                                style={
+                                                    "fontSize": "2rem",
+                                                    "color": "#c7d2fe",
+                                                },
+                                            ),
+                                            html.P(
+                                                "Enter a symbol, select timeframes, and click Analyse to check sequence alignment across intervals.",
+                                                style={
+                                                    "marginTop": "0.5rem",
+                                                    "color": "#9ca3af",
+                                                    "fontWeight": "600",
+                                                    "maxWidth": "420px",
+                                                    "margin": "0.5rem auto 0",
+                                                },
+                                            ),
+                                        ],
+                                        style={
+                                            "padding": "3rem",
+                                            "textAlign": "center",
+                                        },
+                                    ),
+                                ],
+                            ),
+                            type="circle",
+                            color="#6366f1",
+                        ),
                     ],
                     fluid=True,
                 )
@@ -1865,38 +2685,94 @@ main_content = dbc.Tabs(
                     [
                         section_banner(
                             "Watchlist",
-                            "Create reusable sequence filters and symbol watchlists. Save rules for fast recall and automated scanning in other tabs; this supports ongoing strategy tracking."
+                            "Create reusable sequence filters and symbol watchlists. Save rules for fast recall and automated scanning in other tabs; this supports ongoing strategy tracking.",
                         ),
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label("Label", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="wl-label", type="text", placeholder="My Bull Setup",
-                                          style={"width": "100%"}),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("Sequences (comma-separated)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="wl-sequences", type="text",
-                                          placeholder="3R -> 2G, 5R -> 3G",
-                                          style={"width": "100%"}),
-                            ], width=4),
-                            dbc.Col([
-                                html.Label("Symbol (optional)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="wl-symbol", type="text", placeholder="AAPL",
-                                          style={"width": "100%"}),
-                            ], width=2),
-                            dbc.Col([
-                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
-                                dbc.Button(
-                                    [html.I(className="bi bi-bookmark-plus"), " Save"],
-                                    id="wl-add-btn",
-                                    color="success",
-                                    className="w-100",
-                                    style={"fontWeight": "700"},
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Label",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="wl-label",
+                                            type="text",
+                                            placeholder="My Bull Setup",
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=3,
                                 ),
-                            ], width=3),
-                        ], className="g-3 mb-3", style={"marginTop": "1rem"}),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Sequences (comma-separated)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="wl-sequences",
+                                            type="text",
+                                            placeholder="3R -> 2G, 5R -> 3G",
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=4,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Symbol (optional)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="wl-symbol",
+                                            type="text",
+                                            placeholder="AAPL",
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "\u00a0",
+                                            style={
+                                                "display": "block",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dbc.Button(
+                                            [
+                                                html.I(className="bi bi-bookmark-plus"),
+                                                " Save",
+                                            ],
+                                            id="wl-add-btn",
+                                            color="success",
+                                            className="w-100",
+                                            style={"fontWeight": "700"},
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                            ],
+                            className="g-3 mb-3",
+                            style={"marginTop": "1rem"},
+                        ),
                         html.Div(id="wl-status", style={"marginBottom": "0.75rem"}),
-                        dcc.Loading(html.Div(id="wl-content"), type="circle", color="#f59e0b"),
+                        dcc.Loading(
+                            html.Div(id="wl-content"), type="circle", color="#f59e0b"
+                        ),
                         dcc.Store(id="wl-refresh-trigger", data=0),
                     ],
                     fluid=True,
@@ -1915,60 +2791,143 @@ main_content = dbc.Tabs(
                     [
                         section_banner(
                             "Alerts",
-                            "Configure condition-based alerts for sequences and optional webhook destinations. Monitor active rules and review trigger history to validate signal timing and reliability."
+                            "Configure condition-based alerts for sequences and optional webhook destinations. Monitor active rules and review trigger history to validate signal timing and reliability.",
                         ),
                         html.H5(
                             [html.I(className="bi bi-bell me-2"), "Sequence Alerts"],
-                            style={"fontWeight": "800", "marginTop": "1rem", "marginBottom": "1rem"},
+                            style={
+                                "fontWeight": "800",
+                                "marginTop": "1rem",
+                                "marginBottom": "1rem",
+                            },
                         ),
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label("Rule Name", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="alert-rule-name", type="text", placeholder="My Alert",
-                                          style={"width": "100%"}),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("Sequences (comma-separated)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="alert-sequences", type="text",
-                                          placeholder="3R -> 2G, 5R -> 3G",
-                                          style={"width": "100%"}),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("Symbol (optional)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="alert-symbol", type="text", placeholder="AAPL",
-                                          style={"width": "100%"}),
-                            ], width=2),
-                            dbc.Col([
-                                html.Label("Webhook URL (optional)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="alert-webhook", type="text", placeholder="https://...",
-                                          style={"width": "100%"}),
-                            ], width=2),
-                            dbc.Col([
-                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
-                                dbc.Button(
-                                    [html.I(className="bi bi-plus-circle"), " Add Rule"],
-                                    id="alert-add-btn",
-                                    color="warning",
-                                    className="w-100",
-                                    style={"fontWeight": "700"},
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Rule Name",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="alert-rule-name",
+                                            type="text",
+                                            placeholder="My Alert",
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=3,
                                 ),
-                            ], width=2),
-                        ], className="g-3 mb-3"),
-                        html.Div(id="alert-add-status", style={"marginBottom": "0.5rem"}),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Sequences (comma-separated)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="alert-sequences",
+                                            type="text",
+                                            placeholder="3R -> 2G, 5R -> 3G",
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Symbol (optional)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="alert-symbol",
+                                            type="text",
+                                            placeholder="AAPL",
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Webhook URL (optional)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="alert-webhook",
+                                            type="text",
+                                            placeholder="https://...",
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "\u00a0",
+                                            style={
+                                                "display": "block",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dbc.Button(
+                                            [
+                                                html.I(className="bi bi-plus-circle"),
+                                                " Add Rule",
+                                            ],
+                                            id="alert-add-btn",
+                                            color="warning",
+                                            className="w-100",
+                                            style={"fontWeight": "700"},
+                                        ),
+                                    ],
+                                    width=2,
+                                ),
+                            ],
+                            className="g-3 mb-3",
+                        ),
+                        html.Div(
+                            id="alert-add-status", style={"marginBottom": "0.5rem"}
+                        ),
                         html.Hr(),
                         html.H6("Active Rules", style={"fontWeight": "700"}),
-                        dcc.Loading(html.Div(id="alert-rules-content"), type="circle", color="#f59e0b"),
+                        dcc.Loading(
+                            html.Div(id="alert-rules-content"),
+                            type="circle",
+                            color="#f59e0b",
+                        ),
                         html.Hr(),
                         html.H6("Alert History", style={"fontWeight": "700"}),
                         dbc.Button(
                             [html.I(className="bi bi-trash me-1"), "Clear History"],
                             id="alert-clear-history-btn",
-                            color="outline-danger", size="sm",
+                            color="outline-danger",
+                            size="sm",
                             className="mb-2",
                             style={"fontWeight": "600"},
                         ),
-                        html.Div(id="alert-clear-status", style={"marginBottom": "0.5rem"}),
-                        dcc.Loading(html.Div(id="alert-history-content"), type="circle", color="#f59e0b"),
+                        html.Div(
+                            id="alert-clear-status", style={"marginBottom": "0.5rem"}
+                        ),
+                        dcc.Loading(
+                            html.Div(id="alert-history-content"),
+                            type="circle",
+                            color="#f59e0b",
+                        ),
                         dcc.Store(id="alert-refresh-trigger", data=0),
                     ],
                     fluid=True,
@@ -1987,41 +2946,110 @@ main_content = dbc.Tabs(
                     [
                         section_banner(
                             "ML Predict",
-                            "Build a machine learning model on historical sequence outcomes; train, score, and inspect predicted next-step moves along with probability/confidence. This helps evaluate whether ML can improve signal timing."
+                            "Build a machine learning model on historical sequence outcomes; train, score, and inspect predicted next-step moves along with probability/confidence. This helps evaluate whether ML can improve signal timing.",
                         ),
                         html.H5(
-                            [html.I(className="bi bi-robot me-2"), "Sequence Outcome Predictor"],
-                            style={"fontWeight": "800", "marginTop": "1rem", "marginBottom": "0.5rem"},
+                            [
+                                html.I(className="bi bi-robot me-2"),
+                                "Sequence Outcome Predictor",
+                            ],
+                            style={
+                                "fontWeight": "800",
+                                "marginTop": "1rem",
+                                "marginBottom": "0.5rem",
+                            },
                         ),
                         html.P(
                             "Train a GradientBoosting model on the loaded data to predict whether "
                             "the price will rise or fall after current conditions.",
                             style={"color": "#6b7280", "fontSize": "0.85rem"},
                         ),
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label("Hold Period (candles)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Slider(id="ml-hold-slider", min=1, max=20, step=1, value=5,
-                                           marks={i: str(i) for i in [1, 5, 10, 15, 20]}),
-                            ], width=5),
-                            dbc.Col([
-                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
-                                dbc.Button(
-                                    [html.I(className="bi bi-lightning-charge"), " Train & Predict"],
-                                    id="ml-train-btn",
-                                    color="primary",
-                                    className="w-100",
-                                    style={"fontWeight": "700"},
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Hold Period (candles)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Slider(
+                                            id="ml-hold-slider",
+                                            min=1,
+                                            max=20,
+                                            step=1,
+                                            value=5,
+                                            marks={
+                                                i: str(i) for i in [1, 5, 10, 15, 20]
+                                            },
+                                        ),
+                                    ],
+                                    width=5,
                                 ),
-                            ], width=3),
-                        ], className="g-3 mb-3", style={"marginTop": "1rem"}),
-                        dcc.Loading(html.Div(id="ml-predict-content", children=[
-                            html.Div([
-                                html.I(className="bi bi-robot", style={"fontSize": "2rem", "color": "#c7d2fe"}),
-                                html.P("Load data first, then click Train & Predict to build a model and see outcome predictions.",
-                                       style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600", "maxWidth": "420px", "margin": "0.5rem auto 0"}),
-                            ], style={"padding": "3rem", "textAlign": "center"}),
-                        ]), type="circle", color="#6366f1"),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "\u00a0",
+                                            style={
+                                                "display": "block",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dbc.Button(
+                                            [
+                                                html.I(
+                                                    className="bi bi-lightning-charge"
+                                                ),
+                                                " Train & Predict",
+                                            ],
+                                            id="ml-train-btn",
+                                            color="primary",
+                                            className="w-100",
+                                            style={"fontWeight": "700"},
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                            ],
+                            className="g-3 mb-3",
+                            style={"marginTop": "1rem"},
+                        ),
+                        dcc.Loading(
+                            html.Div(
+                                id="ml-predict-content",
+                                children=[
+                                    html.Div(
+                                        [
+                                            html.I(
+                                                className="bi bi-robot",
+                                                style={
+                                                    "fontSize": "2rem",
+                                                    "color": "#c7d2fe",
+                                                },
+                                            ),
+                                            html.P(
+                                                "Load data first, then click Train & Predict to build a model and see outcome predictions.",
+                                                style={
+                                                    "marginTop": "0.5rem",
+                                                    "color": "#9ca3af",
+                                                    "fontWeight": "600",
+                                                    "maxWidth": "420px",
+                                                    "margin": "0.5rem auto 0",
+                                                },
+                                            ),
+                                        ],
+                                        style={
+                                            "padding": "3rem",
+                                            "textAlign": "center",
+                                        },
+                                    ),
+                                ],
+                            ),
+                            type="circle",
+                            color="#6366f1",
+                        ),
                     ],
                     fluid=True,
                 )
@@ -2039,101 +3067,256 @@ main_content = dbc.Tabs(
                     [
                         section_banner(
                             "Settings",
-                            "Set user preferences for default symbol, interval, refresh behavior, and discovery limits so your workflow is reproducible. Includes reset and dataset info for audit."
+                            "Set user preferences for default symbol, interval, refresh behavior, and discovery limits so your workflow is reproducible. Includes reset and dataset info for audit.",
                         ),
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label("Theme", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Dropdown(
-                                    id="theme-selector",
-                                    options=[
-                                        {"label": "Light", "value": "theme-light"},
-                                        {"label": "Dark", "value": "theme-dark"},
-                                        {"label": "Ocean Blue", "value": "theme-blue"},
-                                        {"label": "Solar", "value": "theme-solar"},
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Theme",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Dropdown(
+                                            id="theme-selector",
+                                            options=[
+                                                {
+                                                    "label": "Light",
+                                                    "value": "theme-light",
+                                                },
+                                                {
+                                                    "label": "Dark",
+                                                    "value": "theme-dark",
+                                                },
+                                                {
+                                                    "label": "Ocean Blue",
+                                                    "value": "theme-blue",
+                                                },
+                                                {
+                                                    "label": "Solar",
+                                                    "value": "theme-solar",
+                                                },
+                                            ],
+                                            value="theme-light",
+                                            clearable=False,
+                                            style={"width": "100%"},
+                                        ),
                                     ],
-                                    value="theme-light",
-                                    clearable=False,
-                                    style={"width": "100%"},
+                                    width=3,
                                 ),
-                            ], width=3),
-                        ], className="g-3 mb-3"),
+                            ],
+                            className="g-3 mb-3",
+                        ),
                         html.H5(
                             [html.I(className="bi bi-gear me-2"), "Preferences"],
-                            style={"fontWeight": "800", "marginTop": "1rem", "marginBottom": "1rem"},
+                            style={
+                                "fontWeight": "800",
+                                "marginTop": "1rem",
+                                "marginBottom": "1rem",
+                            },
                         ),
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label("Default Symbol", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="pref-default-symbol", type="text", placeholder="AAPL",
-                                          style={"width": "100%"}),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("Default Period", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Dropdown(
-                                    id="pref-default-period",
-                                    options=[{"label": p, "value": p} for p in VALID_PERIODS],
-                                    value="6mo", clearable=False,
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Default Symbol",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="pref-default-symbol",
+                                            type="text",
+                                            placeholder="AAPL",
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=3,
                                 ),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("Default Interval", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Dropdown(
-                                    id="pref-default-interval",
-                                    options=[{"label": i, "value": i} for i in VALID_INTERVALS],
-                                    value="1d", clearable=False,
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Default Period",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Dropdown(
+                                            id="pref-default-period",
+                                            options=[
+                                                {"label": p, "value": p}
+                                                for p in VALID_PERIODS
+                                            ],
+                                            value="6mo",
+                                            clearable=False,
+                                        ),
+                                    ],
+                                    width=3,
                                 ),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("Hold Period", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="pref-hold-period", type="number", value=5, min=1, max=20,
-                                          style={"width": "100%"}),
-                            ], width=3),
-                        ], className="g-3 mb-3"),
-                        dbc.Row([
-                            dbc.Col([
-                                html.Label("Live Refresh", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dbc.Checklist(
-                                    id="pref-live-enabled",
-                                    options=[{"label": " Enable auto-refresh", "value": "enabled"}],
-                                    value=[],
-                                    switch=True,
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Default Interval",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Dropdown(
+                                            id="pref-default-interval",
+                                            options=[
+                                                {"label": i, "value": i}
+                                                for i in VALID_INTERVALS
+                                            ],
+                                            value="1d",
+                                            clearable=False,
+                                        ),
+                                    ],
+                                    width=3,
                                 ),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("Refresh Interval (sec)", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="pref-live-interval", type="number", value=60, min=10, max=600, step=10,
-                                          style={"width": "100%"}),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("Discovery Max Results", style={"fontWeight": "700", "fontSize": "0.8rem"}),
-                                dcc.Input(id="pref-discovery-max", type="number", value=25, min=5, max=100,
-                                          style={"width": "100%"}),
-                            ], width=3),
-                            dbc.Col([
-                                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem"}),
-                                dbc.Button(
-                                    [html.I(className="bi bi-save"), " Save Preferences"],
-                                    id="pref-save-btn",
-                                    color="success",
-                                    className="w-100",
-                                    style={"fontWeight": "700"},
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Hold Period",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="pref-hold-period",
+                                            type="number",
+                                            value=5,
+                                            min=1,
+                                            max=20,
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=3,
                                 ),
-                            ], width=3),
-                        ], className="g-3 mb-3"),
+                            ],
+                            className="g-3 mb-3",
+                        ),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Live Refresh",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dbc.Checklist(
+                                            id="pref-live-enabled",
+                                            options=[
+                                                {
+                                                    "label": " Enable auto-refresh",
+                                                    "value": "enabled",
+                                                }
+                                            ],
+                                            value=[],
+                                            switch=True,
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Refresh Interval (sec)",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="pref-live-interval",
+                                            type="number",
+                                            value=60,
+                                            min=10,
+                                            max=600,
+                                            step=10,
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Discovery Max Results",
+                                            style={
+                                                "fontWeight": "700",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            id="pref-discovery-max",
+                                            type="number",
+                                            value=25,
+                                            min=5,
+                                            max=100,
+                                            style={"width": "100%"},
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "\u00a0",
+                                            style={
+                                                "display": "block",
+                                                "fontSize": "0.8rem",
+                                            },
+                                        ),
+                                        dbc.Button(
+                                            [
+                                                html.I(className="bi bi-save"),
+                                                " Save Preferences",
+                                            ],
+                                            id="pref-save-btn",
+                                            color="success",
+                                            className="w-100",
+                                            style={"fontWeight": "700"},
+                                        ),
+                                    ],
+                                    width=3,
+                                ),
+                            ],
+                            className="g-3 mb-3",
+                        ),
                         html.Div(id="pref-save-status", style={"marginTop": "0.5rem"}),
                         html.Hr(),
-                        dbc.Row([
-                            dbc.Col([
-                                dbc.Button(
-                                    [html.I(className="bi bi-arrow-counterclockwise"), " Reset to Defaults"],
-                                    id="pref-reset-btn",
-                                    color="outline-danger",
-                                    size="sm",
-                                    style={"fontWeight": "700"},
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        dbc.Button(
+                                            [
+                                                html.I(
+                                                    className="bi bi-arrow-counterclockwise"
+                                                ),
+                                                " Reset to Defaults",
+                                            ],
+                                            id="pref-reset-btn",
+                                            color="outline-danger",
+                                            size="sm",
+                                            style={"fontWeight": "700"},
+                                        ),
+                                    ],
+                                    width=4,
                                 ),
-                            ], width=4),
-                        ]),
+                            ]
+                        ),
                         html.Div(id="pref-reset-status", style={"marginTop": "0.5rem"}),
                         html.Hr(),
                         html.H6("Dataset Info", style={"fontWeight": "700"}),
@@ -2147,21 +3330,22 @@ main_content = dbc.Tabs(
     ],
     id="tabs",
     active_tab="tab-chart",
-    className="mt-2"
+    className="mt-2",
 )
 
+
 # Flask API endpoint for loading sample data
-@server.route('/__debug_app_path')
+@server.route("/__debug_app_path")
 def debug_app_path():
     return f"dashboard module path: {__file__}"
 
 
-@server.route('/__debug_callback_map')
+@server.route("/__debug_callback_map")
 def debug_callback_map():
     return json.dumps(list(app.callback_map.keys()))
 
 
-@server.route('/api/load-sample')  # type: ignore[union-attr] — Phase-11-dash-flask-type-compat
+@server.route("/api/load-sample")  # type: ignore[union-attr] — Phase-11-dash-flask-type-compat
 def api_load_sample():
     """API endpoint to load sample data directly."""
     from flask import jsonify
@@ -2169,33 +3353,38 @@ def api_load_sample():
     from candle_patterns.detection import detect_patterns as _detect
     from candle_patterns.storage import save_upload
     import pandas as pd
-    
+
     try:
         sample_path = Path("data/samples/sample.csv")
-        
+
         if not sample_path.exists():
             return jsonify({"error": "Sample data file not found"}), 404
-        
+
         # Load the sample data
         df = pd.read_csv(sample_path)
-        df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
-        
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+
         # Detect patterns
         patterns = _detect(df)
-        
+
         # Save to storage
-        upload_info = save_upload(f"sample_synthetic_automated_{pd.Timestamp.now().isoformat()}", df, patterns)
-        
-        return jsonify({
-            "success": True,
-            "message": f"[OK] Loaded sample: {len(patterns)} patterns detected",
-            "patterns": len(patterns),
-            "rows": len(df),
-            "upload_id": upload_info
-        })
+        upload_info = save_upload(
+            f"sample_synthetic_automated_{pd.Timestamp.now().isoformat()}", df, patterns
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                "message": f"[OK] Loaded sample: {len(patterns)} patterns detected",
+                "patterns": len(patterns),
+                "rows": len(df),
+                "upload_id": upload_info,
+            }
+        )
     except Exception as e:
-        logger.exception('API load sample failed: %s', e)
+        logger.exception("API load sample failed: %s", e)
         return jsonify({"error": str(e)}), 500
+
 
 # Main layout
 app.layout = html.Div(
@@ -2208,8 +3397,8 @@ app.layout = html.Div(
         store_live_symbol,
         store_ml_model,
         store_theme,
-        dcc.Location(id='url', refresh=False),
-        html.Div(id='page-load-signal', children=1, style={'display': 'none'}),
+        dcc.Location(id="url", refresh=False),
+        html.Div(id="page-load-signal", children=1, style={"display": "none"}),
         # Main body: sidebar LEFT + content RIGHT, each independently scrollable
         html.Div(
             [
@@ -2250,56 +3439,125 @@ app.layout = html.Div(
             },
         ),
         pattern_modal,
-
         # ---- Form-control Tooltips (Phase 9 UX) ----
-        dbc.Tooltip("Choose a trading pair / ticker symbol to fetch from Yahoo Finance.",
-                    target="yf-symbol-select", placement="right"),
-        dbc.Tooltip("How far back to fetch data (e.g. 6mo = six months).",
-                    target="yf-period", placement="right"),
-        dbc.Tooltip("Candle interval / timeframe for the fetched data.",
-                    target="yf-interval", placement="right"),
-        dbc.Tooltip("Filter the chart to a specific date window.",
-                    target="date-range", placement="right"),
-        dbc.Tooltip("Pick from commonly-used candle sequences.",
-                    target="preset-sequences", placement="right"),
-        dbc.Tooltip("Write custom candle sequences, one per line. Syntax: NR (N red), NG (N green), Doji, Hammer. Use -> as separator and * as wildcard.",
-                    target="custom-sequences-input", placement="right"),
-        dbc.Tooltip("Reload a previously uploaded dataset.",
-                    target="history-select", placement="right"),
-        dbc.Tooltip("How many candles ahead to analyse for move statistics.",
-                    target="lookahead-slider", placement="top"),
-        dbc.Tooltip("Minimum price move (%) that qualifies as a 'big move'.",
-                    target="reverse-threshold", placement="top"),
-        dbc.Tooltip("Look for big gains, big losses, or both.",
-                    target="reverse-direction", placement="top"),
-        dbc.Tooltip("How many candles to look back before the big move for pattern discovery.",
-                    target="reverse-lookback", placement="top"),
-        dbc.Tooltip("Number of candles to hold each trade in the backtest.",
-                    target="bt-hold-slider", placement="top"),
-        dbc.Tooltip("Starting portfolio value for the backtest simulation.",
-                    target="bt-capital", placement="top"),
-        dbc.Tooltip("Ticker symbol to fetch multi-timeframe data for (e.g. AAPL, BTC-USD).",
-                    target="mtf-symbol", placement="top"),
-        dbc.Tooltip("Select one or more timeframes to compare sequence alignment.",
-                    target="mtf-intervals", placement="top"),
-        dbc.Tooltip("Number of recent candles to scan on each timeframe.",
-                    target="mtf-lookback", placement="top"),
-        dbc.Tooltip("A friendly name for this watchlist entry.",
-                    target="wl-label", placement="top"),
-        dbc.Tooltip("Comma-separated sequences to watch (e.g. 3R -> 2G, 5R -> 3G).",
-                    target="wl-sequences", placement="top"),
-        dbc.Tooltip("Optional ticker to associate with these sequences.",
-                    target="wl-symbol", placement="top"),
-        dbc.Tooltip("A name for this alert rule.",
-                    target="alert-rule-name", placement="top"),
-        dbc.Tooltip("Comma-separated sequences that trigger the alert.",
-                    target="alert-sequences", placement="top"),
-        dbc.Tooltip("Optional ticker filter for the alert.",
-                    target="alert-symbol", placement="top"),
-        dbc.Tooltip("Optional webhook URL to POST alert payloads to.",
-                    target="alert-webhook", placement="top"),
-        dbc.Tooltip("How many candles ahead the ML model predicts.",
-                    target="ml-hold-slider", placement="top"),
+        dbc.Tooltip(
+            "Choose a trading pair / ticker symbol to fetch from Yahoo Finance.",
+            target="yf-symbol-select",
+            placement="right",
+        ),
+        dbc.Tooltip(
+            "How far back to fetch data (e.g. 6mo = six months).",
+            target="yf-period",
+            placement="right",
+        ),
+        dbc.Tooltip(
+            "Candle interval / timeframe for the fetched data.",
+            target="yf-interval",
+            placement="right",
+        ),
+        dbc.Tooltip(
+            "Filter the chart to a specific date window.",
+            target="date-range",
+            placement="right",
+        ),
+        dbc.Tooltip(
+            "Pick from commonly-used candle sequences.",
+            target="preset-sequences",
+            placement="right",
+        ),
+        dbc.Tooltip(
+            "Write custom candle sequences, one per line. Syntax: NR (N red), NG (N green), Doji, Hammer. Use -> as separator and * as wildcard.",
+            target="custom-sequences-input",
+            placement="right",
+        ),
+        dbc.Tooltip(
+            "Reload a previously uploaded dataset.",
+            target="history-select",
+            placement="right",
+        ),
+        dbc.Tooltip(
+            "How many candles ahead to analyse for move statistics.",
+            target="lookahead-slider",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "Minimum price move (%) that qualifies as a 'big move'.",
+            target="reverse-threshold",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "Look for big gains, big losses, or both.",
+            target="reverse-direction",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "How many candles to look back before the big move for pattern discovery.",
+            target="reverse-lookback",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "Number of candles to hold each trade in the backtest.",
+            target="bt-hold-slider",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "Starting portfolio value for the backtest simulation.",
+            target="bt-capital",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "Ticker symbol to fetch multi-timeframe data for (e.g. AAPL, BTC-USD).",
+            target="mtf-symbol",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "Select one or more timeframes to compare sequence alignment.",
+            target="mtf-intervals",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "Number of recent candles to scan on each timeframe.",
+            target="mtf-lookback",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "A friendly name for this watchlist entry.",
+            target="wl-label",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "Comma-separated sequences to watch (e.g. 3R -> 2G, 5R -> 3G).",
+            target="wl-sequences",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "Optional ticker to associate with these sequences.",
+            target="wl-symbol",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "A name for this alert rule.", target="alert-rule-name", placement="top"
+        ),
+        dbc.Tooltip(
+            "Comma-separated sequences that trigger the alert.",
+            target="alert-sequences",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "Optional ticker filter for the alert.",
+            target="alert-symbol",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "Optional webhook URL to POST alert payloads to.",
+            target="alert-webhook",
+            placement="top",
+        ),
+        dbc.Tooltip(
+            "How many candles ahead the ML model predicts.",
+            target="ml-hold-slider",
+            placement="top",
+        ),
     ],
     id="theme-wrapper",
     className="theme-light",
@@ -2315,6 +3573,7 @@ app.layout = html.Div(
 # =========================================================================
 # CALLBACKS
 # =========================================================================
+
 
 # Theme switcher: propagate selected theme across UI wrapper ----------
 @app.callback(
@@ -2345,7 +3604,7 @@ def load_theme(saved_theme):
     Output("current-data", "data", allow_duplicate=True),
     Output("upload-status", "children", allow_duplicate=True),
     Input("url", "pathname"),
-    prevent_initial_call='initial_duplicate',
+    prevent_initial_call="initial_duplicate",
 )
 def on_page_load(_pathname):
     """Fires on page load (when URL is set) to seed the chart with sample data."""
@@ -2379,12 +3638,18 @@ def on_upload(contents, filename):
     Data dict format:
         {'filename': str, 'upload_id': str, 'df': list of dicts (records)}
     """
+
     def _err(msg):
         return (
             html.Div(
                 [html.I(className="bi bi-exclamation-triangle-fill me-2"), msg],
-                style={"color": "#ef4444", "fontWeight": "600", "padding": "10px",
-                       "backgroundColor": "#fef2f2", "borderRadius": "8px"},
+                style={
+                    "color": "#ef4444",
+                    "fontWeight": "600",
+                    "padding": "10px",
+                    "backgroundColor": "#fef2f2",
+                    "borderRadius": "8px",
+                },
             ),
             dash.no_update,
         )
@@ -2430,10 +3695,17 @@ def on_upload(contents, filename):
         }
 
         status = html.Div(
-            [html.I(className="bi bi-check-circle-fill me-2"),
-             f"Loaded: {filename} ({len(df)} candles)"],
-            style={"color": "#059669", "fontWeight": "600", "padding": "10px",
-                   "backgroundColor": "#ecfdf5", "borderRadius": "8px"},
+            [
+                html.I(className="bi bi-check-circle-fill me-2"),
+                f"Loaded: {filename} ({len(df)} candles)",
+            ],
+            style={
+                "color": "#059669",
+                "fontWeight": "600",
+                "padding": "10px",
+                "backgroundColor": "#ecfdf5",
+                "borderRadius": "8px",
+            },
         )
         return status, data
 
@@ -2455,7 +3727,7 @@ def on_load_sample_click(n_clicks):
         logger.info("Load Sample Data button clicked")
         data, status = load_sample_data()
         if data:
-            logger.info("Sample data loaded: %d candles", len(data['df']))
+            logger.info("Sample data loaded: %d candles", len(data["df"]))
             return data, status, "tab-chart"
         return None, status, "tab-chart"
     return None, "", "tab-chart"
@@ -2475,7 +3747,15 @@ def on_load_sample_click(n_clicks):
     State("current-data", "data"),
     prevent_initial_call=True,
 )
-def scan_sequences(n_clicks, presets, custom_text, followup_enabled, followup_seq, followup_length, data):
+def scan_sequences(
+    n_clicks,
+    presets,
+    custom_text,
+    followup_enabled,
+    followup_seq,
+    followup_length,
+    data,
+):
     """Execute pattern scanning against loaded data.
 
     Scans OHLC data for all selected preset and custom sequences, optionally
@@ -2500,11 +3780,23 @@ def scan_sequences(n_clicks, presets, custom_text, followup_enabled, followup_se
     Returns:
         Tuple[dict, html.Div, str]: (results, summary, active_tab)
     """
-    logger.info("[CALLBACK] scan_sequences triggered: n_clicks=%s presets=%s custom_text=%s data=%s", n_clicks, presets, custom_text, 'present' if data else 'none')
+    logger.info(
+        "[CALLBACK] scan_sequences triggered: n_clicks=%s presets=%s custom_text=%s data=%s",
+        n_clicks,
+        presets,
+        custom_text,
+        "present" if data else "none",
+    )
     try:
         if not data:
-            return None, html.Div("No data loaded. Upload a CSV or load sample data first.",
-                                  style={"color": "#ef4444", "fontWeight": "600"}), "tab-chart"
+            return (
+                None,
+                html.Div(
+                    "No data loaded. Upload a CSV or load sample data first.",
+                    style={"color": "#ef4444", "fontWeight": "600"},
+                ),
+                "tab-chart",
+            )
 
         # Collect sequences from presets + custom
         seqs: list = []
@@ -2522,8 +3814,14 @@ def scan_sequences(n_clicks, presets, custom_text, followup_enabled, followup_se
             if default_scan:
                 seqs = [r["seq_str"] for r in default_scan if r.get("seq_str")]
             if not seqs:
-                return None, html.Div("No sequences defined. Pick presets or type custom ones.",
-                                      style={"color": "#f59e0b", "fontWeight": "600"}), "tab-matches"
+                return (
+                    None,
+                    html.Div(
+                        "No sequences defined. Pick presets or type custom ones.",
+                        style={"color": "#f59e0b", "fontWeight": "600"},
+                    ),
+                    "tab-matches",
+                )
 
         df = pd.DataFrame(data["df"])
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
@@ -2534,16 +3832,20 @@ def scan_sequences(n_clicks, presets, custom_text, followup_enabled, followup_se
             try:
                 # Use wildcard matcher if '*' is present
                 if "*" in seq_str:
-                    wild_hits = find_wildcard_sequence(df, seq_str, wildcard_min=1, wildcard_max=3)
+                    wild_hits = find_wildcard_sequence(
+                        df, seq_str, wildcard_min=1, wildcard_max=3
+                    )
                     matches = []
                     for h in wild_hits:
                         si, ei = h["start_idx"], h["end_idx"]
-                        matches.append({
-                            "start_idx": si,
-                            "end_idx": ei,
-                            "start_ts": str(df.iloc[si]["timestamp"]),
-                            "end_ts": str(df.iloc[ei]["timestamp"]),
-                        })
+                        matches.append(
+                            {
+                                "start_idx": si,
+                                "end_idx": ei,
+                                "start_ts": str(df.iloc[si]["timestamp"]),
+                                "end_ts": str(df.iloc[ei]["timestamp"]),
+                            }
+                        )
                     seq_len = sequence_length(seq_str.replace("*", "1R"))  # approx
                 else:
                     occ_ends = find_sequence_occurrences(df, seq_str)
@@ -2553,15 +3855,19 @@ def scan_sequences(n_clicks, presets, custom_text, followup_enabled, followup_se
                         start_idx = end_idx - seq_len + 1
                         if start_idx < 0:
                             start_idx = 0
-                        matches.append({
-                            "start_idx": int(start_idx),
-                            "end_idx": int(end_idx),
-                            "start_ts": str(df.iloc[start_idx]["timestamp"]),
-                            "end_ts": str(df.iloc[end_idx]["timestamp"]),
-                        })
+                        matches.append(
+                            {
+                                "start_idx": int(start_idx),
+                                "end_idx": int(end_idx),
+                                "start_ts": str(df.iloc[start_idx]["timestamp"]),
+                                "end_ts": str(df.iloc[end_idx]["timestamp"]),
+                            }
+                        )
                 entry = {"seq_str": seq_str, "length": seq_len, "matches": matches}
 
-                followup_enabled_flag = bool(followup_enabled and "enabled" in followup_enabled)
+                followup_enabled_flag = bool(
+                    followup_enabled and "enabled" in followup_enabled
+                )
                 followup_len = None
                 if followup_length is not None:
                     try:
@@ -2570,39 +3876,62 @@ def scan_sequences(n_clicks, presets, custom_text, followup_enabled, followup_se
                         followup_len = None
 
                 if followup_enabled_flag:
-                    if not followup_seq or not isinstance(followup_seq, str) or not followup_seq.strip():
-                        entry.update({
-                            "followup_error": "Enable follow-up with a valid follow-up sequence (e.g. 5R)",
-                        })
+                    if (
+                        not followup_seq
+                        or not isinstance(followup_seq, str)
+                        or not followup_seq.strip()
+                    ):
+                        entry.update(
+                            {
+                                "followup_error": "Enable follow-up with a valid follow-up sequence (e.g. 5R)",
+                            }
+                        )
                     elif followup_len is None or followup_len <= 0:
-                        entry.update({
-                            "followup_error": "Enable follow-up with a valid follow-up length (positive integer)",
-                        })
+                        entry.update(
+                            {
+                                "followup_error": "Enable follow-up with a valid follow-up length (positive integer)",
+                            }
+                        )
                     else:
-                        follow_stats = count_followup_pattern(df, seq_str, followup_seq.strip(), followup_len)
-                        followup_outcomes = find_followup_outcomes(df, seq_str, max_follow_len=followup_len, top_k=5)
-                        entry.update({
-                            "followup_seq": followup_seq.strip(),
-                            "followup_length": followup_len,
-                            "followup_success": follow_stats["followup_success"],
-                            "followup_rate": follow_stats["followup_rate"],
-                            "followup_total": follow_stats["total_matches"],
-                            "followup_outcomes": followup_outcomes,
-                        })
+                        follow_stats = count_followup_pattern(
+                            df, seq_str, followup_seq.strip(), followup_len
+                        )
+                        followup_outcomes = find_followup_outcomes(
+                            df, seq_str, max_follow_len=followup_len, top_k=5
+                        )
+                        entry.update(
+                            {
+                                "followup_seq": followup_seq.strip(),
+                                "followup_length": followup_len,
+                                "followup_success": follow_stats["followup_success"],
+                                "followup_rate": follow_stats["followup_rate"],
+                                "followup_total": follow_stats["total_matches"],
+                                "followup_outcomes": followup_outcomes,
+                            }
+                        )
 
                 results.append(entry)
                 total_matches += len(matches)
 
             except Exception as seq_err:
-                results.append({"seq_str": seq_str, "length": 0, "matches": [], "error": str(seq_err)})
+                results.append(
+                    {
+                        "seq_str": seq_str,
+                        "length": 0,
+                        "matches": [],
+                        "error": str(seq_err),
+                    }
+                )
 
         summary = html.Div(
             f"Scanned {len(seqs)} sequence(s) — {total_matches} total matches found",
             style={
                 "color": "#059669" if total_matches else "#f59e0b",
-                "fontWeight": "600", "padding": "10px",
+                "fontWeight": "600",
+                "padding": "10px",
                 "backgroundColor": "#ecfdf5" if total_matches else "#fffbeb",
-                "borderRadius": "8px", "fontSize": "0.85rem",
+                "borderRadius": "8px",
+                "fontSize": "0.85rem",
             },
         )
         return results, summary, "tab-matches"
@@ -2611,7 +3940,13 @@ def scan_sequences(n_clicks, presets, custom_text, followup_enabled, followup_se
         logger.exception("scan_sequences error: %s", e)
         err_msg = html.Div(
             f"Scan failed: {e}",
-            style={"color": "#ef4444", "fontWeight": "600", "padding": "10px", "backgroundColor": "#fff1f2", "borderRadius": "8px"},
+            style={
+                "color": "#ef4444",
+                "fontWeight": "600",
+                "padding": "10px",
+                "backgroundColor": "#fff1f2",
+                "borderRadius": "8px",
+            },
         )
         return None, err_msg, "tab-matches"
 
@@ -2647,11 +3982,14 @@ def update_chart(data, scan_results, start_date, end_date):
             - candle-count-badge: Badge showing data point count
             - current-data-debug: Debug info (hidden)
     """
-    logger.info("[CALLBACK] update_chart called: data=%s scan=%s",
-                'set' if data else 'None', 'set' if scan_results else 'None')
+    logger.info(
+        "[CALLBACK] update_chart called: data=%s scan=%s",
+        "set" if data else "None",
+        "set" if scan_results else "None",
+    )
 
     # Fallback to app.default_sample_data if the store is empty
-    if not data and hasattr(app, 'default_sample_data') and app.default_sample_data:
+    if not data and hasattr(app, "default_sample_data") and app.default_sample_data:
         data = app.default_sample_data
         logger.debug("[CALLBACK] update_chart: using app.default_sample_data fallback")
 
@@ -2660,22 +3998,44 @@ def update_chart(data, scan_results, start_date, end_date):
         fig = go.Figure()
         fig.add_annotation(
             text="Upload a CSV or click  Load Sample Data  to begin",
-            xref='paper', yref='paper', x=0.5, y=0.5, showarrow=False,
-            font=dict(size=18, color='#6366f1', family='sans-serif'),
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=18, color="#6366f1", family="sans-serif"),
         )
         fig.update_layout(
-            xaxis=dict(visible=False), yaxis=dict(visible=False),
-            template='plotly_white', height=400,
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+            template="plotly_white",
+            height=400,
             margin=dict(l=0, r=0, t=0, b=0),
-            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-            dragmode='pan',
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            dragmode="pan",
         )
         empty = html.Div(
-            [html.I(className="bi bi-inbox", style={"fontSize": "2rem", "color": "#c7d2fe"}),
-             html.P("No data loaded", style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+            [
+                html.I(
+                    className="bi bi-inbox",
+                    style={"fontSize": "2rem", "color": "#c7d2fe"},
+                ),
+                html.P(
+                    "No data loaded",
+                    style={
+                        "marginTop": "0.5rem",
+                        "color": "#9ca3af",
+                        "fontWeight": "600",
+                    },
+                ),
+            ],
             style={"padding": "3rem", "textAlign": "center"},
         )
-        debug_text = html.Div("No data available (current-data store empty)", style={"color": "#6b7280", "fontSize": "0.8rem"})
+        debug_text = html.Div(
+            "No data available (current-data store empty)",
+            style={"color": "#6b7280", "fontSize": "0.8rem"},
+        )
         return fig, empty, "", debug_text
 
     # ---- process data ----
@@ -2686,15 +4046,26 @@ def update_chart(data, scan_results, start_date, end_date):
         if start_date:
             df = df[df["timestamp"] >= pd.to_datetime(start_date, utc=True)]
         if end_date:
-            df = df[df["timestamp"] <= pd.to_datetime(end_date, utc=True) + pd.Timedelta(days=1)]
+            df = df[
+                df["timestamp"]
+                <= pd.to_datetime(end_date, utc=True) + pd.Timedelta(days=1)
+            ]
 
         # ---- candlestick ----
-        fig = go.Figure(data=[go.Candlestick(
-            x=df["timestamp"], open=df["open"], high=df["high"],
-            low=df["low"], close=df["close"],
-            name="OHLC",
-            increasing_line_color='#10b981', decreasing_line_color='#ef4444',
-        )])
+        fig = go.Figure(
+            data=[
+                go.Candlestick(
+                    x=df["timestamp"],
+                    open=df["open"],
+                    high=df["high"],
+                    low=df["low"],
+                    close=df["close"],
+                    name="OHLC",
+                    increasing_line_color="#10b981",
+                    decreasing_line_color="#ef4444",
+                )
+            ]
+        )
 
         total_matches = 0
 
@@ -2714,9 +4085,12 @@ def update_chart(data, scan_results, start_date, end_date):
                     x0 = df.iloc[si]["timestamp"]
                     x1 = df.iloc[ei]["timestamp"]
                     fig.add_vrect(
-                        x0=x0, x1=x1,
-                        fillcolor=color, opacity=0.12,
-                        line_width=2, line_color=color,
+                        x0=x0,
+                        x1=x1,
+                        fillcolor=color,
+                        opacity=0.12,
+                        line_width=2,
+                        line_color=color,
                         annotation_text=seq_str if len(matches) <= 6 else None,
                         annotation_position="top left",
                         annotation_font_size=9,
@@ -2725,12 +4099,16 @@ def update_chart(data, scan_results, start_date, end_date):
 
                 # Also add a single invisible scatter for the legend entry
                 if matches:
-                    fig.add_trace(go.Scatter(
-                        x=[None], y=[None], mode='markers',
-                        marker=dict(size=10, color=color, symbol="square"),
-                        name=f"{seq_str} ({len(matches)})",
-                        showlegend=True,
-                    ))
+                    fig.add_trace(
+                        go.Scatter(
+                            x=[None],
+                            y=[None],
+                            mode="markers",
+                            marker=dict(size=10, color=color, symbol="square"),
+                            name=f"{seq_str} ({len(matches)})",
+                            showlegend=True,
+                        )
+                    )
 
         title_text = f"Candlestick Chart | {len(df)} candles"
         if scan_results:
@@ -2742,14 +4120,14 @@ def update_chart(data, scan_results, start_date, end_date):
         )
 
         fig.update_layout(
-            title=dict(text=title_text, font=dict(size=16, color='#1f2937')),
-            template='plotly_white',
+            title=dict(text=title_text, font=dict(size=16, color="#1f2937")),
+            template="plotly_white",
             height=550,
-            hovermode='x unified',
-            dragmode='pan',
+            hovermode="x unified",
+            dragmode="pan",
             xaxis=dict(
                 rangeslider=dict(visible=False),
-                type='date',
+                type="date",
                 fixedrange=False,
             ),
             yaxis=dict(
@@ -2757,18 +4135,35 @@ def update_chart(data, scan_results, start_date, end_date):
             ),
             margin=dict(l=50, r=20, t=70, b=40),
             legend=dict(
-                orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1,
-                font=dict(size=11), bgcolor='rgba(255,255,255,0.8)',
-                bordercolor='#e5e7eb', borderwidth=1,
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1,
+                font=dict(size=11),
+                bgcolor="rgba(255,255,255,0.8)",
+                bordercolor="#e5e7eb",
+                borderwidth=1,
             ),
         )
 
         # ---- Sequence Matches tab content ----
         if not scan_results:
             matches_div = html.Div(
-                [html.I(className="bi bi-search", style={"fontSize": "2rem", "color": "#c7d2fe"}),
-                 html.P("Define sequences in the sidebar and click Scan to find matches.",
-                        style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+                [
+                    html.I(
+                        className="bi bi-search",
+                        style={"fontSize": "2rem", "color": "#c7d2fe"},
+                    ),
+                    html.P(
+                        "Define sequences in the sidebar and click Scan to find matches.",
+                        style={
+                            "marginTop": "0.5rem",
+                            "color": "#9ca3af",
+                            "fontWeight": "600",
+                        },
+                    ),
+                ],
                 style={"padding": "3rem", "textAlign": "center"},
             )
         else:
@@ -2784,86 +4179,230 @@ def update_chart(data, scan_results, start_date, end_date):
                     body = html.P(f"Parse error: {error}", style={"color": "#ef4444"})
                 elif not matches:
                     badge = dbc.Badge("0 matches", color="warning", className="ms-2")
-                    body = html.P("No matches found in the loaded data.", style={"color": "#6b7280"})
+                    body = html.P(
+                        "No matches found in the loaded data.",
+                        style={"color": "#6b7280"},
+                    )
                 else:
-                    badge = dbc.Badge(f"{len(matches)} matches", color="success", className="ms-2")
+                    badge = dbc.Badge(
+                        f"{len(matches)} matches", color="success", className="ms-2"
+                    )
                     rows = []
                     for i, m in enumerate(matches[:50]):
-                        rows.append(html.Tr([
-                            html.Td(str(i + 1), style={"color": "#9ca3af", "width": "40px"}),
-                            html.Td(f"Candle {m['start_idx']} → {m['end_idx']}"),
-                            html.Td(m["start_ts"][:19]),
-                            html.Td(m["end_ts"][:19]),
-                        ]))
+                        rows.append(
+                            html.Tr(
+                                [
+                                    html.Td(
+                                        str(i + 1),
+                                        style={"color": "#9ca3af", "width": "40px"},
+                                    ),
+                                    html.Td(
+                                        f"Candle {m['start_idx']} → {m['end_idx']}"
+                                    ),
+                                    html.Td(m["start_ts"][:19]),
+                                    html.Td(m["end_ts"][:19]),
+                                ]
+                            )
+                        )
                     body_children: list = [
                         dbc.Table(
-                            [html.Thead(html.Tr([html.Th("#"), html.Th("Candle Range"), html.Th("Start"), html.Th("End")])),
-                             html.Tbody(rows)],
-                            bordered=True, hover=True, responsive=True, striped=True, size="sm",
+                            [
+                                html.Thead(
+                                    html.Tr(
+                                        [
+                                            html.Th("#"),
+                                            html.Th("Candle Range"),
+                                            html.Th("Start"),
+                                            html.Th("End"),
+                                        ]
+                                    )
+                                ),
+                                html.Tbody(rows),
+                            ],
+                            bordered=True,
+                            hover=True,
+                            responsive=True,
+                            striped=True,
+                            size="sm",
                             style={"fontSize": "0.85rem"},
                         )
                     ]
-                    
+
                     # Add followup outcomes table if available
                     if res.get("followup_outcomes"):
                         outcomes = res.get("followup_outcomes", [])
                         if outcomes:
                             outcome_rows = []
                             for outcome in outcomes:
-                                outcome_rows.append(html.Tr([
-                                    html.Td(outcome.get("followup", ""), style={"fontFamily": "monospace", "fontWeight": "600"}),
-                                    html.Td(str(outcome.get("count", 0))),
-                                    html.Td(f"{outcome.get('rate', 0.0):.1%}", style={"color": "#2563eb", "fontWeight": "600"}),
-                                ]))
-                            
+                                outcome_rows.append(
+                                    html.Tr(
+                                        [
+                                            html.Td(
+                                                outcome.get("followup", ""),
+                                                style={
+                                                    "fontFamily": "monospace",
+                                                    "fontWeight": "600",
+                                                },
+                                            ),
+                                            html.Td(str(outcome.get("count", 0))),
+                                            html.Td(
+                                                f"{outcome.get('rate', 0.0):.1%}",
+                                                style={
+                                                    "color": "#2563eb",
+                                                    "fontWeight": "600",
+                                                },
+                                            ),
+                                        ]
+                                    )
+                                )
+
                             body_children.append(html.Hr(style={"margin": "0.75rem 0"}))
-                            body_children.append(html.H6("Top Follow-up Outcomes", style={"fontSize": "0.85rem", "fontWeight": "700", "marginBottom": "0.5rem", "color": "#1f2937"}))
+                            body_children.append(
+                                html.H6(
+                                    "Top Follow-up Outcomes",
+                                    style={
+                                        "fontSize": "0.85rem",
+                                        "fontWeight": "700",
+                                        "marginBottom": "0.5rem",
+                                        "color": "#1f2937",
+                                    },
+                                )
+                            )
                             body_children.append(
                                 dbc.Table(
-                                    [html.Thead(html.Tr([html.Th("Sequence"), html.Th("Count"), html.Th("Rate")])),
-                                     html.Tbody(outcome_rows)],
-                                    bordered=True, hover=True, responsive=True, striped=True, size="sm",
+                                    [
+                                        html.Thead(
+                                            html.Tr(
+                                                [
+                                                    html.Th("Sequence"),
+                                                    html.Th("Count"),
+                                                    html.Th("Rate"),
+                                                ]
+                                            )
+                                        ),
+                                        html.Tbody(outcome_rows),
+                                    ],
+                                    bordered=True,
+                                    hover=True,
+                                    responsive=True,
+                                    striped=True,
+                                    size="sm",
                                     style={"fontSize": "0.8rem"},
                                 )
                             )
-                    
+
                     body = html.Div(body_children)
 
-                card = dbc.Card([
-                    dbc.CardHeader([
-                        html.Span(
-                            "\u25A0 ",
-                            style={"color": color, "fontSize": "1rem"},
+                card = dbc.Card(
+                    [
+                        dbc.CardHeader(
+                            [
+                                html.Span(
+                                    "\u25a0 ",
+                                    style={"color": color, "fontSize": "1rem"},
+                                ),
+                                html.Strong(seq_str, style={"fontFamily": "monospace"}),
+                                badge,
+                                html.Span(
+                                    f"  ({res.get('length', '?')} candles)",
+                                    style={
+                                        "color": "#9ca3af",
+                                        "fontSize": "0.8rem",
+                                        "marginLeft": "0.5rem",
+                                    },
+                                ),
+                                (
+                                    html.Span(
+                                        f"Followup: {res.get('followup_seq', '')} ({res.get('followup_success', 0)}/{res.get('followup_total', 0)}) {res.get('followup_rate', 0.0):.0%}",
+                                        style={
+                                            "color": "#2563eb",
+                                            "fontSize": "0.75rem",
+                                            "marginLeft": "0.5rem",
+                                        },
+                                    )
+                                    if res.get("followup_seq")
+                                    else None
+                                ),
+                                (
+                                    html.Span(
+                                        res.get("followup_error", ""),
+                                        style={
+                                            "color": "#b91c1c",
+                                            "fontSize": "0.75rem",
+                                            "marginLeft": "0.5rem",
+                                        },
+                                    )
+                                    if res.get("followup_error")
+                                    else None
+                                ),
+                                # Quick-action buttons
+                                html.Span(
+                                    [
+                                        dbc.Button(
+                                            [
+                                                html.I(
+                                                    className="bi bi-bar-chart-steps me-1"
+                                                ),
+                                                "Backtest",
+                                            ],
+                                            id={
+                                                "type": "goto-tab-btn",
+                                                "tab": "tab-backtest",
+                                                "idx": idx,
+                                            },
+                                            color="link",
+                                            size="sm",
+                                            style={
+                                                "fontSize": "0.7rem",
+                                                "padding": "0.15rem 0.4rem",
+                                                "fontWeight": "600",
+                                            },
+                                        ),
+                                        dbc.Button(
+                                            [
+                                                html.I(className="bi bi-grid-3x3 me-1"),
+                                                "Heatmap",
+                                            ],
+                                            id={
+                                                "type": "goto-tab-btn",
+                                                "tab": "tab-heatmap",
+                                                "idx": idx,
+                                            },
+                                            color="link",
+                                            size="sm",
+                                            style={
+                                                "fontSize": "0.7rem",
+                                                "padding": "0.15rem 0.4rem",
+                                                "fontWeight": "600",
+                                            },
+                                        ),
+                                        dbc.Button(
+                                            [
+                                                html.I(className="bi bi-graph-up me-1"),
+                                                "Stats",
+                                            ],
+                                            id={
+                                                "type": "goto-tab-btn",
+                                                "tab": "tab-stats",
+                                                "idx": idx,
+                                            },
+                                            color="link",
+                                            size="sm",
+                                            style={
+                                                "fontSize": "0.7rem",
+                                                "padding": "0.15rem 0.4rem",
+                                                "fontWeight": "600",
+                                            },
+                                        ),
+                                    ],
+                                    style={"float": "right"},
+                                ),
+                            ]
                         ),
-                        html.Strong(seq_str, style={"fontFamily": "monospace"}),
-                        badge,
-                        html.Span(f"  ({res.get('length', '?')} candles)", style={"color": "#9ca3af", "fontSize": "0.8rem", "marginLeft": "0.5rem"}),
-                        (html.Span(f"Followup: {res.get('followup_seq', '')} ({res.get('followup_success', 0)}/{res.get('followup_total', 0)}) {res.get('followup_rate', 0.0):.0%}", style={"color": "#2563eb", "fontSize": "0.75rem", "marginLeft": "0.5rem"}) if res.get('followup_seq') else None),
-                        (html.Span(res.get('followup_error', ''), style={"color": "#b91c1c", "fontSize": "0.75rem", "marginLeft": "0.5rem"}) if res.get('followup_error') else None),
-                        # Quick-action buttons
-                        html.Span([
-                            dbc.Button(
-                                [html.I(className="bi bi-bar-chart-steps me-1"), "Backtest"],
-                                id={"type": "goto-tab-btn", "tab": "tab-backtest", "idx": idx},
-                                color="link", size="sm",
-                                style={"fontSize": "0.7rem", "padding": "0.15rem 0.4rem", "fontWeight": "600"},
-                            ),
-                            dbc.Button(
-                                [html.I(className="bi bi-grid-3x3 me-1"), "Heatmap"],
-                                id={"type": "goto-tab-btn", "tab": "tab-heatmap", "idx": idx},
-                                color="link", size="sm",
-                                style={"fontSize": "0.7rem", "padding": "0.15rem 0.4rem", "fontWeight": "600"},
-                            ),
-                            dbc.Button(
-                                [html.I(className="bi bi-graph-up me-1"), "Stats"],
-                                id={"type": "goto-tab-btn", "tab": "tab-stats", "idx": idx},
-                                color="link", size="sm",
-                                style={"fontSize": "0.7rem", "padding": "0.15rem 0.4rem", "fontWeight": "600"},
-                            ),
-                        ], style={"float": "right"}),
-                    ]),
-                    dbc.CardBody(body),
-                ], className="mb-3")
+                        dbc.CardBody(body),
+                    ],
+                    className="mb-3",
+                )
 
                 cards.append(card)
 
@@ -2871,7 +4410,8 @@ def update_chart(data, scan_results, start_date, end_date):
 
         candle_badge = dbc.Badge(
             [html.I(className="bi bi-bar-chart-steps me-1"), f"{len(df)} candles"],
-            color="light", text_color="secondary",
+            color="light",
+            text_color="secondary",
             style={"fontSize": "0.78rem", "fontWeight": "600"},
         )
         return fig, matches_div, candle_badge, debug_text
@@ -2879,11 +4419,23 @@ def update_chart(data, scan_results, start_date, end_date):
     except Exception as e:
         logger.exception("[CALLBACK ERROR] update_chart: %s", e)
         err_fig = go.Figure()
-        err_fig.add_annotation(text=f"ERROR: {str(e)[:80]}", xref='paper', yref='paper',
-                               x=0.5, y=0.5, showarrow=False, font=dict(size=14, color='#ef4444'))
-        err_fig.update_layout(height=400, template='plotly_white', dragmode='pan')
-        err_div = html.Div(f"Error: {str(e)[:100]}", style={"color": "#ef4444", "padding": "1rem"})
-        err_debug = html.Div(f"update_chart error: {str(e)}", style={"color": "#ef4444", "fontSize": "0.8rem"})
+        err_fig.add_annotation(
+            text=f"ERROR: {str(e)[:80]}",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=14, color="#ef4444"),
+        )
+        err_fig.update_layout(height=400, template="plotly_white", dragmode="pan")
+        err_div = html.Div(
+            f"Error: {str(e)[:100]}", style={"color": "#ef4444", "padding": "1rem"}
+        )
+        err_debug = html.Div(
+            f"update_chart error: {str(e)}",
+            style={"color": "#ef4444", "fontSize": "0.8rem"},
+        )
         return err_fig, err_div, "", err_debug
 
 
@@ -2901,6 +4453,7 @@ def switch_tab_from_match(n_clicks_list):
     # Extract which button was clicked
     triggered_id = ctx.triggered[0]["prop_id"].rsplit(".", 1)[0]
     import json as _json
+
     btn_info = _json.loads(triggered_id)
     return btn_info["tab"]
 
@@ -2915,9 +4468,20 @@ def auto_discover(data):
     """Automatically discover the most common colour sequences in the loaded data."""
     if not data:
         return html.Div(
-            [html.I(className="bi bi-lightbulb", style={"fontSize": "2rem", "color": "#c7d2fe"}),
-             html.P("Load data to auto-discover common candle sequences.",
-                    style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+            [
+                html.I(
+                    className="bi bi-lightbulb",
+                    style={"fontSize": "2rem", "color": "#c7d2fe"},
+                ),
+                html.P(
+                    "Load data to auto-discover common candle sequences.",
+                    style={
+                        "marginTop": "0.5rem",
+                        "color": "#9ca3af",
+                        "fontWeight": "600",
+                    },
+                ),
+            ],
             style={"padding": "3rem", "textAlign": "center"},
         )
 
@@ -2928,7 +4492,10 @@ def auto_discover(data):
         discovered = discover_color_sequences(df, min_len=3, max_len=8, top_k=25)
 
         if not discovered:
-            return html.Div("No recurring sequences found.", style={"color": "#6b7280", "padding": "1rem"})
+            return html.Div(
+                "No recurring sequences found.",
+                style={"color": "#6b7280", "padding": "1rem"},
+            )
 
         rows = []
         for i, d in enumerate(discovered):
@@ -2945,32 +4512,63 @@ def auto_discover(data):
                 wr_color = "#9ca3af"
                 ret_color = "#9ca3af"
 
-            rows.append(html.Tr([
-                html.Td(str(i + 1), style={"color": "#9ca3af", "width": "40px"}),
-                html.Td(
-                    html.Code(d["sequence"], style={"fontSize": "0.85rem"}),
-                ),
-                html.Td(str(d["length"])),
-                html.Td(str(d["count"]), style={"fontWeight": "700"}),
-                html.Td(f"{d['support']:.4f}"),
-                html.Td(wr, style={"fontWeight": "700", "color": wr_color}),
-                html.Td(avg_ret, style={"fontWeight": "700", "color": ret_color}),
-            ]))
+            rows.append(
+                html.Tr(
+                    [
+                        html.Td(
+                            str(i + 1), style={"color": "#9ca3af", "width": "40px"}
+                        ),
+                        html.Td(
+                            html.Code(d["sequence"], style={"fontSize": "0.85rem"}),
+                        ),
+                        html.Td(str(d["length"])),
+                        html.Td(str(d["count"]), style={"fontWeight": "700"}),
+                        html.Td(f"{d['support']:.4f}"),
+                        html.Td(wr, style={"fontWeight": "700", "color": wr_color}),
+                        html.Td(
+                            avg_ret, style={"fontWeight": "700", "color": ret_color}
+                        ),
+                    ]
+                )
+            )
 
         header = html.Div(
-            [html.I(className="bi bi-stars me-2"),
-             f"Top {len(discovered)} recurring colour sequences (length 3-8)"],
+            [
+                html.I(className="bi bi-stars me-2"),
+                f"Top {len(discovered)} recurring colour sequences (length 3-8)",
+            ],
             style={
-                "padding": "0.75rem 1rem", "backgroundColor": "#f0f0ff",
-                "borderRadius": "8px", "fontWeight": "600", "color": "#4f46e5",
+                "padding": "0.75rem 1rem",
+                "backgroundColor": "#f0f0ff",
+                "borderRadius": "8px",
+                "fontWeight": "600",
+                "color": "#4f46e5",
                 "marginBottom": "0.75rem",
             },
         )
 
         table = dbc.Table(
-            [html.Thead(html.Tr([html.Th("#"), html.Th("Sequence"), html.Th("Length"), html.Th("Count"), html.Th("Support"), html.Th("Win Rate"), html.Th("Avg Return")])),
-             html.Tbody(rows)],
-            bordered=True, hover=True, responsive=True, striped=True, size="sm",
+            [
+                html.Thead(
+                    html.Tr(
+                        [
+                            html.Th("#"),
+                            html.Th("Sequence"),
+                            html.Th("Length"),
+                            html.Th("Count"),
+                            html.Th("Support"),
+                            html.Th("Win Rate"),
+                            html.Th("Avg Return"),
+                        ]
+                    )
+                ),
+                html.Tbody(rows),
+            ],
+            bordered=True,
+            hover=True,
+            responsive=True,
+            striped=True,
+            size="sm",
             style={"fontSize": "0.9rem"},
         )
 
@@ -2979,15 +4577,26 @@ def auto_discover(data):
             style={"color": "#9ca3af", "display": "block", "marginTop": "0.75rem"},
         )
 
-        legend = html.Div([
-            html.Small("Win Rate & Avg Return are calculated over a 5-candle hold period following each occurrence.", style={"color": "#6b7280", "display": "block", "marginTop": "0.25rem"}),
-        ])
+        legend = html.Div(
+            [
+                html.Small(
+                    "Win Rate & Avg Return are calculated over a 5-candle hold period following each occurrence.",
+                    style={
+                        "color": "#6b7280",
+                        "display": "block",
+                        "marginTop": "0.25rem",
+                    },
+                ),
+            ]
+        )
 
         return html.Div([header, table, tip, legend])
 
     except Exception as e:
         logger.exception("auto_discover error: %s", e)
-        return html.Div(f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"})
+        return html.Div(
+            f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"}
+        )
 
 
 # Statistics & Predictions tab -----------------------------------------
@@ -3006,17 +4615,39 @@ def update_stats_tab(scan_results, data, hold_candles, lookahead):
 
     if not data:
         return html.Div(
-            [html.I(className="bi bi-bar-chart-line", style={"fontSize": "2rem", "color": "#c7d2fe"}),
-             html.P("Load data to see sequence statistics.",
-                    style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+            [
+                html.I(
+                    className="bi bi-bar-chart-line",
+                    style={"fontSize": "2rem", "color": "#c7d2fe"},
+                ),
+                html.P(
+                    "Load data to see sequence statistics.",
+                    style={
+                        "marginTop": "0.5rem",
+                        "color": "#9ca3af",
+                        "fontWeight": "600",
+                    },
+                ),
+            ],
             style={"padding": "3rem", "textAlign": "center"},
         )
 
     if not scan_results:
         return html.Div(
-            [html.I(className="bi bi-graph-up-arrow", style={"fontSize": "2rem", "color": "#c7d2fe"}),
-             html.P("Scan sequences first to see statistics and predictions.",
-                    style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+            [
+                html.I(
+                    className="bi bi-graph-up-arrow",
+                    style={"fontSize": "2rem", "color": "#c7d2fe"},
+                ),
+                html.P(
+                    "Scan sequences first to see statistics and predictions.",
+                    style={
+                        "marginTop": "0.5rem",
+                        "color": "#9ca3af",
+                        "fontWeight": "600",
+                    },
+                ),
+            ],
             style={"padding": "3rem", "textAlign": "center"},
         )
 
@@ -3061,56 +4692,271 @@ def update_stats_tab(scan_results, data, hold_candles, lookahead):
                 ret_color = "#10b981" if avg_ret >= 0 else "#ef4444"
 
                 stats_items.append(
-                    dbc.Row([
-                        dbc.Col(html.Div([
-                            html.H6(f"Win Rate ({hold_candles}-candle hold)", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
-                            html.H4(f"{wr:.1f}%", style={"color": wr_color, "fontWeight": "800", "margin": "0"}),
-                        ], className="stat-card"), width=3),
-                        dbc.Col(html.Div([
-                            html.H6("Avg Return", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
-                            html.H4(f"{avg_ret:+.2f}%", style={"color": ret_color, "fontWeight": "800", "margin": "0"}),
-                        ], className="stat-card"), width=2),
-                        dbc.Col(html.Div([
-                            html.H6("Max Gain", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
-                            html.H4(f"{stats['max_gain_pct']:+.2f}%", style={"color": "#10b981", "fontWeight": "800", "margin": "0"}),
-                        ], className="stat-card"), width=2),
-                        dbc.Col(html.Div([
-                            html.H6("Max Loss", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
-                            html.H4(f"{stats['max_loss_pct']:+.2f}%", style={"color": "#ef4444", "fontWeight": "800", "margin": "0"}),
-                        ], className="stat-card"), width=2),
-                    ], className="g-2 mb-2")
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                html.Div(
+                                    [
+                                        html.H6(
+                                            f"Win Rate ({hold_candles}-candle hold)",
+                                            style={
+                                                "color": "#6b7280",
+                                                "fontSize": "0.7rem",
+                                                "textTransform": "uppercase",
+                                                "letterSpacing": "1px",
+                                                "marginBottom": "4px",
+                                            },
+                                        ),
+                                        html.H4(
+                                            f"{wr:.1f}%",
+                                            style={
+                                                "color": wr_color,
+                                                "fontWeight": "800",
+                                                "margin": "0",
+                                            },
+                                        ),
+                                    ],
+                                    className="stat-card",
+                                ),
+                                width=3,
+                            ),
+                            dbc.Col(
+                                html.Div(
+                                    [
+                                        html.H6(
+                                            "Avg Return",
+                                            style={
+                                                "color": "#6b7280",
+                                                "fontSize": "0.7rem",
+                                                "textTransform": "uppercase",
+                                                "letterSpacing": "1px",
+                                                "marginBottom": "4px",
+                                            },
+                                        ),
+                                        html.H4(
+                                            f"{avg_ret:+.2f}%",
+                                            style={
+                                                "color": ret_color,
+                                                "fontWeight": "800",
+                                                "margin": "0",
+                                            },
+                                        ),
+                                    ],
+                                    className="stat-card",
+                                ),
+                                width=2,
+                            ),
+                            dbc.Col(
+                                html.Div(
+                                    [
+                                        html.H6(
+                                            "Max Gain",
+                                            style={
+                                                "color": "#6b7280",
+                                                "fontSize": "0.7rem",
+                                                "textTransform": "uppercase",
+                                                "letterSpacing": "1px",
+                                                "marginBottom": "4px",
+                                            },
+                                        ),
+                                        html.H4(
+                                            f"{stats['max_gain_pct']:+.2f}%",
+                                            style={
+                                                "color": "#10b981",
+                                                "fontWeight": "800",
+                                                "margin": "0",
+                                            },
+                                        ),
+                                    ],
+                                    className="stat-card",
+                                ),
+                                width=2,
+                            ),
+                            dbc.Col(
+                                html.Div(
+                                    [
+                                        html.H6(
+                                            "Max Loss",
+                                            style={
+                                                "color": "#6b7280",
+                                                "fontSize": "0.7rem",
+                                                "textTransform": "uppercase",
+                                                "letterSpacing": "1px",
+                                                "marginBottom": "4px",
+                                            },
+                                        ),
+                                        html.H4(
+                                            f"{stats['max_loss_pct']:+.2f}%",
+                                            style={
+                                                "color": "#ef4444",
+                                                "fontWeight": "800",
+                                                "margin": "0",
+                                            },
+                                        ),
+                                    ],
+                                    className="stat-card",
+                                ),
+                                width=2,
+                            ),
+                        ],
+                        className="g-2 mb-2",
+                    )
                 )
 
                 # Confidence scoring row
                 if conf:
                     conf_color = "#10b981" if conf["is_significant"] else "#f59e0b"
-                    z_color = "#10b981" if abs(conf.get("z_score", 0)) > 1.96 else "#6b7280"
+                    z_color = (
+                        "#10b981" if abs(conf.get("z_score", 0)) > 1.96 else "#6b7280"
+                    )
                     stats_items.append(
-                        dbc.Row([
-                            dbc.Col(html.Div([
-                                html.H6("Confidence", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
-                                html.Span(conf["confidence_level"], style={"color": conf_color, "fontWeight": "700", "fontSize": "0.85rem"}),
-                            ], className="stat-card"), width=3),
-                            dbc.Col(html.Div([
-                                html.H6("Z-Score", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
-                                html.H4(f"{conf.get('z_score', 0):.2f}", style={"color": z_color, "fontWeight": "800", "margin": "0", "fontSize": "1.5rem"}),
-                            ], className="stat-card"), width=2),
-                            dbc.Col(html.Div([
-                                html.H6("P-Value", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
-                                html.H4(f"{conf.get('p_value', 1):.4f}", style={"color": "#374151", "fontWeight": "700", "margin": "0", "fontSize": "1.2rem"}),
-                            ], className="stat-card"), width=2),
-                            dbc.Col(html.Div([
-                                html.H6("Baseline Avg", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
-                                html.H4(f"{conf.get('baseline_avg', 0):+.2f}%", style={"color": "#6b7280", "fontWeight": "700", "margin": "0", "fontSize": "1.2rem"}),
-                            ], className="stat-card"), width=2),
-                            dbc.Col(html.Div([
-                                html.H6("Significant?", style={"color": "#6b7280", "fontSize": "0.7rem", "textTransform": "uppercase", "letterSpacing": "1px", "marginBottom": "4px"}),
-                                html.H4(
-                                    "YES" if conf["is_significant"] else "NO",
-                                    style={"color": "#10b981" if conf["is_significant"] else "#ef4444", "fontWeight": "800", "margin": "0", "fontSize": "1.5rem"},
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    html.Div(
+                                        [
+                                            html.H6(
+                                                "Confidence",
+                                                style={
+                                                    "color": "#6b7280",
+                                                    "fontSize": "0.7rem",
+                                                    "textTransform": "uppercase",
+                                                    "letterSpacing": "1px",
+                                                    "marginBottom": "4px",
+                                                },
+                                            ),
+                                            html.Span(
+                                                conf["confidence_level"],
+                                                style={
+                                                    "color": conf_color,
+                                                    "fontWeight": "700",
+                                                    "fontSize": "0.85rem",
+                                                },
+                                            ),
+                                        ],
+                                        className="stat-card",
+                                    ),
+                                    width=3,
                                 ),
-                            ], className="stat-card"), width=2),
-                        ], className="g-2 mb-3")
+                                dbc.Col(
+                                    html.Div(
+                                        [
+                                            html.H6(
+                                                "Z-Score",
+                                                style={
+                                                    "color": "#6b7280",
+                                                    "fontSize": "0.7rem",
+                                                    "textTransform": "uppercase",
+                                                    "letterSpacing": "1px",
+                                                    "marginBottom": "4px",
+                                                },
+                                            ),
+                                            html.H4(
+                                                f"{conf.get('z_score', 0):.2f}",
+                                                style={
+                                                    "color": z_color,
+                                                    "fontWeight": "800",
+                                                    "margin": "0",
+                                                    "fontSize": "1.5rem",
+                                                },
+                                            ),
+                                        ],
+                                        className="stat-card",
+                                    ),
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    html.Div(
+                                        [
+                                            html.H6(
+                                                "P-Value",
+                                                style={
+                                                    "color": "#6b7280",
+                                                    "fontSize": "0.7rem",
+                                                    "textTransform": "uppercase",
+                                                    "letterSpacing": "1px",
+                                                    "marginBottom": "4px",
+                                                },
+                                            ),
+                                            html.H4(
+                                                f"{conf.get('p_value', 1):.4f}",
+                                                style={
+                                                    "color": "#374151",
+                                                    "fontWeight": "700",
+                                                    "margin": "0",
+                                                    "fontSize": "1.2rem",
+                                                },
+                                            ),
+                                        ],
+                                        className="stat-card",
+                                    ),
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    html.Div(
+                                        [
+                                            html.H6(
+                                                "Baseline Avg",
+                                                style={
+                                                    "color": "#6b7280",
+                                                    "fontSize": "0.7rem",
+                                                    "textTransform": "uppercase",
+                                                    "letterSpacing": "1px",
+                                                    "marginBottom": "4px",
+                                                },
+                                            ),
+                                            html.H4(
+                                                f"{conf.get('baseline_avg', 0):+.2f}%",
+                                                style={
+                                                    "color": "#6b7280",
+                                                    "fontWeight": "700",
+                                                    "margin": "0",
+                                                    "fontSize": "1.2rem",
+                                                },
+                                            ),
+                                        ],
+                                        className="stat-card",
+                                    ),
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    html.Div(
+                                        [
+                                            html.H6(
+                                                "Significant?",
+                                                style={
+                                                    "color": "#6b7280",
+                                                    "fontSize": "0.7rem",
+                                                    "textTransform": "uppercase",
+                                                    "letterSpacing": "1px",
+                                                    "marginBottom": "4px",
+                                                },
+                                            ),
+                                            html.H4(
+                                                (
+                                                    "YES"
+                                                    if conf["is_significant"]
+                                                    else "NO"
+                                                ),
+                                                style={
+                                                    "color": (
+                                                        "#10b981"
+                                                        if conf["is_significant"]
+                                                        else "#ef4444"
+                                                    ),
+                                                    "fontWeight": "800",
+                                                    "margin": "0",
+                                                    "fontSize": "1.5rem",
+                                                },
+                                            ),
+                                        ],
+                                        className="stat-card",
+                                    ),
+                                    width=2,
+                                ),
+                            ],
+                            className="g-2 mb-3",
+                        )
                     )
 
             # Build prediction table
@@ -3122,73 +4968,186 @@ def update_stats_tab(scan_results, data, hold_candles, lookahead):
                     g_pct = d.get("G_pct", 0) * 100
                     doji_pct = d.get("Doji_pct", 0) * 100
                     best = max(("R", "G", "Doji"), key=lambda k: d.get(f"{k}_pct", 0))
-                    pred_rows.append(html.Tr([
-                        html.Td(f"+{d['position']}", style={"fontWeight": "700"}),
-                        html.Td(
-                            html.Div(
-                                style={"display": "flex", "gap": "4px", "alignItems": "center"},
-                                children=[
-                                    html.Div(style={"width": f"{r_pct}%", "minWidth": "2px" if r_pct > 0 else "0", "height": "18px", "background": "#ef4444", "borderRadius": "4px"}),
-                                    html.Div(style={"width": f"{g_pct}%", "minWidth": "2px" if g_pct > 0 else "0", "height": "18px", "background": "#10b981", "borderRadius": "4px"}),
-                                    html.Div(style={"width": f"{doji_pct}%", "minWidth": "2px" if doji_pct > 0 else "0", "height": "18px", "background": "#6366f1", "borderRadius": "4px"}),
-                                ]
-                            )
-                        ),
-                        html.Td(f"{r_pct:.0f}%", style={"color": "#ef4444", "fontWeight": "600"}),
-                        html.Td(f"{g_pct:.0f}%", style={"color": "#10b981", "fontWeight": "600"}),
-                        html.Td(f"{doji_pct:.0f}%", style={"color": "#6366f1", "fontWeight": "600"}),
-                        html.Td(html.Strong(best), style={"color": "#1f2937"}),
-                    ]))
+                    pred_rows.append(
+                        html.Tr(
+                            [
+                                html.Td(
+                                    f"+{d['position']}", style={"fontWeight": "700"}
+                                ),
+                                html.Td(
+                                    html.Div(
+                                        style={
+                                            "display": "flex",
+                                            "gap": "4px",
+                                            "alignItems": "center",
+                                        },
+                                        children=[
+                                            html.Div(
+                                                style={
+                                                    "width": f"{r_pct}%",
+                                                    "minWidth": (
+                                                        "2px" if r_pct > 0 else "0"
+                                                    ),
+                                                    "height": "18px",
+                                                    "background": "#ef4444",
+                                                    "borderRadius": "4px",
+                                                }
+                                            ),
+                                            html.Div(
+                                                style={
+                                                    "width": f"{g_pct}%",
+                                                    "minWidth": (
+                                                        "2px" if g_pct > 0 else "0"
+                                                    ),
+                                                    "height": "18px",
+                                                    "background": "#10b981",
+                                                    "borderRadius": "4px",
+                                                }
+                                            ),
+                                            html.Div(
+                                                style={
+                                                    "width": f"{doji_pct}%",
+                                                    "minWidth": (
+                                                        "2px" if doji_pct > 0 else "0"
+                                                    ),
+                                                    "height": "18px",
+                                                    "background": "#6366f1",
+                                                    "borderRadius": "4px",
+                                                }
+                                            ),
+                                        ],
+                                    )
+                                ),
+                                html.Td(
+                                    f"{r_pct:.0f}%",
+                                    style={"color": "#ef4444", "fontWeight": "600"},
+                                ),
+                                html.Td(
+                                    f"{g_pct:.0f}%",
+                                    style={"color": "#10b981", "fontWeight": "600"},
+                                ),
+                                html.Td(
+                                    f"{doji_pct:.0f}%",
+                                    style={"color": "#6366f1", "fontWeight": "600"},
+                                ),
+                                html.Td(html.Strong(best), style={"color": "#1f2937"}),
+                            ]
+                        )
+                    )
 
                 pred_items.append(
-                    html.Div([
-                        html.H6([
-                            html.I(className="bi bi-lightning-fill me-1"),
-                            f"What Comes Next? (predicted from {prediction['total_occurrences']} occurrences)"
-                        ], style={"fontWeight": "700", "color": "#4f46e5", "marginBottom": "0.5rem"}),
-                        html.P([
-                            "Most likely continuation: ",
-                            html.Code(prediction["most_likely_next"] or "—", style={"fontSize": "0.9rem"}),
-                        ], style={"marginBottom": "0.5rem", "color": "#374151"}),
-                        dbc.Table(
-                            [html.Thead(html.Tr([
-                                html.Th("Candle"), html.Th("Distribution"),
-                                html.Th("Red"), html.Th("Green"), html.Th("Doji"), html.Th("Likely"),
-                            ])),
-                             html.Tbody(pred_rows)],
-                            bordered=True, hover=True, responsive=True, striped=True, size="sm",
-                            style={"fontSize": "0.85rem"},
-                        ),
-                    ], style={"marginTop": "0.75rem"})
+                    html.Div(
+                        [
+                            html.H6(
+                                [
+                                    html.I(className="bi bi-lightning-fill me-1"),
+                                    f"What Comes Next? (predicted from {prediction['total_occurrences']} occurrences)",
+                                ],
+                                style={
+                                    "fontWeight": "700",
+                                    "color": "#4f46e5",
+                                    "marginBottom": "0.5rem",
+                                },
+                            ),
+                            html.P(
+                                [
+                                    "Most likely continuation: ",
+                                    html.Code(
+                                        prediction["most_likely_next"] or "—",
+                                        style={"fontSize": "0.9rem"},
+                                    ),
+                                ],
+                                style={"marginBottom": "0.5rem", "color": "#374151"},
+                            ),
+                            dbc.Table(
+                                [
+                                    html.Thead(
+                                        html.Tr(
+                                            [
+                                                html.Th("Candle"),
+                                                html.Th("Distribution"),
+                                                html.Th("Red"),
+                                                html.Th("Green"),
+                                                html.Th("Doji"),
+                                                html.Th("Likely"),
+                                            ]
+                                        )
+                                    ),
+                                    html.Tbody(pred_rows),
+                                ],
+                                bordered=True,
+                                hover=True,
+                                responsive=True,
+                                striped=True,
+                                size="sm",
+                                style={"fontSize": "0.85rem"},
+                            ),
+                        ],
+                        style={"marginTop": "0.75rem"},
+                    )
                 )
 
-            card = dbc.Card([
-                dbc.CardHeader([
-                    html.Span("\u25A0 ", style={"color": color, "fontSize": "1rem"}),
-                    html.Strong(seq_str, style={"fontFamily": "monospace"}),
-                    dbc.Badge(f"{len(matches)} matches", color="success", className="ms-2"),
-                ]),
-                dbc.CardBody(stats_items + pred_items if (stats_items or pred_items) else [
-                    html.P("Not enough data for analysis.", style={"color": "#9ca3af"})
-                ]),
-            ], className="mb-3")
+            card = dbc.Card(
+                [
+                    dbc.CardHeader(
+                        [
+                            html.Span(
+                                "\u25a0 ", style={"color": color, "fontSize": "1rem"}
+                            ),
+                            html.Strong(seq_str, style={"fontFamily": "monospace"}),
+                            dbc.Badge(
+                                f"{len(matches)} matches",
+                                color="success",
+                                className="ms-2",
+                            ),
+                        ]
+                    ),
+                    dbc.CardBody(
+                        stats_items + pred_items
+                        if (stats_items or pred_items)
+                        else [
+                            html.P(
+                                "Not enough data for analysis.",
+                                style={"color": "#9ca3af"},
+                            )
+                        ]
+                    ),
+                ],
+                className="mb-3",
+            )
 
             sections.append(card)
 
         if not sections:
             return html.Div(
-                [html.I(className="bi bi-exclamation-circle", style={"fontSize": "1.5rem", "color": "#f59e0b"}),
-                 html.P("No matched sequences to analyze. Try scanning for sequences with at least 1 match.",
-                        style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+                [
+                    html.I(
+                        className="bi bi-exclamation-circle",
+                        style={"fontSize": "1.5rem", "color": "#f59e0b"},
+                    ),
+                    html.P(
+                        "No matched sequences to analyze. Try scanning for sequences with at least 1 match.",
+                        style={
+                            "marginTop": "0.5rem",
+                            "color": "#9ca3af",
+                            "fontWeight": "600",
+                        },
+                    ),
+                ],
                 style={"padding": "3rem", "textAlign": "center"},
             )
 
         header = html.Div(
-            [html.I(className="bi bi-bar-chart-line me-2"),
-             "Sequence Outcome Statistics & Predictions"],
+            [
+                html.I(className="bi bi-bar-chart-line me-2"),
+                "Sequence Outcome Statistics & Predictions",
+            ],
             style={
-                "padding": "0.75rem 1rem", "backgroundColor": "#fefce8",
-                "borderRadius": "8px", "fontWeight": "600", "color": "#854d0e",
+                "padding": "0.75rem 1rem",
+                "backgroundColor": "#fefce8",
+                "borderRadius": "8px",
+                "fontWeight": "600",
+                "color": "#854d0e",
                 "marginBottom": "0.75rem",
             },
         )
@@ -3197,7 +5156,9 @@ def update_stats_tab(scan_results, data, hold_candles, lookahead):
 
     except Exception as e:
         logger.exception("update_stats_tab error: %s", e)
-        return html.Div(f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"})
+        return html.Div(
+            f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"}
+        )
 
 
 # History dropdown refresh  -------------------------------------------
@@ -3207,8 +5168,11 @@ def update_stats_tab(scan_results, data, hold_candles, lookahead):
 )
 def refresh_history(_):
     from candle_patterns.storage import list_uploads
+
     rows = list_uploads(limit=200)
-    return [{"label": f"{r['stored_at']} - {r['filename']}", "value": r["id"]} for r in rows]
+    return [
+        {"label": f"{r['stored_at']} - {r['filename']}", "value": r["id"]} for r in rows
+    ]
 
 
 # Run cleanup (with confirmation) ------------------------------------
@@ -3230,9 +5194,13 @@ def run_cleanup(submit_n):
     if not submit_n:
         return dash.no_update
     from candle_patterns.storage import cleanup_old_uploads
+
     removed = cleanup_old_uploads(retention_days=30)
     return html.Div(
-        [html.I(className="bi bi-check-circle me-1"), f"Removed {removed} old uploads/detections"],
+        [
+            html.I(className="bi bi-check-circle me-1"),
+            f"Removed {removed} old uploads/detections",
+        ],
         style={"color": "#10b981", "fontWeight": "600"},
     )
 
@@ -3273,31 +5241,47 @@ def show_pattern_detail(clickData, nclose, is_open, current_data):
         x = pt.get("x")
         body_items = [
             html.H5("Candle Detail", style={"fontWeight": "700", "color": "#4f46e5"}),
-            html.P([html.I(className="bi bi-clock me-2"), f"Timestamp: {x}"], style={"color": "#6b7280"}),
+            html.P(
+                [html.I(className="bi bi-clock me-2"), f"Timestamp: {x}"],
+                style={"color": "#6b7280"},
+            ),
         ]
         try:
             if current_data:
-                df_all = pd.DataFrame(current_data.get('df', []))
+                df_all = pd.DataFrame(current_data.get("df", []))
                 if len(df_all):
-                    df_all['timestamp'] = pd.to_datetime(df_all['timestamp'], utc=True)
+                    df_all["timestamp"] = pd.to_datetime(df_all["timestamp"], utc=True)
                     ts = pd.to_datetime(x, utc=True)
-                    idx = df_all.index[(df_all['timestamp'] - ts).abs().argsort()[:1]][0]
+                    idx = df_all.index[(df_all["timestamp"] - ts).abs().argsort()[:1]][
+                        0
+                    ]
                     start = max(0, idx - 5)
                     end = min(len(df_all) - 1, idx + 5)
-                    window = df_all.iloc[start:end + 1]
-                    mini_fig = go.Figure(data=[go.Candlestick(
-                        x=window['timestamp'], open=window['open'],
-                        high=window['high'], low=window['low'], close=window['close'],
-                        increasing_line_color='#10b981', decreasing_line_color='#ef4444',
-                    )])
+                    window = df_all.iloc[start : end + 1]
+                    mini_fig = go.Figure(
+                        data=[
+                            go.Candlestick(
+                                x=window["timestamp"],
+                                open=window["open"],
+                                high=window["high"],
+                                low=window["low"],
+                                close=window["close"],
+                                increasing_line_color="#10b981",
+                                decreasing_line_color="#ef4444",
+                            )
+                        ]
+                    )
                     mini_fig.update_layout(
-                        margin=dict(l=40, r=10, t=10, b=30), height=250,
-                        template='plotly_white',
+                        margin=dict(l=40, r=10, t=10, b=30),
+                        height=250,
+                        template="plotly_white",
                         xaxis=dict(rangeslider=dict(visible=False)),
                     )
-                    body_items.append(dcc.Graph(figure=mini_fig, config={'displayModeBar': False}))
+                    body_items.append(
+                        dcc.Graph(figure=mini_fig, config={"displayModeBar": False})
+                    )
         except Exception as e:
-            logger.debug('mini-chart build error: %s', e)
+            logger.debug("mini-chart build error: %s", e)
         return True, html.Div(body_items)
     return False, ""
 
@@ -3310,21 +5294,75 @@ def show_pattern_detail(clickData, nclose, is_open, current_data):
 )
 def update_stats(_, __):
     from candle_patterns.storage import list_uploads
+
     rows = list_uploads(limit=100)
     total_uploads = len(rows)
     last_upload = rows[0] if rows else None
-    last_label = f"{last_upload['stored_at'].split(' ')[0]} - {last_upload['filename']}" if last_upload else "-"
+    last_label = (
+        f"{last_upload['stored_at'].split(' ')[0]} - {last_upload['filename']}"
+        if last_upload
+        else "-"
+    )
 
-    return dbc.Row([
-        dbc.Col(dbc.Card(dbc.CardBody([
-            html.H6("Total Uploads", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
-            html.H4(str(total_uploads), style={"color": "#667eea", "fontWeight": "700"}),
-        ]), className="stat-card"), width=6),
-        dbc.Col(dbc.Card(dbc.CardBody([
-            html.H6("Last Upload", style={"color": "#6c757d", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "1px", "fontWeight": "600", "marginBottom": "0.5rem"}),
-            html.P(last_label, style={"color": "#495057", "fontSize": "0.85rem", "margin": "0"}),
-        ]), className="stat-card"), width=6),
-    ], className="g-2 mt-3")
+    return dbc.Row(
+        [
+            dbc.Col(
+                dbc.Card(
+                    dbc.CardBody(
+                        [
+                            html.H6(
+                                "Total Uploads",
+                                style={
+                                    "color": "#6c757d",
+                                    "fontSize": "0.75rem",
+                                    "textTransform": "uppercase",
+                                    "letterSpacing": "1px",
+                                    "fontWeight": "600",
+                                    "marginBottom": "0.5rem",
+                                },
+                            ),
+                            html.H4(
+                                str(total_uploads),
+                                style={"color": "#667eea", "fontWeight": "700"},
+                            ),
+                        ]
+                    ),
+                    className="stat-card",
+                ),
+                width=6,
+            ),
+            dbc.Col(
+                dbc.Card(
+                    dbc.CardBody(
+                        [
+                            html.H6(
+                                "Last Upload",
+                                style={
+                                    "color": "#6c757d",
+                                    "fontSize": "0.75rem",
+                                    "textTransform": "uppercase",
+                                    "letterSpacing": "1px",
+                                    "fontWeight": "600",
+                                    "marginBottom": "0.5rem",
+                                },
+                            ),
+                            html.P(
+                                last_label,
+                                style={
+                                    "color": "#495057",
+                                    "fontSize": "0.85rem",
+                                    "margin": "0",
+                                },
+                            ),
+                        ]
+                    ),
+                    className="stat-card",
+                ),
+                width=6,
+            ),
+        ],
+        className="g-2 mt-3",
+    )
 
 
 # Export ---------------------------------------------------------------
@@ -3357,10 +5395,18 @@ def export_data(n_matches, n_discovery, n_chart, scan_results, data):
                 rows.append({"sequence": res["seq_str"], **m})
         if rows:
             ok_msg = html.Div(
-                [html.I(className="bi bi-check-circle me-1"), f"Exported {len(rows)} matches"],
+                [
+                    html.I(className="bi bi-check-circle me-1"),
+                    f"Exported {len(rows)} matches",
+                ],
                 style={"color": "#10b981", "fontWeight": "600", "fontSize": "0.8rem"},
             )
-            return send_data_frame(pd.DataFrame(rows).to_csv, "sequence_matches.csv", index=False), ok_msg
+            return (
+                send_data_frame(
+                    pd.DataFrame(rows).to_csv, "sequence_matches.csv", index=False
+                ),
+                ok_msg,
+            )
         return dash.no_update, no_data_msg
 
     elif triggered == "export-aggregated-btn":
@@ -3369,29 +5415,50 @@ def export_data(n_matches, n_discovery, n_chart, scan_results, data):
         discovered = discover_color_sequences(df, min_len=3, max_len=8, top_k=25)
         if discovered:
             ok_msg = html.Div(
-                [html.I(className="bi bi-check-circle me-1"), f"Exported {len(discovered)} sequences"],
+                [
+                    html.I(className="bi bi-check-circle me-1"),
+                    f"Exported {len(discovered)} sequences",
+                ],
                 style={"color": "#10b981", "fontWeight": "600", "fontSize": "0.8rem"},
             )
-            return send_data_frame(pd.DataFrame(discovered).to_csv, "discovered_sequences.csv", index=False), ok_msg
+            return (
+                send_data_frame(
+                    pd.DataFrame(discovered).to_csv,
+                    "discovered_sequences.csv",
+                    index=False,
+                ),
+                ok_msg,
+            )
         return dash.no_update, no_data_msg
 
     elif triggered == "export-chart-btn":
-        df = pd.DataFrame(data['df'])
-        df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
-        fig = go.Figure(data=[go.Candlestick(x=df['timestamp'], open=df['open'],
-                                              high=df['high'], low=df['low'], close=df['close'])])
+        df = pd.DataFrame(data["df"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+        fig = go.Figure(
+            data=[
+                go.Candlestick(
+                    x=df["timestamp"],
+                    open=df["open"],
+                    high=df["high"],
+                    low=df["low"],
+                    close=df["close"],
+                )
+            ]
+        )
         try:
-            img_bytes = fig.to_image(format='png', width=1200, height=600, scale=2)
+            img_bytes = fig.to_image(format="png", width=1200, height=600, scale=2)
             ok_msg = html.Div(
                 [html.I(className="bi bi-check-circle me-1"), "Chart PNG exported"],
                 style={"color": "#10b981", "fontWeight": "600", "fontSize": "0.8rem"},
             )
             return send_bytes(lambda: img_bytes, "chart.png"), ok_msg
         except Exception as e:
-            logger.exception('export chart failed: %s', e)
+            logger.exception("export chart failed: %s", e)
             err_msg = html.Div(
-                [html.I(className="bi bi-exclamation-triangle me-1"),
-                 "PNG export requires the 'kaleido' package. Install with: pip install kaleido"],
+                [
+                    html.I(className="bi bi-exclamation-triangle me-1"),
+                    "PNG export requires the 'kaleido' package. Install with: pip install kaleido",
+                ],
                 style={"color": "#ef4444", "fontWeight": "600", "fontSize": "0.8rem"},
             )
             return dash.no_update, err_msg
@@ -3427,6 +5494,7 @@ def load_from_history(upload_id):
 # =========================================================================
 # YAHOO FINANCE CALLBACKS
 # =========================================================================
+
 
 # Set symbol input when a popular symbol is selected
 @app.callback(
@@ -3472,14 +5540,25 @@ def on_yf_fetch(n_clicks, symbol, period, interval):
             - tabs: sets active tab to 'tab-chart'
     """
     if not n_clicks or not symbol:
-        return dash.no_update, html.Div("Enter a symbol first.", style={"color": "#f59e0b", "fontWeight": "600", "fontSize": "0.85rem"}), dash.no_update
+        return (
+            dash.no_update,
+            html.Div(
+                "Enter a symbol first.",
+                style={"color": "#f59e0b", "fontWeight": "600", "fontSize": "0.85rem"},
+            ),
+            dash.no_update,
+        )
 
     try:
         df = fetch_yahoo_data(symbol.strip(), period=period, interval=interval)
 
         try:
             upload_meta = save_upload(f"yf_{symbol}_{period}_{interval}", df, [])
-            upload_id = upload_meta.get("upload_id") if isinstance(upload_meta, dict) else upload_meta
+            upload_id = (
+                upload_meta.get("upload_id")
+                if isinstance(upload_meta, dict)
+                else upload_meta
+            )
         except Exception:
             upload_id = None
 
@@ -3492,23 +5571,41 @@ def on_yf_fetch(n_clicks, symbol, period, interval):
         status = html.Div(
             f"Fetched {len(df)} candles for {symbol} ({period}, {interval})",
             style={
-                "color": "#059669", "fontWeight": "600", "padding": "10px",
-                "backgroundColor": "#ecfdf5", "borderRadius": "8px", "fontSize": "0.85rem",
+                "color": "#059669",
+                "fontWeight": "600",
+                "padding": "10px",
+                "backgroundColor": "#ecfdf5",
+                "borderRadius": "8px",
+                "fontSize": "0.85rem",
             },
         )
         upload_status = html.Div(
-            [html.I(className="bi bi-cloud-check me-1"),
-             f"Yahoo Finance: {symbol} — {len(df)} candles loaded"],
-            style={"color": "#059669", "fontWeight": "600", "padding": "12px",
-                   "backgroundColor": "#ecfdf5", "borderRadius": "6px", "marginTop": "8px"},
+            [
+                html.I(className="bi bi-cloud-check me-1"),
+                f"Yahoo Finance: {symbol} — {len(df)} candles loaded",
+            ],
+            style={
+                "color": "#059669",
+                "fontWeight": "600",
+                "padding": "12px",
+                "backgroundColor": "#ecfdf5",
+                "borderRadius": "6px",
+                "marginTop": "8px",
+            },
         )
         return data, status, upload_status
 
     except (ValueError, ConnectionError) as e:
         err = html.Div(
             f"Error: {str(e)[:100]}",
-            style={"color": "#ef4444", "fontWeight": "600", "fontSize": "0.85rem", "padding": "8px",
-                   "backgroundColor": "#fef2f2", "borderRadius": "8px"},
+            style={
+                "color": "#ef4444",
+                "fontWeight": "600",
+                "fontSize": "0.85rem",
+                "padding": "8px",
+                "backgroundColor": "#fef2f2",
+                "borderRadius": "8px",
+            },
         )
         return dash.no_update, err, dash.no_update
     except Exception as e:
@@ -3523,6 +5620,7 @@ def on_yf_fetch(n_clicks, symbol, period, interval):
 # HEATMAP TAB CALLBACK
 # =========================================================================
 
+
 @app.callback(
     Output("heatmap-content", "children"),
     Input("scan-results", "data"),
@@ -3533,17 +5631,39 @@ def update_heatmap(scan_results, data):
     """Render a heatmap showing sequence match density across time buckets."""
     if not data:
         return html.Div(
-            [html.I(className="bi bi-grid-3x3", style={"fontSize": "2rem", "color": "#c7d2fe"}),
-             html.P("Load data to see the sequence heatmap.",
-                    style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+            [
+                html.I(
+                    className="bi bi-grid-3x3",
+                    style={"fontSize": "2rem", "color": "#c7d2fe"},
+                ),
+                html.P(
+                    "Load data to see the sequence heatmap.",
+                    style={
+                        "marginTop": "0.5rem",
+                        "color": "#9ca3af",
+                        "fontWeight": "600",
+                    },
+                ),
+            ],
             style={"padding": "3rem", "textAlign": "center"},
         )
 
     if not scan_results:
         return html.Div(
-            [html.I(className="bi bi-grid-3x3-gap", style={"fontSize": "2rem", "color": "#c7d2fe"}),
-             html.P("Scan sequences first to see pattern density heatmap.",
-                    style={"marginTop": "0.5rem", "color": "#9ca3af", "fontWeight": "600"})],
+            [
+                html.I(
+                    className="bi bi-grid-3x3-gap",
+                    style={"fontSize": "2rem", "color": "#c7d2fe"},
+                ),
+                html.P(
+                    "Scan sequences first to see pattern density heatmap.",
+                    style={
+                        "marginTop": "0.5rem",
+                        "color": "#9ca3af",
+                        "fontWeight": "600",
+                    },
+                ),
+            ],
             style={"padding": "3rem", "textAlign": "center"},
         )
 
@@ -3553,7 +5673,10 @@ def update_heatmap(scan_results, data):
 
         seq_strs = [r["seq_str"] for r in scan_results if not r.get("error")]
         if not seq_strs:
-            return html.Div("No valid sequences to heatmap.", style={"color": "#9ca3af", "padding": "1rem"})
+            return html.Div(
+                "No valid sequences to heatmap.",
+                style={"color": "#9ca3af", "padding": "1rem"},
+            )
 
         heatmap = sequence_heatmap_data(df, seq_strs, bucket_size=10)
 
@@ -3573,23 +5696,28 @@ def update_heatmap(scan_results, data):
             else:
                 x_labels.append("")
 
-        fig = go.Figure(data=go.Heatmap(
-            z=z_data,
-            x=x_labels,
-            y=y_labels,
-            colorscale=[
-                [0, "#f9fafb"],
-                [0.25, "#c7d2fe"],
-                [0.5, "#818cf8"],
-                [0.75, "#6366f1"],
-                [1, "#4338ca"],
-            ],
-            hoverongaps=False,
-            hovertemplate="Bucket: %{x}<br>Sequence: %{y}<br>Matches: %{z}<extra></extra>",
-        ))
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=z_data,
+                x=x_labels,
+                y=y_labels,
+                colorscale=[
+                    [0, "#f9fafb"],
+                    [0.25, "#c7d2fe"],
+                    [0.5, "#818cf8"],
+                    [0.75, "#6366f1"],
+                    [1, "#4338ca"],
+                ],
+                hoverongaps=False,
+                hovertemplate="Bucket: %{x}<br>Sequence: %{y}<br>Matches: %{z}<extra></extra>",
+            )
+        )
 
         fig.update_layout(
-            title=dict(text="Sequence Match Density Over Time", font=dict(size=16, color="#1f2937")),
+            title=dict(
+                text="Sequence Match Density Over Time",
+                font=dict(size=16, color="#1f2937"),
+            ),
             xaxis=dict(title="Time Bucket (start date)", tickangle=-45),
             yaxis=dict(title="Sequence", autorange="reversed"),
             template="plotly_white",
@@ -3598,33 +5726,54 @@ def update_heatmap(scan_results, data):
         )
 
         header = html.Div(
-            [html.I(className="bi bi-grid-3x3 me-2"),
-             f"Pattern Density Heatmap — {len(seq_strs)} sequences across {len(x_labels)} time buckets (10 candles each)"],
+            [
+                html.I(className="bi bi-grid-3x3 me-2"),
+                f"Pattern Density Heatmap — {len(seq_strs)} sequences across {len(x_labels)} time buckets (10 candles each)",
+            ],
             style={
-                "padding": "0.75rem 1rem", "backgroundColor": "#ede9fe",
-                "borderRadius": "8px", "fontWeight": "600", "color": "#5b21b6",
+                "padding": "0.75rem 1rem",
+                "backgroundColor": "#ede9fe",
+                "borderRadius": "8px",
+                "fontWeight": "600",
+                "color": "#5b21b6",
                 "marginBottom": "0.75rem",
             },
         )
 
-        return html.Div([
-            header,
-            dcc.Graph(figure=fig, config={"responsive": True, "displayModeBar": True, "displaylogo": False}),
-            html.Small(
-                "Each cell shows how many times a sequence matched within that 10-candle time bucket. "
-                "Darker cells indicate higher pattern concentration.",
-                style={"color": "#6b7280", "display": "block", "marginTop": "0.75rem"},
-            ),
-        ])
+        return html.Div(
+            [
+                header,
+                dcc.Graph(
+                    figure=fig,
+                    config={
+                        "responsive": True,
+                        "displayModeBar": True,
+                        "displaylogo": False,
+                    },
+                ),
+                html.Small(
+                    "Each cell shows how many times a sequence matched within that 10-candle time bucket. "
+                    "Darker cells indicate higher pattern concentration.",
+                    style={
+                        "color": "#6b7280",
+                        "display": "block",
+                        "marginTop": "0.75rem",
+                    },
+                ),
+            ]
+        )
 
     except Exception as e:
         logger.exception("heatmap error: %s", e)
-        return html.Div(f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"})
+        return html.Div(
+            f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"}
+        )
 
 
 # =========================================================================
 # REVERSE PATTERN FINDER CALLBACK
 # =========================================================================
+
 
 @app.callback(
     Output("reverse-content", "children"),
@@ -3638,7 +5787,10 @@ def update_heatmap(scan_results, data):
 def update_reverse_finder(n_clicks, threshold, direction, lookback, data):
     """Find sequences that preceded big price moves."""
     if not data:
-        return html.Div("Load data first.", style={"color": "#f59e0b", "fontWeight": "600", "padding": "1rem"})
+        return html.Div(
+            "Load data first.",
+            style={"color": "#f59e0b", "fontWeight": "600", "padding": "1rem"},
+        )
 
     try:
         df = pd.DataFrame(data["df"])
@@ -3649,16 +5801,32 @@ def update_reverse_finder(n_clicks, threshold, direction, lookback, data):
         direction = direction or "up"
 
         results = reverse_pattern_finder(
-            df, threshold_pct=threshold, direction=direction,
-            lookback=lookback, min_len=3, max_len=6, top_k=15,
+            df,
+            threshold_pct=threshold,
+            direction=direction,
+            lookback=lookback,
+            min_len=3,
+            max_len=6,
+            top_k=15,
         )
 
         if not results:
-            dir_label = {"up": "gains", "down": "losses", "both": "moves"}.get(direction, "moves")
+            dir_label = {"up": "gains", "down": "losses", "both": "moves"}.get(
+                direction, "moves"
+            )
             return html.Div(
-                [html.I(className="bi bi-info-circle me-2", style={"fontSize": "1.2rem"}),
-                 f"No big {dir_label} (>{threshold}%) found. Try lowering the threshold or loading more data."],
-                style={"color": "#6b7280", "padding": "2rem", "textAlign": "center", "fontWeight": "600"},
+                [
+                    html.I(
+                        className="bi bi-info-circle me-2", style={"fontSize": "1.2rem"}
+                    ),
+                    f"No big {dir_label} (>{threshold}%) found. Try lowering the threshold or loading more data.",
+                ],
+                style={
+                    "color": "#6b7280",
+                    "padding": "2rem",
+                    "textAlign": "center",
+                    "fontWeight": "600",
+                },
             )
 
         # Build confidence data for each discovered preceding sequence
@@ -3677,35 +5845,75 @@ def update_reverse_finder(n_clicks, threshold, direction, lookback, data):
                 conf_text = "N/A"
                 p_val = "—"
 
-            rows.append(html.Tr([
-                html.Td(str(i + 1), style={"color": "#9ca3af", "width": "40px"}),
-                html.Td(html.Code(r["sequence"], style={"fontSize": "0.85rem"})),
-                html.Td(str(r["length"])),
-                html.Td(str(r["count"]), style={"fontWeight": "700"}),
-                html.Td(f"{r['avg_move_pct']:+.2f}%", style={"fontWeight": "700", "color": avg_move_color}),
-                html.Td(dbc.Badge(conf_text, color=conf_badge_color, style={"fontSize": "0.7rem"})),
-                html.Td(p_val, style={"fontSize": "0.8rem", "color": "#6b7280"}),
-            ]))
+            rows.append(
+                html.Tr(
+                    [
+                        html.Td(
+                            str(i + 1), style={"color": "#9ca3af", "width": "40px"}
+                        ),
+                        html.Td(
+                            html.Code(r["sequence"], style={"fontSize": "0.85rem"})
+                        ),
+                        html.Td(str(r["length"])),
+                        html.Td(str(r["count"]), style={"fontWeight": "700"}),
+                        html.Td(
+                            f"{r['avg_move_pct']:+.2f}%",
+                            style={"fontWeight": "700", "color": avg_move_color},
+                        ),
+                        html.Td(
+                            dbc.Badge(
+                                conf_text,
+                                color=conf_badge_color,
+                                style={"fontSize": "0.7rem"},
+                            )
+                        ),
+                        html.Td(
+                            p_val, style={"fontSize": "0.8rem", "color": "#6b7280"}
+                        ),
+                    ]
+                )
+            )
 
-        dir_label = {"up": "big gains", "down": "big losses", "both": "big moves"}.get(direction, "moves")
+        dir_label = {"up": "big gains", "down": "big losses", "both": "big moves"}.get(
+            direction, "moves"
+        )
         header = html.Div(
-            [html.I(className="bi bi-arrow-return-left me-2"),
-             f"Top {len(results)} sequences preceding {dir_label} (>{threshold}% threshold, {lookback}-candle lookback)"],
+            [
+                html.I(className="bi bi-arrow-return-left me-2"),
+                f"Top {len(results)} sequences preceding {dir_label} (>{threshold}% threshold, {lookback}-candle lookback)",
+            ],
             style={
-                "padding": "0.75rem 1rem", "backgroundColor": "#fef3c7",
-                "borderRadius": "8px", "fontWeight": "600", "color": "#92400e",
+                "padding": "0.75rem 1rem",
+                "backgroundColor": "#fef3c7",
+                "borderRadius": "8px",
+                "fontWeight": "600",
+                "color": "#92400e",
                 "marginBottom": "0.75rem",
             },
         )
 
         table = dbc.Table(
-            [html.Thead(html.Tr([
-                html.Th("#"), html.Th("Sequence"), html.Th("Length"),
-                html.Th("Occurrences"), html.Th("Avg Move"),
-                html.Th("Confidence"), html.Th("p-value"),
-            ])),
-             html.Tbody(rows)],
-            bordered=True, hover=True, responsive=True, striped=True, size="sm",
+            [
+                html.Thead(
+                    html.Tr(
+                        [
+                            html.Th("#"),
+                            html.Th("Sequence"),
+                            html.Th("Length"),
+                            html.Th("Occurrences"),
+                            html.Th("Avg Move"),
+                            html.Th("Confidence"),
+                            html.Th("p-value"),
+                        ]
+                    )
+                ),
+                html.Tbody(rows),
+            ],
+            bordered=True,
+            hover=True,
+            responsive=True,
+            striped=True,
+            size="sm",
             style={"fontSize": "0.9rem"},
         )
 
@@ -3719,12 +5927,15 @@ def update_reverse_finder(n_clicks, threshold, direction, lookback, data):
 
     except Exception as e:
         logger.exception("reverse_finder error: %s", e)
-        return html.Div(f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"})
+        return html.Div(
+            f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"}
+        )
 
 
 # ======================================================================
 # CALLBACK 18: BACKTESTING TAB
 # ======================================================================
+
 
 @app.callback(
     Output("backtest-content", "children"),
@@ -3738,7 +5949,10 @@ def update_reverse_finder(n_clicks, threshold, direction, lookback, data):
 def run_backtest(n_clicks, hold_periods, initial_capital, scan_results, data):
     """Backtest each scanned sequence: equity curve, Sharpe, drawdown."""
     if not n_clicks or not data or not scan_results:
-        return html.Div("Load data and scan sequences first.", style={"color": "#6b7280", "padding": "1rem"})
+        return html.Div(
+            "Load data and scan sequences first.",
+            style={"color": "#6b7280", "padding": "1rem"},
+        )
 
     try:
         df = pd.DataFrame(data["df"])
@@ -3754,7 +5968,10 @@ def run_backtest(n_clicks, hold_periods, initial_capital, scan_results, data):
             matches_info = res.get("matches", [])
             # matches_info is a list of match dicts
             if isinstance(matches_info, list):
-                indices = [m if isinstance(m, int) else m.get("end_idx", 0) for m in matches_info]
+                indices = [
+                    m if isinstance(m, int) else m.get("end_idx", 0)
+                    for m in matches_info
+                ]
             else:
                 continue
             if not indices:
@@ -3773,15 +5990,20 @@ def run_backtest(n_clicks, hold_periods, initial_capital, scan_results, data):
 
             # Mini equity curve
             eq_fig = go.Figure()
-            eq_fig.add_trace(go.Scatter(
-                y=eq.values, mode="lines+markers",
-                line=dict(color="#6366f1", width=2),
-                marker=dict(size=4),
-                name="Equity",
-            ))
+            eq_fig.add_trace(
+                go.Scatter(
+                    y=eq.values,
+                    mode="lines+markers",
+                    line=dict(color="#6366f1", width=2),
+                    marker=dict(size=4),
+                    name="Equity",
+                )
+            )
             eq_fig.update_layout(
-                height=180, margin=dict(l=30, r=10, t=10, b=20),
-                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#f9fafb",
+                height=180,
+                margin=dict(l=30, r=10, t=10, b=20),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="#f9fafb",
                 yaxis=dict(title="$", gridcolor="#e5e7eb"),
                 xaxis=dict(title="Trade #", gridcolor="#e5e7eb"),
                 showlegend=False,
@@ -3791,59 +6013,154 @@ def run_backtest(n_clicks, hold_periods, initial_capital, scan_results, data):
             sh_color = "#10b981" if sharpe > 0 else "#ef4444"
 
             card = dbc.Card(
-                dbc.CardBody([
-                    html.H6(html.Code(seq_str), className="mb-2"),
-                    dbc.Row([
-                        dbc.Col(html.Div([
-                            html.Small("Trades", style={"color": "#6b7280"},
-                                       title="Total number of simulated trades"),
-                            html.H5(str(len(trades)), style={"fontWeight": "700"}),
-                        ]), width=2),
-                        dbc.Col(html.Div([
-                            html.Small("Win Rate", style={"color": "#6b7280"},
-                                       title="Percentage of trades that ended in profit"),
-                            html.H5(f"{win_rate:.1%}", style={"fontWeight": "700", "color": wr_color}),
-                        ]), width=2),
-                        dbc.Col(html.Div([
-                            html.Small("Sharpe", style={"color": "#6b7280"},
-                                       title="Risk-adjusted return (Sharpe Ratio). >1 is good, >2 is excellent"),
-                            html.H5(f"{sharpe:.2f}", style={"fontWeight": "700", "color": sh_color}),
-                        ]), width=2),
-                        dbc.Col(html.Div([
-                            html.Small("Max DD", style={"color": "#6b7280"},
-                                       title="Maximum drawdown — largest peak-to-trough decline"),
-                            html.H5(f"{max_dd:.1%}", style={"fontWeight": "700", "color": "#ef4444"}),
-                        ]), width=2),
-                        dbc.Col(html.Div([
-                            html.Small("Profit Factor", style={"color": "#6b7280"},
-                                       title="Gross profit / Gross loss. >1 means profitable, >2 is strong"),
-                            html.H5(f"{pf:.2f}" if pf != float("inf") else "∞",
-                                    style={"fontWeight": "700", "color": "#6366f1"}),
-                        ]), width=2),
-                        dbc.Col(html.Div([
-                            html.Small("Final Equity", style={"color": "#6b7280"},
-                                       title="Portfolio value at the end of the backtest"),
-                            html.H5(f"${eq.iloc[-1]:,.0f}", style={"fontWeight": "700"}),
-                        ]), width=2),
-                    ]),
-                    dcc.Graph(figure=eq_fig, config={"displayModeBar": False},
-                              style={"marginTop": "0.5rem"}),
-                ]),
+                dbc.CardBody(
+                    [
+                        html.H6(html.Code(seq_str), className="mb-2"),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    html.Div(
+                                        [
+                                            html.Small(
+                                                "Trades",
+                                                style={"color": "#6b7280"},
+                                                title="Total number of simulated trades",
+                                            ),
+                                            html.H5(
+                                                str(len(trades)),
+                                                style={"fontWeight": "700"},
+                                            ),
+                                        ]
+                                    ),
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    html.Div(
+                                        [
+                                            html.Small(
+                                                "Win Rate",
+                                                style={"color": "#6b7280"},
+                                                title="Percentage of trades that ended in profit",
+                                            ),
+                                            html.H5(
+                                                f"{win_rate:.1%}",
+                                                style={
+                                                    "fontWeight": "700",
+                                                    "color": wr_color,
+                                                },
+                                            ),
+                                        ]
+                                    ),
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    html.Div(
+                                        [
+                                            html.Small(
+                                                "Sharpe",
+                                                style={"color": "#6b7280"},
+                                                title="Risk-adjusted return (Sharpe Ratio). >1 is good, >2 is excellent",
+                                            ),
+                                            html.H5(
+                                                f"{sharpe:.2f}",
+                                                style={
+                                                    "fontWeight": "700",
+                                                    "color": sh_color,
+                                                },
+                                            ),
+                                        ]
+                                    ),
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    html.Div(
+                                        [
+                                            html.Small(
+                                                "Max DD",
+                                                style={"color": "#6b7280"},
+                                                title="Maximum drawdown — largest peak-to-trough decline",
+                                            ),
+                                            html.H5(
+                                                f"{max_dd:.1%}",
+                                                style={
+                                                    "fontWeight": "700",
+                                                    "color": "#ef4444",
+                                                },
+                                            ),
+                                        ]
+                                    ),
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    html.Div(
+                                        [
+                                            html.Small(
+                                                "Profit Factor",
+                                                style={"color": "#6b7280"},
+                                                title="Gross profit / Gross loss. >1 means profitable, >2 is strong",
+                                            ),
+                                            html.H5(
+                                                (
+                                                    f"{pf:.2f}"
+                                                    if pf != float("inf")
+                                                    else "∞"
+                                                ),
+                                                style={
+                                                    "fontWeight": "700",
+                                                    "color": "#6366f1",
+                                                },
+                                            ),
+                                        ]
+                                    ),
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    html.Div(
+                                        [
+                                            html.Small(
+                                                "Final Equity",
+                                                style={"color": "#6b7280"},
+                                                title="Portfolio value at the end of the backtest",
+                                            ),
+                                            html.H5(
+                                                f"${eq.iloc[-1]:,.0f}",
+                                                style={"fontWeight": "700"},
+                                            ),
+                                        ]
+                                    ),
+                                    width=2,
+                                ),
+                            ]
+                        ),
+                        dcc.Graph(
+                            figure=eq_fig,
+                            config={"displayModeBar": False},
+                            style={"marginTop": "0.5rem"},
+                        ),
+                    ]
+                ),
                 className="mb-3",
                 style={"border": "1px solid #e5e7eb", "borderRadius": "12px"},
             )
             cards.append(card)
 
         if not cards:
-            return html.Div("No trades generated from scanned sequences. Try scanning first.",
-                            style={"color": "#6b7280", "padding": "1rem"})
+            return html.Div(
+                "No trades generated from scanned sequences. Try scanning first.",
+                style={"color": "#6b7280", "padding": "1rem"},
+            )
 
         header = html.Div(
-            [html.I(className="bi bi-calculator me-2"),
-             f"Backtest Results — {hold_periods}-candle hold, ${initial_capital:,.0f} capital"],
+            [
+                html.I(className="bi bi-calculator me-2"),
+                f"Backtest Results — {hold_periods}-candle hold, ${initial_capital:,.0f} capital",
+            ],
             style={
-                "padding": "0.75rem 1rem", "backgroundColor": "#dcfce7",
-                "borderRadius": "8px", "fontWeight": "600", "color": "#166534",
+                "padding": "0.75rem 1rem",
+                "backgroundColor": "#dcfce7",
+                "borderRadius": "8px",
+                "fontWeight": "600",
+                "color": "#166534",
                 "marginBottom": "1rem",
             },
         )
@@ -3851,12 +6168,15 @@ def run_backtest(n_clicks, hold_periods, initial_capital, scan_results, data):
 
     except Exception as e:
         logger.exception("backtest error: %s", e)
-        return html.Div(f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"})
+        return html.Div(
+            f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"}
+        )
 
 
 # ======================================================================
 # CALLBACK 19: MULTI-TIMEFRAME ANALYSIS
 # ======================================================================
+
 
 @app.callback(
     Output("mtf-content", "children"),
@@ -3872,21 +6192,33 @@ def run_multi_timeframe(n_clicks, symbol, intervals, lookback, scan_results):
     if not n_clicks:
         return html.Div()
     if not symbol or not symbol.strip():
-        return html.Div("Enter a symbol (e.g. AAPL, BTC-USD).", style={"color": "#ef4444", "padding": "1rem"})
+        return html.Div(
+            "Enter a symbol (e.g. AAPL, BTC-USD).",
+            style={"color": "#ef4444", "padding": "1rem"},
+        )
     if not intervals:
-        return html.Div("Select at least one timeframe.", style={"color": "#ef4444", "padding": "1rem"})
+        return html.Div(
+            "Select at least one timeframe.",
+            style={"color": "#ef4444", "padding": "1rem"},
+        )
 
     # Gather sequences from scan results (scan_results is a list of dicts)
-    sequences = [r["seq_str"] for r in scan_results if r.get("seq_str")] if scan_results else []
+    sequences = (
+        [r["seq_str"] for r in scan_results if r.get("seq_str")] if scan_results else []
+    )
     if not sequences:
-        return html.Div("Scan sequences first so we know what to look for across timeframes.",
-                        style={"color": "#6b7280", "padding": "1rem"})
+        return html.Div(
+            "Scan sequences first so we know what to look for across timeframes.",
+            style={"color": "#6b7280", "padding": "1rem"},
+        )
 
     try:
         lookback = int(lookback or 5)
         # Map common aliases for yfinance
         interval_map: dict[str, str] = {"4h": "60m"}  # yfinance 4h workaround
-        yf_intervals = [interval_map.get(str(iv), str(iv)) for iv in intervals if iv is not None]
+        yf_intervals = [
+            interval_map.get(str(iv), str(iv)) for iv in intervals if iv is not None
+        ]
 
         result = multi_timeframe_summary(
             symbol=symbol.strip(),
@@ -3898,19 +6230,38 @@ def run_multi_timeframe(n_clicks, symbol, intervals, lookback, scan_results):
         # Per-timeframe stats table
         tf_rows = []
         for iv, stats in result["per_timeframe_stats"].items():
-            tf_rows.append(html.Tr([
-                html.Td(html.Code(iv), style={"fontWeight": "700"}),
-                html.Td(str(stats["candle_count"])),
-                html.Td(str(stats["total_matches"]), style={"fontWeight": "700"}),
-                html.Td(str(stats["sequences_found"])),
-            ]))
+            tf_rows.append(
+                html.Tr(
+                    [
+                        html.Td(html.Code(iv), style={"fontWeight": "700"}),
+                        html.Td(str(stats["candle_count"])),
+                        html.Td(
+                            str(stats["total_matches"]), style={"fontWeight": "700"}
+                        ),
+                        html.Td(str(stats["sequences_found"])),
+                    ]
+                )
+            )
 
         tf_table = dbc.Table(
-            [html.Thead(html.Tr([
-                html.Th("Timeframe"), html.Th("Candles"), html.Th("Total Matches"), html.Th("Sequences Found"),
-            ])),
-             html.Tbody(tf_rows)],
-            bordered=True, hover=True, responsive=True, striped=True, size="sm",
+            [
+                html.Thead(
+                    html.Tr(
+                        [
+                            html.Th("Timeframe"),
+                            html.Th("Candles"),
+                            html.Th("Total Matches"),
+                            html.Th("Sequences Found"),
+                        ]
+                    )
+                ),
+                html.Tbody(tf_rows),
+            ],
+            bordered=True,
+            hover=True,
+            responsive=True,
+            striped=True,
+            size="sm",
         )
 
         # Alignment table
@@ -3920,52 +6271,93 @@ def run_multi_timeframe(n_clicks, symbol, intervals, lookback, scan_results):
             total = a["total_timeframes"]
             pct = (count / total * 100) if total else 0
             color = "#10b981" if pct >= 50 else ("#f59e0b" if pct >= 25 else "#ef4444")
-            align_rows.append(html.Tr([
-                html.Td(html.Code(a["sequence"], style={"fontSize": "0.85rem"})),
-                html.Td(", ".join(a["aligned_timeframes"]) if a["aligned_timeframes"] else "—",
-                         style={"fontSize": "0.85rem"}),
-                html.Td(f"{count}/{total}", style={"fontWeight": "700"}),
-                html.Td(f"{pct:.0f}%", style={"fontWeight": "700", "color": color}),
-            ]))
+            align_rows.append(
+                html.Tr(
+                    [
+                        html.Td(
+                            html.Code(a["sequence"], style={"fontSize": "0.85rem"})
+                        ),
+                        html.Td(
+                            (
+                                ", ".join(a["aligned_timeframes"])
+                                if a["aligned_timeframes"]
+                                else "—"
+                            ),
+                            style={"fontSize": "0.85rem"},
+                        ),
+                        html.Td(f"{count}/{total}", style={"fontWeight": "700"}),
+                        html.Td(
+                            f"{pct:.0f}%", style={"fontWeight": "700", "color": color}
+                        ),
+                    ]
+                )
+            )
 
         align_table = dbc.Table(
-            [html.Thead(html.Tr([
-                html.Th("Sequence"), html.Th("Aligned TFs"), html.Th("Count"), html.Th("Alignment %"),
-            ])),
-             html.Tbody(align_rows)],
-            bordered=True, hover=True, responsive=True, striped=True, size="sm",
+            [
+                html.Thead(
+                    html.Tr(
+                        [
+                            html.Th("Sequence"),
+                            html.Th("Aligned TFs"),
+                            html.Th("Count"),
+                            html.Th("Alignment %"),
+                        ]
+                    )
+                ),
+                html.Tbody(align_rows),
+            ],
+            bordered=True,
+            hover=True,
+            responsive=True,
+            striped=True,
+            size="sm",
         )
 
         header = html.Div(
-            [html.I(className="bi bi-layers me-2"),
-             f"Multi-Timeframe Analysis: {symbol.upper()} — {', '.join(intervals)}"],
+            [
+                html.I(className="bi bi-layers me-2"),
+                f"Multi-Timeframe Analysis: {symbol.upper()} — {', '.join(intervals)}",
+            ],
             style={
-                "padding": "0.75rem 1rem", "backgroundColor": "#dbeafe",
-                "borderRadius": "8px", "fontWeight": "600", "color": "#1e40af",
+                "padding": "0.75rem 1rem",
+                "backgroundColor": "#dbeafe",
+                "borderRadius": "8px",
+                "fontWeight": "600",
+                "color": "#1e40af",
                 "marginBottom": "1rem",
             },
         )
 
-        return html.Div([
-            header,
-            html.H6("Per-Timeframe Summary", className="mt-3 mb-2"),
-            tf_table,
-            html.H6("Sequence Alignment (recent matches)", className="mt-4 mb-2"),
-            html.Small(
-                f"A sequence is 'aligned' if it matched within the last {lookback} candles of a timeframe.",
-                style={"color": "#6b7280", "display": "block", "marginBottom": "0.5rem"},
-            ),
-            align_table,
-        ])
+        return html.Div(
+            [
+                header,
+                html.H6("Per-Timeframe Summary", className="mt-3 mb-2"),
+                tf_table,
+                html.H6("Sequence Alignment (recent matches)", className="mt-4 mb-2"),
+                html.Small(
+                    f"A sequence is 'aligned' if it matched within the last {lookback} candles of a timeframe.",
+                    style={
+                        "color": "#6b7280",
+                        "display": "block",
+                        "marginBottom": "0.5rem",
+                    },
+                ),
+                align_table,
+            ]
+        )
 
     except Exception as e:
         logger.exception("mtf error: %s", e)
-        return html.Div(f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"})
+        return html.Div(
+            f"Error: {str(e)[:120]}", style={"color": "#ef4444", "padding": "1rem"}
+        )
 
 
 # ======================================================================
 # CALLBACK 20 & 21: WATCHLIST — Save / Display
 # ======================================================================
+
 
 @app.callback(
     Output("wl-status", "children"),
@@ -3984,13 +6376,19 @@ def save_watchlist_entry(n_clicks, label, sequences_str, symbol, trigger):
     if not label or not label.strip():
         return html.Div("Label is required.", style={"color": "#ef4444"}), trigger
     if not sequences_str or not sequences_str.strip():
-        return html.Div("Enter at least one sequence.", style={"color": "#ef4444"}), trigger
+        return (
+            html.Div("Enter at least one sequence.", style={"color": "#ef4444"}),
+            trigger,
+        )
 
     seqs = [s.strip() for s in sequences_str.split(",") if s.strip()]
     try:
         add_to_watchlist(label=label, sequences=seqs, symbol=symbol or "")
         msg = html.Div(
-            [html.I(className="bi bi-check-circle me-1"), f"Saved '{label}' ({len(seqs)} sequences)"],
+            [
+                html.I(className="bi bi-check-circle me-1"),
+                f"Saved '{label}' ({len(seqs)} sequences)",
+            ],
             style={"color": "#10b981", "fontWeight": "600"},
         )
         return msg, (trigger or 0) + 1
@@ -4015,51 +6413,88 @@ def display_watchlist(trigger, active_tab):
 
     if not entries:
         return html.Div(
-            [html.I(className="bi bi-bookmark"), " No saved sequences yet. Add one above!"],
+            [
+                html.I(className="bi bi-bookmark"),
+                " No saved sequences yet. Add one above!",
+            ],
             style={"color": "#6b7280", "padding": "1rem", "textAlign": "center"},
         )
 
     rows = []
     for e in entries:
         import datetime
-        created = datetime.datetime.fromtimestamp(e.get("created_at", 0)).strftime("%Y-%m-%d %H:%M")
+
+        created = datetime.datetime.fromtimestamp(e.get("created_at", 0)).strftime(
+            "%Y-%m-%d %H:%M"
+        )
         seqs_str = ", ".join(e.get("sequences", []))
         entry_id = e.get("id", 0)
-        rows.append(html.Tr([
-            html.Td(e.get("label", ""), style={"fontWeight": "700"}),
-            html.Td(html.Code(seqs_str, style={"fontSize": "0.8rem"})),
-            html.Td(e.get("symbol", "") or "—"),
-            html.Td(created, style={"fontSize": "0.8rem", "color": "#6b7280"}),
-            html.Td([
-                dbc.Button(
-                    html.I(className="bi bi-play-circle"),
-                    id={"type": "wl-load-btn", "index": entry_id},
-                    color="primary", size="sm", className="me-1",
-                    title="Load into scanner",
-                ),
-                dbc.Button(
-                    html.I(className="bi bi-trash"),
-                    id={"type": "wl-delete-btn", "index": entry_id},
-                    color="danger", size="sm", outline=True,
-                    title="Delete entry",
-                ),
-            ], style={"whiteSpace": "nowrap"}),
-        ]))
+        rows.append(
+            html.Tr(
+                [
+                    html.Td(e.get("label", ""), style={"fontWeight": "700"}),
+                    html.Td(html.Code(seqs_str, style={"fontSize": "0.8rem"})),
+                    html.Td(e.get("symbol", "") or "—"),
+                    html.Td(created, style={"fontSize": "0.8rem", "color": "#6b7280"}),
+                    html.Td(
+                        [
+                            dbc.Button(
+                                html.I(className="bi bi-play-circle"),
+                                id={"type": "wl-load-btn", "index": entry_id},
+                                color="primary",
+                                size="sm",
+                                className="me-1",
+                                title="Load into scanner",
+                            ),
+                            dbc.Button(
+                                html.I(className="bi bi-trash"),
+                                id={"type": "wl-delete-btn", "index": entry_id},
+                                color="danger",
+                                size="sm",
+                                outline=True,
+                                title="Delete entry",
+                            ),
+                        ],
+                        style={"whiteSpace": "nowrap"},
+                    ),
+                ]
+            )
+        )
 
     table = dbc.Table(
-        [html.Thead(html.Tr([
-            html.Th("Label"), html.Th("Sequences"), html.Th("Symbol"), html.Th("Created"), html.Th("Actions"),
-        ])),
-         html.Tbody(rows)],
-        bordered=True, hover=True, responsive=True, striped=True, size="sm",
+        [
+            html.Thead(
+                html.Tr(
+                    [
+                        html.Th("Label"),
+                        html.Th("Sequences"),
+                        html.Th("Symbol"),
+                        html.Th("Created"),
+                        html.Th("Actions"),
+                    ]
+                )
+            ),
+            html.Tbody(rows),
+        ],
+        bordered=True,
+        hover=True,
+        responsive=True,
+        striped=True,
+        size="sm",
         style={"fontSize": "0.9rem"},
     )
 
     header = html.Div(
-        [html.I(className="bi bi-bookmarks me-2"), f"{len(entries)} Saved Sequence{'s' if len(entries) != 1 else ''}"],
+        [
+            html.I(className="bi bi-bookmarks me-2"),
+            f"{len(entries)} Saved Sequence{'s' if len(entries) != 1 else ''}",
+        ],
         style={
-            "padding": "0.75rem 1rem", "backgroundColor": "#fef3c7",
-            "borderRadius": "8px", "fontWeight": "600", "color": "#92400e",
+            "padding": "0.75rem 1rem",
+            "backgroundColor": "#fef3c7",
+            "borderRadius": "8px",
+            "fontWeight": "600",
+            "color": "#92400e",
             "marginBottom": "0.75rem",
         },
     )
@@ -4115,8 +6550,10 @@ def load_watchlist_entry(n_clicks_list, btn_ids):
                         update_last_used(entry_id)
                         seqs = "\n".join(e.get("sequences", []))
                         msg = html.Div(
-                            [html.I(className="bi bi-check-circle me-1"),
-                             f"Loaded '{e.get('label', '')}' into scanner"],
+                            [
+                                html.I(className="bi bi-check-circle me-1"),
+                                f"Loaded '{e.get('label', '')}' into scanner",
+                            ],
                             style={"color": "#10b981", "fontWeight": "600"},
                         )
                         return seqs, msg
@@ -4126,6 +6563,7 @@ def load_watchlist_entry(n_clicks_list, btn_ids):
 # =========================================================================
 # PHASE 6 CALLBACKS — Alerts, ML Predict, Settings, Live Refresh
 # =========================================================================
+
 
 # --- ALERTS: Add Rule ---
 @app.callback(
@@ -4145,14 +6583,23 @@ def on_add_alert_rule(n_clicks, name, sequences_str, symbol, webhook, trigger):
     if not name or not name.strip():
         return html.Div("Rule name is required.", style={"color": "#ef4444"}), trigger
     if not sequences_str or not sequences_str.strip():
-        return html.Div("Enter at least one sequence.", style={"color": "#ef4444"}), trigger
+        return (
+            html.Div("Enter at least one sequence.", style={"color": "#ef4444"}),
+            trigger,
+        )
     seqs = [s.strip() for s in sequences_str.split(",") if s.strip()]
     try:
-        add_alert_rule(name=name.strip(), sequences=seqs,
-                       symbol=symbol or "", webhook_url=webhook or "")
+        add_alert_rule(
+            name=name.strip(),
+            sequences=seqs,
+            symbol=symbol or "",
+            webhook_url=webhook or "",
+        )
         msg = html.Div(
-            [html.I(className="bi bi-check-circle me-1"),
-             f"Alert rule '{name}' created ({len(seqs)} sequences)"],
+            [
+                html.I(className="bi bi-check-circle me-1"),
+                f"Alert rule '{name}' created ({len(seqs)} sequences)",
+            ],
             style={"color": "#10b981", "fontWeight": "600"},
         )
         return msg, (trigger or 0) + 1
@@ -4181,40 +6628,66 @@ def display_alert_rules(trigger, active_tab):
     rows = []
     for r in rules:
         import datetime as _dt
-        created = _dt.datetime.fromtimestamp(r.get("created_at", 0)).strftime("%Y-%m-%d %H:%M")
+
+        created = _dt.datetime.fromtimestamp(r.get("created_at", 0)).strftime(
+            "%Y-%m-%d %H:%M"
+        )
         seqs_str = ", ".join(r.get("sequences", []))
         rule_id = r.get("id", 0)
         status_badge = html.Span(
             "Active" if r["enabled"] else "Disabled",
             style={
                 "backgroundColor": "#10b981" if r["enabled"] else "#9ca3af",
-                "color": "white", "padding": "2px 8px", "borderRadius": "4px",
-                "fontSize": "0.75rem", "fontWeight": "700",
+                "color": "white",
+                "padding": "2px 8px",
+                "borderRadius": "4px",
+                "fontSize": "0.75rem",
+                "fontWeight": "700",
             },
         )
-        rows.append(html.Tr([
-            html.Td(r.get("name", ""), style={"fontWeight": "700"}),
-            html.Td(html.Code(seqs_str, style={"fontSize": "0.8rem"})),
-            html.Td(r.get("symbol", "") or "Any"),
-            html.Td(status_badge),
-            html.Td(created, style={"fontSize": "0.8rem", "color": "#6b7280"}),
-            html.Td(
-                dbc.Button(
-                    html.I(className="bi bi-trash"),
-                    id={"type": "alert-delete-btn", "index": rule_id},
-                    color="danger", size="sm", outline=True,
-                    title="Delete rule",
-                ),
-                style={"whiteSpace": "nowrap"},
-            ),
-        ]))
+        rows.append(
+            html.Tr(
+                [
+                    html.Td(r.get("name", ""), style={"fontWeight": "700"}),
+                    html.Td(html.Code(seqs_str, style={"fontSize": "0.8rem"})),
+                    html.Td(r.get("symbol", "") or "Any"),
+                    html.Td(status_badge),
+                    html.Td(created, style={"fontSize": "0.8rem", "color": "#6b7280"}),
+                    html.Td(
+                        dbc.Button(
+                            html.I(className="bi bi-trash"),
+                            id={"type": "alert-delete-btn", "index": rule_id},
+                            color="danger",
+                            size="sm",
+                            outline=True,
+                            title="Delete rule",
+                        ),
+                        style={"whiteSpace": "nowrap"},
+                    ),
+                ]
+            )
+        )
     table = dbc.Table(
-        [html.Thead(html.Tr([
-            html.Th("Name"), html.Th("Sequences"), html.Th("Symbol"),
-            html.Th("Status"), html.Th("Created"), html.Th(""),
-        ])),
-         html.Tbody(rows)],
-        bordered=True, hover=True, responsive=True, striped=True, size="sm",
+        [
+            html.Thead(
+                html.Tr(
+                    [
+                        html.Th("Name"),
+                        html.Th("Sequences"),
+                        html.Th("Symbol"),
+                        html.Th("Status"),
+                        html.Th("Created"),
+                        html.Th(""),
+                    ]
+                )
+            ),
+            html.Tbody(rows),
+        ],
+        bordered=True,
+        hover=True,
+        responsive=True,
+        striped=True,
+        size="sm",
     )
     return table
 
@@ -4257,24 +6730,56 @@ def display_alert_history(trigger, active_tab):
     rows = []
     for a in history:
         import datetime as _dt
-        ts = _dt.datetime.fromtimestamp(a.get("triggered_at", 0)).strftime("%Y-%m-%d %H:%M:%S")
+
+        ts = _dt.datetime.fromtimestamp(a.get("triggered_at", 0)).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         sev = a.get("severity", "info")
         sev_color = {"warning": "#f59e0b", "info": "#3b82f6"}.get(sev, "#6b7280")
-        rows.append(html.Tr([
-            html.Td(html.Span(sev.upper(), style={"color": sev_color, "fontWeight": "700", "fontSize": "0.75rem"})),
-            html.Td(a.get("rule_name", ""), style={"fontWeight": "600"}),
-            html.Td(html.Code(a.get("sequence", ""), style={"fontSize": "0.8rem"})),
-            html.Td(a.get("symbol", "") or "—"),
-            html.Td(str(a.get("match_count", 0)), style={"fontWeight": "700"}),
-            html.Td(ts, style={"fontSize": "0.8rem", "color": "#6b7280"}),
-        ]))
+        rows.append(
+            html.Tr(
+                [
+                    html.Td(
+                        html.Span(
+                            sev.upper(),
+                            style={
+                                "color": sev_color,
+                                "fontWeight": "700",
+                                "fontSize": "0.75rem",
+                            },
+                        )
+                    ),
+                    html.Td(a.get("rule_name", ""), style={"fontWeight": "600"}),
+                    html.Td(
+                        html.Code(a.get("sequence", ""), style={"fontSize": "0.8rem"})
+                    ),
+                    html.Td(a.get("symbol", "") or "—"),
+                    html.Td(str(a.get("match_count", 0)), style={"fontWeight": "700"}),
+                    html.Td(ts, style={"fontSize": "0.8rem", "color": "#6b7280"}),
+                ]
+            )
+        )
     table = dbc.Table(
-        [html.Thead(html.Tr([
-            html.Th("Severity"), html.Th("Rule"), html.Th("Sequence"),
-            html.Th("Symbol"), html.Th("Matches"), html.Th("Time"),
-        ])),
-         html.Tbody(rows)],
-        bordered=True, hover=True, responsive=True, striped=True, size="sm",
+        [
+            html.Thead(
+                html.Tr(
+                    [
+                        html.Th("Severity"),
+                        html.Th("Rule"),
+                        html.Th("Sequence"),
+                        html.Th("Symbol"),
+                        html.Th("Matches"),
+                        html.Th("Time"),
+                    ]
+                )
+            ),
+            html.Tbody(rows),
+        ],
+        bordered=True,
+        hover=True,
+        responsive=True,
+        striped=True,
+        size="sm",
     )
     return table
 
@@ -4292,12 +6797,17 @@ def update_alert_badge(trigger, active_tab):
         count = 0
     if count > 0:
         return html.Span(
-            [html.I(className="bi bi-bell-fill me-1"),
-             dbc.Badge(str(count), color="danger", pill=True, className="ms-1")],
+            [
+                html.I(className="bi bi-bell-fill me-1"),
+                dbc.Badge(str(count), color="danger", pill=True, className="ms-1"),
+            ],
             style={"color": "white", "fontSize": "1rem"},
         )
     return html.Span(
-        html.I(className="bi bi-bell", style={"color": "rgba(255,255,255,0.7)", "fontSize": "1rem"}),
+        html.I(
+            className="bi bi-bell",
+            style={"color": "rgba(255,255,255,0.7)", "fontSize": "1rem"},
+        ),
     )
 
 
@@ -4316,8 +6826,10 @@ def on_clear_alert_history(n_clicks, trigger):
         removed = clear_alert_history()
         return (
             html.Div(
-                [html.I(className="bi bi-check-circle me-1"),
-                 f"Cleared {removed} alert(s) from history"],
+                [
+                    html.I(className="bi bi-check-circle me-1"),
+                    f"Cleared {removed} alert(s) from history",
+                ],
                 style={"color": "#10b981", "fontWeight": "600"},
             ),
             (trigger or 0) + 1,
@@ -4336,7 +6848,9 @@ def on_clear_alert_history(n_clicks, trigger):
 )
 def on_ml_train_predict(n_clicks, data, hold_candles):
     if not n_clicks or not data:
-        return html.Div("Load data first.", style={"color": "#6b7280", "padding": "1rem"})
+        return html.Div(
+            "Load data first.", style={"color": "#6b7280", "padding": "1rem"}
+        )
 
     try:
         df = pd.DataFrame(data["df"])
@@ -4345,7 +6859,9 @@ def on_ml_train_predict(n_clicks, data, hold_candles):
 
         result = train_sequence_predictor(df, hold_candles=hold)
         if "error" in result:
-            return html.Div(result["error"], style={"color": "#ef4444", "padding": "1rem"})
+            return html.Div(
+                result["error"], style={"color": "#ef4444", "padding": "1rem"}
+            )
 
         metrics = result["metrics"]
         predictor = result["model"]
@@ -4354,66 +6870,201 @@ def on_ml_train_predict(n_clicks, data, hold_candles):
         prediction = predictor.predict_next_outcome(df, hold_candles=hold)
 
         # Metrics cards
-        metric_cards = dbc.Row([
-            dbc.Col(dbc.Card([
-                dbc.CardBody([
-                    html.H6("Accuracy", style={"color": "#6b7280", "fontSize": "0.75rem", "textTransform": "uppercase"}),
-                    html.H4(f"{metrics['accuracy']:.1%}", style={"fontWeight": "800", "color": "#6366f1"}),
-                ])
-            ], style={"borderRadius": "12px", "border": "1px solid #e5e7eb"}), width=2),
-            dbc.Col(dbc.Card([
-                dbc.CardBody([
-                    html.H6("ROC AUC", style={"color": "#6b7280", "fontSize": "0.75rem", "textTransform": "uppercase"}),
-                    html.H4(f"{metrics['roc_auc']:.3f}", style={"fontWeight": "800", "color": "#3b82f6"}),
-                ])
-            ], style={"borderRadius": "12px", "border": "1px solid #e5e7eb"}), width=2),
-            dbc.Col(dbc.Card([
-                dbc.CardBody([
-                    html.H6("Precision", style={"color": "#6b7280", "fontSize": "0.75rem", "textTransform": "uppercase"}),
-                    html.H4(f"{metrics['precision']:.1%}", style={"fontWeight": "800", "color": "#10b981"}),
-                ])
-            ], style={"borderRadius": "12px", "border": "1px solid #e5e7eb"}), width=2),
-            dbc.Col(dbc.Card([
-                dbc.CardBody([
-                    html.H6("Recall", style={"color": "#6b7280", "fontSize": "0.75rem", "textTransform": "uppercase"}),
-                    html.H4(f"{metrics['recall']:.1%}", style={"fontWeight": "800", "color": "#f59e0b"}),
-                ])
-            ], style={"borderRadius": "12px", "border": "1px solid #e5e7eb"}), width=2),
-            dbc.Col(dbc.Card([
-                dbc.CardBody([
-                    html.H6("F1 Score", style={"color": "#6b7280", "fontSize": "0.75rem", "textTransform": "uppercase"}),
-                    html.H4(f"{metrics['f1']:.3f}", style={"fontWeight": "800", "color": "#ec4899"}),
-                ])
-            ], style={"borderRadius": "12px", "border": "1px solid #e5e7eb"}), width=2),
-            dbc.Col(dbc.Card([
-                dbc.CardBody([
-                    html.H6("Samples", style={"color": "#6b7280", "fontSize": "0.75rem", "textTransform": "uppercase"}),
-                    html.H4(str(result["n_samples"]), style={"fontWeight": "800", "color": "#6b7280"}),
-                ])
-            ], style={"borderRadius": "12px", "border": "1px solid #e5e7eb"}), width=2),
-        ], className="g-3 mb-4")
+        metric_cards = dbc.Row(
+            [
+                dbc.Col(
+                    dbc.Card(
+                        [
+                            dbc.CardBody(
+                                [
+                                    html.H6(
+                                        "Accuracy",
+                                        style={
+                                            "color": "#6b7280",
+                                            "fontSize": "0.75rem",
+                                            "textTransform": "uppercase",
+                                        },
+                                    ),
+                                    html.H4(
+                                        f"{metrics['accuracy']:.1%}",
+                                        style={"fontWeight": "800", "color": "#6366f1"},
+                                    ),
+                                ]
+                            )
+                        ],
+                        style={"borderRadius": "12px", "border": "1px solid #e5e7eb"},
+                    ),
+                    width=2,
+                ),
+                dbc.Col(
+                    dbc.Card(
+                        [
+                            dbc.CardBody(
+                                [
+                                    html.H6(
+                                        "ROC AUC",
+                                        style={
+                                            "color": "#6b7280",
+                                            "fontSize": "0.75rem",
+                                            "textTransform": "uppercase",
+                                        },
+                                    ),
+                                    html.H4(
+                                        f"{metrics['roc_auc']:.3f}",
+                                        style={"fontWeight": "800", "color": "#3b82f6"},
+                                    ),
+                                ]
+                            )
+                        ],
+                        style={"borderRadius": "12px", "border": "1px solid #e5e7eb"},
+                    ),
+                    width=2,
+                ),
+                dbc.Col(
+                    dbc.Card(
+                        [
+                            dbc.CardBody(
+                                [
+                                    html.H6(
+                                        "Precision",
+                                        style={
+                                            "color": "#6b7280",
+                                            "fontSize": "0.75rem",
+                                            "textTransform": "uppercase",
+                                        },
+                                    ),
+                                    html.H4(
+                                        f"{metrics['precision']:.1%}",
+                                        style={"fontWeight": "800", "color": "#10b981"},
+                                    ),
+                                ]
+                            )
+                        ],
+                        style={"borderRadius": "12px", "border": "1px solid #e5e7eb"},
+                    ),
+                    width=2,
+                ),
+                dbc.Col(
+                    dbc.Card(
+                        [
+                            dbc.CardBody(
+                                [
+                                    html.H6(
+                                        "Recall",
+                                        style={
+                                            "color": "#6b7280",
+                                            "fontSize": "0.75rem",
+                                            "textTransform": "uppercase",
+                                        },
+                                    ),
+                                    html.H4(
+                                        f"{metrics['recall']:.1%}",
+                                        style={"fontWeight": "800", "color": "#f59e0b"},
+                                    ),
+                                ]
+                            )
+                        ],
+                        style={"borderRadius": "12px", "border": "1px solid #e5e7eb"},
+                    ),
+                    width=2,
+                ),
+                dbc.Col(
+                    dbc.Card(
+                        [
+                            dbc.CardBody(
+                                [
+                                    html.H6(
+                                        "F1 Score",
+                                        style={
+                                            "color": "#6b7280",
+                                            "fontSize": "0.75rem",
+                                            "textTransform": "uppercase",
+                                        },
+                                    ),
+                                    html.H4(
+                                        f"{metrics['f1']:.3f}",
+                                        style={"fontWeight": "800", "color": "#ec4899"},
+                                    ),
+                                ]
+                            )
+                        ],
+                        style={"borderRadius": "12px", "border": "1px solid #e5e7eb"},
+                    ),
+                    width=2,
+                ),
+                dbc.Col(
+                    dbc.Card(
+                        [
+                            dbc.CardBody(
+                                [
+                                    html.H6(
+                                        "Samples",
+                                        style={
+                                            "color": "#6b7280",
+                                            "fontSize": "0.75rem",
+                                            "textTransform": "uppercase",
+                                        },
+                                    ),
+                                    html.H4(
+                                        str(result["n_samples"]),
+                                        style={"fontWeight": "800", "color": "#6b7280"},
+                                    ),
+                                ]
+                            )
+                        ],
+                        style={"borderRadius": "12px", "border": "1px solid #e5e7eb"},
+                    ),
+                    width=2,
+                ),
+            ],
+            className="g-3 mb-4",
+        )
 
         # Prediction result
         direction = prediction.get("direction", "unknown")
         confidence = prediction.get("confidence", 0)
-        pred_color = "#10b981" if direction == "bullish" else "#ef4444" if direction == "bearish" else "#6b7280"
-        pred_icon = "bi-arrow-up-circle" if direction == "bullish" else "bi-arrow-down-circle"
+        pred_color = (
+            "#10b981"
+            if direction == "bullish"
+            else "#ef4444" if direction == "bearish" else "#6b7280"
+        )
+        pred_icon = (
+            "bi-arrow-up-circle" if direction == "bullish" else "bi-arrow-down-circle"
+        )
 
-        pred_card = dbc.Card([
-            dbc.CardBody([
-                html.H5([html.I(className=f"bi {pred_icon} me-2"), "Current Prediction"],
-                         style={"fontWeight": "800"}),
-                html.H3(
-                    f"{direction.upper()} ({confidence:.1%} confidence)",
-                    style={"fontWeight": "800", "color": pred_color, "marginTop": "0.5rem"},
-                ),
-                html.Small(
-                    f"Based on {result['n_features']} features, {hold}-candle hold period • "
-                    f"{'Calibrated' if metrics.get('calibrated') else 'Uncalibrated'} probabilities",
-                    style={"color": "#6b7280"},
-                ),
-            ])
-        ], style={"borderRadius": "12px", "border": f"2px solid {pred_color}", "marginBottom": "1.5rem"})
+        pred_card = dbc.Card(
+            [
+                dbc.CardBody(
+                    [
+                        html.H5(
+                            [
+                                html.I(className=f"bi {pred_icon} me-2"),
+                                "Current Prediction",
+                            ],
+                            style={"fontWeight": "800"},
+                        ),
+                        html.H3(
+                            f"{direction.upper()} ({confidence:.1%} confidence)",
+                            style={
+                                "fontWeight": "800",
+                                "color": pred_color,
+                                "marginTop": "0.5rem",
+                            },
+                        ),
+                        html.Small(
+                            f"Based on {result['n_features']} features, {hold}-candle hold period • "
+                            f"{'Calibrated' if metrics.get('calibrated') else 'Uncalibrated'} probabilities",
+                            style={"color": "#6b7280"},
+                        ),
+                    ]
+                )
+            ],
+            style={
+                "borderRadius": "12px",
+                "border": f"2px solid {pred_color}",
+                "marginBottom": "1.5rem",
+            },
+        )
 
         # Feature importance
         fi = result.get("feature_importance", [])
@@ -4421,26 +7072,49 @@ def on_ml_train_predict(n_clicks, data, hold_candles):
         if fi:
             fi_rows = []
             for feat in fi[:10]:
-                fi_rows.append(html.Tr([
-                    html.Td(feat["feature"], style={"fontWeight": "600"}),
-                    html.Td(f"{feat['importance']:.4f}"),
-                    html.Td(
-                        html.Div(style={
-                            "width": f"{feat['importance'] * 400}px",
-                            "height": "8px",
-                            "backgroundColor": "#6366f1",
-                            "borderRadius": "4px",
-                        })
+                fi_rows.append(
+                    html.Tr(
+                        [
+                            html.Td(feat["feature"], style={"fontWeight": "600"}),
+                            html.Td(f"{feat['importance']:.4f}"),
+                            html.Td(
+                                html.Div(
+                                    style={
+                                        "width": f"{feat['importance'] * 400}px",
+                                        "height": "8px",
+                                        "backgroundColor": "#6366f1",
+                                        "borderRadius": "4px",
+                                    }
+                                )
+                            ),
+                        ]
+                    )
+                )
+            fi_section = html.Div(
+                [
+                    html.H6(
+                        "Feature Importance (Top 10)",
+                        style={"fontWeight": "700", "marginTop": "1rem"},
                     ),
-                ]))
-            fi_section = html.Div([
-                html.H6("Feature Importance (Top 10)", style={"fontWeight": "700", "marginTop": "1rem"}),
-                dbc.Table(
-                    [html.Thead(html.Tr([html.Th("Feature"), html.Th("Importance"), html.Th("")])),
-                     html.Tbody(fi_rows)],
-                    bordered=True, hover=True, size="sm",
-                ),
-            ])
+                    dbc.Table(
+                        [
+                            html.Thead(
+                                html.Tr(
+                                    [
+                                        html.Th("Feature"),
+                                        html.Th("Importance"),
+                                        html.Th(""),
+                                    ]
+                                )
+                            ),
+                            html.Tbody(fi_rows),
+                        ],
+                        bordered=True,
+                        hover=True,
+                        size="sm",
+                    ),
+                ]
+            )
 
         return html.Div([metric_cards, pred_card, fi_section])
 
@@ -4491,7 +7165,16 @@ def load_settings_on_tab(active_tab):
     State("pref-discovery-max", "value"),
     prevent_initial_call=True,
 )
-def on_save_preferences(n_clicks, symbol, period, interval, hold, live_enabled, live_interval_sec, discovery_max):
+def on_save_preferences(
+    n_clicks,
+    symbol,
+    period,
+    interval,
+    hold,
+    live_enabled,
+    live_interval_sec,
+    discovery_max,
+):
     if not n_clicks:
         return ""
     try:
@@ -4548,12 +7231,19 @@ def show_dataset_info(active_tab, data):
     try:
         df = pd.DataFrame(data["df"])
         info = dataset_info(df)
-        return html.Div([
-            html.Div(f"Rows: {info['rows']}", style={"fontWeight": "600"}),
-            html.Div(f"Memory: {info['memory_mb']} MB"),
-            html.Div(f"Needs downsampling: {'Yes' if info['needs_downsampling'] else 'No'}"),
-            html.Div(f"Needs chunking: {'Yes' if info['needs_chunking'] else 'No'}"),
-        ], style={"padding": "0.5rem", "color": "#374151"})
+        return html.Div(
+            [
+                html.Div(f"Rows: {info['rows']}", style={"fontWeight": "600"}),
+                html.Div(f"Memory: {info['memory_mb']} MB"),
+                html.Div(
+                    f"Needs downsampling: {'Yes' if info['needs_downsampling'] else 'No'}"
+                ),
+                html.Div(
+                    f"Needs chunking: {'Yes' if info['needs_chunking'] else 'No'}"
+                ),
+            ],
+            style={"padding": "0.5rem", "color": "#374151"},
+        )
     except Exception:
         return html.Div("Could not compute dataset info.", style={"color": "#6b7280"})
 
@@ -4588,11 +7278,15 @@ def on_live_refresh(n_intervals, symbol, period, interval):
     """Auto-refresh data from Yahoo Finance using the current sidebar symbol."""
     if not symbol or not symbol.strip():
         from dash.exceptions import PreventUpdate
+
         raise PreventUpdate
     try:
-        df = fetch_yahoo_data(symbol.strip(), period=period or "1d", interval=interval or "1d")
+        df = fetch_yahoo_data(
+            symbol.strip(), period=period or "1d", interval=interval or "1d"
+        )
         if df is None or df.empty:
             from dash.exceptions import PreventUpdate
+
             raise PreventUpdate
         data = {
             "filename": f"live_{symbol.strip()}",
@@ -4602,18 +7296,23 @@ def on_live_refresh(n_intervals, symbol, period, interval):
         return data
     except Exception:
         from dash.exceptions import PreventUpdate
+
         raise PreventUpdate
 
 
 if __name__ == "__main__":
     import sys
+
     try:
-        app.run(host="0.0.0.0", port="8050", debug=False, use_reloader=False, threaded=True)
+        app.run(
+            host="0.0.0.0", port="8050", debug=False, use_reloader=False, threaded=True
+        )
     except KeyboardInterrupt:
         print("\nShutdown requested.")
         sys.exit(0)
     except Exception as e:
         print(f"Server error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

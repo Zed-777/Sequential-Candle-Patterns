@@ -17,8 +17,19 @@ logger = logging.getLogger(__name__)
 
 # Timeframe hierarchy — lower index = shorter timeframe
 TIMEFRAME_ORDER = [
-    "1m", "2m", "5m", "15m", "30m", "60m", "90m",
-    "1h", "4h", "1d", "5d", "1wk", "1mo",
+    "1m",
+    "2m",
+    "5m",
+    "15m",
+    "30m",
+    "60m",
+    "90m",
+    "1h",
+    "4h",
+    "1d",
+    "5d",
+    "1wk",
+    "1mo",
 ]
 
 # Sensible default period per interval to get enough candles
@@ -210,9 +221,7 @@ def multi_timeframe_summary(
         per_tf[iv] = {
             "candle_count": len(df),
             "total_matches": total_matches,
-            "sequences_found": sum(
-                1 for v in scan_results.get(iv, {}).values() if v
-            ),
+            "sequences_found": sum(1 for v in scan_results.get(iv, {}).values() if v),
         }
 
     return {

@@ -36,6 +36,7 @@ _ALERTS_DB = Path("data/alerts.db")
 # SQLite persistence for alert history & rules
 # ---------------------------------------------------------------------------
 
+
 def _init_alerts_db(db_path: Optional[Path] = None) -> None:
     db = db_path or _ALERTS_DB
     db.parent.mkdir(parents=True, exist_ok=True)
@@ -76,6 +77,7 @@ def _init_alerts_db(db_path: Optional[Path] = None) -> None:
 # ---------------------------------------------------------------------------
 # Alert Rule CRUD
 # ---------------------------------------------------------------------------
+
 
 def add_alert_rule(
     name: str,
@@ -124,18 +126,20 @@ def list_alert_rules(db_path: Optional[Path] = None) -> List[Dict[str, Any]]:
     conn.close()
     results = []
     for r in rows:
-        results.append({
-            "id": r["id"],
-            "name": r["name"],
-            "sequences": json.loads(r["sequences"]),
-            "symbol": r["symbol"],
-            "interval": r["interval"],
-            "webhook_url": r["webhook_url"],
-            "email_to": r["email_to"] if "email_to" in r.keys() else "",
-            "enabled": bool(r["enabled"]),
-            "created_at": r["created_at"],
-            "updated_at": r["updated_at"],
-        })
+        results.append(
+            {
+                "id": r["id"],
+                "name": r["name"],
+                "sequences": json.loads(r["sequences"]),
+                "symbol": r["symbol"],
+                "interval": r["interval"],
+                "webhook_url": r["webhook_url"],
+                "email_to": r["email_to"] if "email_to" in r.keys() else "",
+                "enabled": bool(r["enabled"]),
+                "created_at": r["created_at"],
+                "updated_at": r["updated_at"],
+            }
+        )
     return results
 
 
@@ -152,7 +156,9 @@ def remove_alert_rule(rule_id: int, db_path: Optional[Path] = None) -> bool:
     return deleted
 
 
-def toggle_alert_rule(rule_id: int, enabled: bool, db_path: Optional[Path] = None) -> bool:
+def toggle_alert_rule(
+    rule_id: int, enabled: bool, db_path: Optional[Path] = None
+) -> bool:
     """Enable/disable an alert rule."""
     db = db_path or _ALERTS_DB
     _init_alerts_db(db)
@@ -171,6 +177,7 @@ def toggle_alert_rule(rule_id: int, enabled: bool, db_path: Optional[Path] = Non
 # ---------------------------------------------------------------------------
 # Alert History
 # ---------------------------------------------------------------------------
+
 
 def record_alert(
     rule_id: Optional[int],
@@ -263,6 +270,7 @@ def clear_alert_history(db_path: Optional[Path] = None) -> int:
 # Webhook dispatch
 # ---------------------------------------------------------------------------
 
+
 def send_webhook(
     url: str,
     payload: Dict[str, Any],
@@ -306,14 +314,16 @@ def configure_email(
     Call once at startup or from the Settings tab.  Credentials are kept
     only in process memory — never persisted to disk.
     """
-    _EMAIL_CONFIG.update({
-        "smtp_host": smtp_host,
-        "smtp_port": smtp_port,
-        "smtp_user": smtp_user,
-        "smtp_password": smtp_password,
-        "smtp_from": smtp_from or smtp_user,
-        "smtp_use_tls": smtp_use_tls,
-    })
+    _EMAIL_CONFIG.update(
+        {
+            "smtp_host": smtp_host,
+            "smtp_port": smtp_port,
+            "smtp_user": smtp_user,
+            "smtp_password": smtp_password,
+            "smtp_from": smtp_from or smtp_user,
+            "smtp_use_tls": smtp_use_tls,
+        }
+    )
 
 
 def send_email(
@@ -374,6 +384,7 @@ def send_email(
 # Check & Trigger — called by the live scanner
 # ---------------------------------------------------------------------------
 
+
 def check_and_trigger(
     df,
     symbol: str = "",
@@ -428,17 +439,20 @@ def check_and_trigger(
 
                     # Fire webhook if configured
                     if rule["webhook_url"]:
-                        send_webhook(rule["webhook_url"], {
-                            "alert_id": alert_id,
-                            "rule": rule["name"],
-                            "sequence": seq_str,
-                            "symbol": symbol,
-                            "match_count": len(matches),
-                            "message": msg,
-                            "timestamp": datetime.datetime.now(
-                                datetime.timezone.utc
-                            ).isoformat(),
-                        })
+                        send_webhook(
+                            rule["webhook_url"],
+                            {
+                                "alert_id": alert_id,
+                                "rule": rule["name"],
+                                "sequence": seq_str,
+                                "symbol": symbol,
+                                "match_count": len(matches),
+                                "message": msg,
+                                "timestamp": datetime.datetime.now(
+                                    datetime.timezone.utc
+                                ).isoformat(),
+                            },
+                        )
 
                     # Fire email if configured
                     if rule.get("email_to"):
@@ -455,17 +469,23 @@ def check_and_trigger(
                             ),
                         )
 
-                    triggered.append({
-                        "alert_id": alert_id,
-                        "rule_name": rule["name"],
-                        "sequence": seq_str,
-                        "match_count": len(matches),
-                        "severity": severity,
-                        "message": msg,
-                    })
+                    triggered.append(
+                        {
+                            "alert_id": alert_id,
+                            "rule_name": rule["name"],
+                            "sequence": seq_str,
+                            "match_count": len(matches),
+                            "severity": severity,
+                            "message": msg,
+                        }
+                    )
             except Exception as exc:
-                logger.warning("Alert check failed for rule '%s' seq '%s': %s",
-                               rule["name"], seq_str, exc)
+                logger.warning(
+                    "Alert check failed for rule '%s' seq '%s': %s",
+                    rule["name"],
+                    seq_str,
+                    exc,
+                )
 
     return triggered
 

@@ -48,7 +48,9 @@ def summarize_detections(
     return rows
 
 
-def pattern_sparkline_series(df: pd.DataFrame, detections: List[Dict[str, Any]], horizon: int = 5) -> Dict[str, List[float]]:
+def pattern_sparkline_series(
+    df: pd.DataFrame, detections: List[Dict[str, Any]], horizon: int = 5
+) -> Dict[str, List[float]]:
     """Compute average return series per pattern for hold periods 1..horizon.
 
     Returns a dict: { pattern_name: [avg_return@1, avg_return@2, ..., avg_return@horizon] }

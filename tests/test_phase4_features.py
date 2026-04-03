@@ -1,6 +1,7 @@
 """Tests for Phase 4 features: data_feeds, reverse_pattern_finder,
 sequence_confidence, sequence_heatmap_data.
 """
+
 from __future__ import annotations
 
 import pandas as pd
@@ -23,12 +24,14 @@ from candle_patterns.data_feeds import (
     ALL_POPULAR,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_candles(colours: str, base_open: float = 100.0, volatility: float = 2.0) -> pd.DataFrame:
+
+def _make_candles(
+    colours: str, base_open: float = 100.0, volatility: float = 2.0
+) -> pd.DataFrame:
     """Build a DataFrame from a colour string like 'RRGGRD'.
 
     R = red (close < open), G = green (close > open), D = doji.
@@ -37,11 +40,38 @@ def _make_candles(colours: str, base_open: float = 100.0, volatility: float = 2.
     for i, c in enumerate(colours):
         o = base_open + i * 0.5
         if c == "R":
-            rows.append({"timestamp": f"2025-01-{i+1:02d}", "open": o + volatility, "high": o + volatility + 1, "low": o - 1, "close": o, "volume": 100})
+            rows.append(
+                {
+                    "timestamp": f"2025-01-{i+1:02d}",
+                    "open": o + volatility,
+                    "high": o + volatility + 1,
+                    "low": o - 1,
+                    "close": o,
+                    "volume": 100,
+                }
+            )
         elif c == "G":
-            rows.append({"timestamp": f"2025-01-{i+1:02d}", "open": o, "high": o + volatility + 1, "low": o - 1, "close": o + volatility, "volume": 100})
+            rows.append(
+                {
+                    "timestamp": f"2025-01-{i+1:02d}",
+                    "open": o,
+                    "high": o + volatility + 1,
+                    "low": o - 1,
+                    "close": o + volatility,
+                    "volume": 100,
+                }
+            )
         else:  # Doji
-            rows.append({"timestamp": f"2025-01-{i+1:02d}", "open": o, "high": o + 5, "low": o - 5, "close": o, "volume": 100})
+            rows.append(
+                {
+                    "timestamp": f"2025-01-{i+1:02d}",
+                    "open": o,
+                    "high": o + 5,
+                    "low": o - 5,
+                    "close": o,
+                    "volume": 100,
+                }
+            )
     df = pd.DataFrame(rows)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     return df
@@ -51,6 +81,7 @@ def _make_volatile_candles(n: int = 50) -> pd.DataFrame:
     """Build a dataset with some big moves for reverse pattern finder testing."""
     rows = []
     import random
+
     random.seed(42)
     price = 100.0
     for i in range(n):
@@ -62,14 +93,16 @@ def _make_volatile_candles(n: int = 50) -> pd.DataFrame:
         c = price + change
         h = max(o, c) + abs(change) * 0.3
         low = min(o, c) - abs(change) * 0.5
-        rows.append({
-            "timestamp": f"2025-01-{(i % 28) + 1:02d}",
-            "open": round(o, 4),
-            "high": round(h, 4),
-            "low": round(low, 4),
-            "close": round(c, 4),
-            "volume": 100,
-        })
+        rows.append(
+            {
+                "timestamp": f"2025-01-{(i % 28) + 1:02d}",
+                "open": round(o, 4),
+                "high": round(h, 4),
+                "low": round(low, 4),
+                "close": round(c, 4),
+                "volume": 100,
+            }
+        )
         price = c
     df = pd.DataFrame(rows)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -79,6 +112,7 @@ def _make_volatile_candles(n: int = 50) -> pd.DataFrame:
 # ===========================================================================
 # Data Feeds — constants and validation
 # ===========================================================================
+
 
 class TestDataFeedsConstants:
     def test_valid_intervals_list(self):
@@ -117,7 +151,9 @@ class TestFetchYahooData:
         with pytest.raises(ValueError, match="Invalid period"):
             fetch_yahoo_data("AAPL", period="99x")
 
-    @pytest.mark.skipif(True, reason="Network test — enable manually for integration testing")
+    @pytest.mark.skipif(
+        True, reason="Network test — enable manually for integration testing"
+    )
     def test_fetch_aapl_daily(self):
         """Integration test: fetch AAPL daily data (requires internet)."""
         df = fetch_yahoo_data("AAPL", period="1mo", interval="1d")
@@ -132,7 +168,9 @@ class TestSearchSymbols:
         result = search_symbols("")
         assert result == []
 
-    @pytest.mark.skipif(True, reason="Network test — enable manually for integration testing")
+    @pytest.mark.skipif(
+        True, reason="Network test — enable manually for integration testing"
+    )
     def test_search_apple(self):
         """Integration test: search for Apple (requires internet)."""
         results = search_symbols("Apple")
@@ -143,6 +181,7 @@ class TestSearchSymbols:
 # ===========================================================================
 # Reverse Pattern Finder
 # ===========================================================================
+
 
 class TestReversePatternFinder:
     def test_returns_list(self):
@@ -180,7 +219,9 @@ class TestReversePatternFinder:
 
     def test_top_k_limit(self):
         df = _make_volatile_candles(50)
-        results = reverse_pattern_finder(df, threshold_pct=0.5, direction="both", top_k=5)
+        results = reverse_pattern_finder(
+            df, threshold_pct=0.5, direction="both", top_k=5
+        )
         assert len(results) <= 5
 
     def test_high_threshold_no_results(self):
@@ -193,6 +234,7 @@ class TestReversePatternFinder:
 # Sequence Confidence Scoring
 # ===========================================================================
 
+
 class TestSequenceConfidence:
     def test_returns_dict(self):
         df = _make_candles("RRGGRRGGRRGG")
@@ -202,8 +244,16 @@ class TestSequenceConfidence:
     def test_all_fields_present(self):
         df = _make_candles("RRGGRRGGRRGG")
         result = sequence_confidence(df, "2R", hold_candles=2)
-        expected = ["z_score", "p_value", "confidence_level", "sequence_avg",
-                     "baseline_avg", "baseline_std", "sample_size", "is_significant"]
+        expected = [
+            "z_score",
+            "p_value",
+            "confidence_level",
+            "sequence_avg",
+            "baseline_avg",
+            "baseline_std",
+            "sample_size",
+            "is_significant",
+        ]
         for k in expected:
             assert k in result, f"Missing key: {k}"
 
@@ -211,9 +261,14 @@ class TestSequenceConfidence:
         df = _make_candles("RG")  # only 1 possible occurrence
         result = sequence_confidence(df, "1R -> 1G", hold_candles=1)
         # Should handle gracefully
-        assert result["confidence_level"] in ("Insufficient data", "Insufficient baseline",
-                                               "Very High (p < 0.01)", "High (p < 0.05)",
-                                               "Moderate (p < 0.10)", "Low (p >= 0.10)")
+        assert result["confidence_level"] in (
+            "Insufficient data",
+            "Insufficient baseline",
+            "Very High (p < 0.01)",
+            "High (p < 0.05)",
+            "Moderate (p < 0.10)",
+            "Low (p >= 0.10)",
+        )
 
     def test_p_value_range(self):
         df = _make_candles("RRGGRRGGRRGGRRGG")
@@ -234,6 +289,7 @@ class TestSequenceConfidence:
 # ===========================================================================
 # Sequence Heatmap Data
 # ===========================================================================
+
 
 class TestSequenceHeatmapData:
     def test_returns_dict(self):
@@ -284,11 +340,14 @@ class TestSequenceHeatmapData:
 # Integration: Patterns + Data combo
 # ===========================================================================
 
+
 class TestPatternsIntegration:
     def test_reverse_finder_sequences_are_scannable(self):
         """Sequences returned by reverse_pattern_finder should be valid for find_sequence_occurrences."""
         df = _make_volatile_candles(50)
-        results = reverse_pattern_finder(df, threshold_pct=1.0, direction="both", top_k=5)
+        results = reverse_pattern_finder(
+            df, threshold_pct=1.0, direction="both", top_k=5
+        )
         for r in results:
             occurrences = find_sequence_occurrences(df, r["sequence"])
             assert isinstance(occurrences, list)

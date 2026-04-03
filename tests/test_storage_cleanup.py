@@ -11,7 +11,15 @@ def test_cleanup_old_uploads(tmp_path, monkeypatch):
     # run in isolated tmp path so artifacts/db are local to test
     monkeypatch.chdir(tmp_path)
 
-    df = pd.DataFrame({"timestamp": ["2020-01-01T00:00:00Z"], "open": [1], "high": [2], "low": [0.5], "close": [1.5]})
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2020-01-01T00:00:00Z"],
+            "open": [1],
+            "high": [2],
+            "low": [0.5],
+            "close": [1.5],
+        }
+    )
     detects = [{"index": 0, "timestamp": "2020-01-01T00:00:00Z", "pattern": "doji"}]
 
     # save an upload (should create artifacts and DB row)
@@ -42,7 +50,15 @@ def test_cli_cleanup(tmp_path, monkeypatch):
     # create a sample upload to cleanup
     import pandas as pd
 
-    df = pd.DataFrame({"timestamp": ["2020-01-01T00:00:00Z"], "open": [1], "high": [2], "low": [0.5], "close": [1.5]})
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2020-01-01T00:00:00Z"],
+            "open": [1],
+            "high": [2],
+            "low": [0.5],
+            "close": [1.5],
+        }
+    )
     detects = [{"index": 0, "timestamp": "2020-01-01T00:00:00Z", "pattern": "doji"}]
     storage.save_upload("s.csv", df, detects)
 

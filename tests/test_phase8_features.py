@@ -6,6 +6,7 @@ Tests for:
 - REST API endpoints (health, scan, discover, portfolio/scan, symbols/search)
 - CI workflow updates (verified by file content)
 """
+
 from __future__ import annotations
 
 import json
@@ -13,7 +14,6 @@ import pandas as pd
 import pytest
 from unittest.mock import patch
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -70,7 +70,9 @@ class TestScanSymbol:
         assert result["matches"][0]["sequence"] == "1R -> 1G"
         assert isinstance(result["matches"][0]["count"], int)
 
-    @patch("candle_patterns.data_feeds.fetch_yahoo_data", side_effect=Exception("network"))
+    @patch(
+        "candle_patterns.data_feeds.fetch_yahoo_data", side_effect=Exception("network")
+    )
     def test_scan_handles_fetch_error(self, mock_fetch):
         from candle_patterns.portfolio import scan_symbol
 
@@ -115,8 +117,18 @@ class TestRankSymbols:
         from candle_patterns.portfolio import rank_symbols
 
         data = [
-            {"symbol": "A", "matches": [{"count": 5, "stats": {"win_rate": 0.6, "avg_return": 0.01}}]},
-            {"symbol": "B", "matches": [{"count": 10, "stats": {"win_rate": 0.4, "avg_return": 0.02}}]},
+            {
+                "symbol": "A",
+                "matches": [
+                    {"count": 5, "stats": {"win_rate": 0.6, "avg_return": 0.01}}
+                ],
+            },
+            {
+                "symbol": "B",
+                "matches": [
+                    {"count": 10, "stats": {"win_rate": 0.4, "avg_return": 0.02}}
+                ],
+            },
             {"symbol": "C", "matches": [{"count": 0, "stats": {}}]},
         ]
         ranked = rank_symbols(data, sort_by="total_matches")
@@ -128,8 +140,18 @@ class TestRankSymbols:
         from candle_patterns.portfolio import rank_symbols
 
         data = [
-            {"symbol": "A", "matches": [{"count": 5, "stats": {"win_rate": 0.8, "avg_return": 0.01}}]},
-            {"symbol": "B", "matches": [{"count": 10, "stats": {"win_rate": 0.4, "avg_return": 0.02}}]},
+            {
+                "symbol": "A",
+                "matches": [
+                    {"count": 5, "stats": {"win_rate": 0.8, "avg_return": 0.01}}
+                ],
+            },
+            {
+                "symbol": "B",
+                "matches": [
+                    {"count": 10, "stats": {"win_rate": 0.4, "avg_return": 0.02}}
+                ],
+            },
         ]
         ranked = rank_symbols(data, sort_by="avg_win_rate")
         assert ranked[0]["symbol"] == "A"
@@ -138,8 +160,18 @@ class TestRankSymbols:
         from candle_patterns.portfolio import rank_symbols
 
         data = [
-            {"symbol": "A", "matches": [{"count": 5, "stats": {"win_rate": 0.5, "avg_return": 0.05}}]},
-            {"symbol": "B", "matches": [{"count": 5, "stats": {"win_rate": 0.5, "avg_return": 0.10}}]},
+            {
+                "symbol": "A",
+                "matches": [
+                    {"count": 5, "stats": {"win_rate": 0.5, "avg_return": 0.05}}
+                ],
+            },
+            {
+                "symbol": "B",
+                "matches": [
+                    {"count": 5, "stats": {"win_rate": 0.5, "avg_return": 0.10}}
+                ],
+            },
         ]
         ranked = rank_symbols(data, sort_by="avg_return")
         assert ranked[0]["symbol"] == "B"
@@ -162,7 +194,13 @@ class TestPortfolioSummary:
         data = [
             {"symbol": "A", "matches": [{"count": 3, "sequence": "1R"}]},
             {"symbol": "B", "matches": [{"count": 0, "sequence": "1R"}]},
-            {"symbol": "C", "matches": [{"count": 7, "sequence": "1R"}, {"count": 2, "sequence": "2G"}]},
+            {
+                "symbol": "C",
+                "matches": [
+                    {"count": 7, "sequence": "1R"},
+                    {"count": 2, "sequence": "2G"},
+                ],
+            },
         ]
         summary = portfolio_summary(data)
         assert summary["symbols_scanned"] == 3
@@ -265,7 +303,9 @@ class TestApiPortfolioScan:
     def test_portfolio_max_50_symbols(self, api_client):
         resp = api_client.post(
             "/api/portfolio/scan",
-            data=json.dumps({"symbols": [f"S{i}" for i in range(51)], "sequences": ["1R"]}),
+            data=json.dumps(
+                {"symbols": [f"S{i}" for i in range(51)], "sequences": ["1R"]}
+            ),
             content_type="application/json",
         )
         assert resp.status_code == 400
@@ -293,7 +333,10 @@ class TestApiSymbolSearch:
         resp = api_client.get("/api/symbols/search")
         assert resp.status_code == 400
 
-    @patch("candle_patterns.data_feeds.search_symbols", return_value=[{"symbol": "AAPL", "name": "Apple Inc."}])
+    @patch(
+        "candle_patterns.data_feeds.search_symbols",
+        return_value=[{"symbol": "AAPL", "name": "Apple Inc."}],
+    )
     def test_search_success(self, mock_search, api_client):
         resp = api_client.get("/api/symbols/search?q=apple")
         assert resp.status_code == 200

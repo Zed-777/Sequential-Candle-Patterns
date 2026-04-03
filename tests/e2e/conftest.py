@@ -46,7 +46,9 @@ def dash_server():
     env = {
         "PYTHONPATH": str(ROOT / "src"),
         "PYTHONUNBUFFERED": "1",
-        "PATH": str(ROOT / ".venv" / "Scripts") + ";" + str(Path(sys.executable).parent),
+        "PATH": str(ROOT / ".venv" / "Scripts")
+        + ";"
+        + str(Path(sys.executable).parent),
     }
 
     proc = subprocess.Popen(
@@ -66,7 +68,9 @@ def dash_server():
             break
         if proc.poll() is not None:
             out = proc.stdout.read().decode() if proc.stdout else ""
-            pytest.fail(f"Dash server exited prematurely (code {proc.returncode}):\n{out}")
+            pytest.fail(
+                f"Dash server exited prematurely (code {proc.returncode}):\n{out}"
+            )
         time.sleep(0.5)
     else:
         proc.kill()

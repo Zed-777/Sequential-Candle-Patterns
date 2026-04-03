@@ -14,6 +14,7 @@ Example:
     $ python -m candle_patterns.cli run data.csv --out report.csv
     $ python -m candle_patterns.cli train --file data.csv --model-out model.pkl
 """
+
 from __future__ import annotations
 
 import typer
@@ -48,7 +49,9 @@ def cleanup(days: int = 30) -> None:
 @app.command()
 def train(
     file: str = typer.Argument(..., help="Path to OHLC CSV file"),
-    model_out: str = typer.Option("artifacts/model.pkl", "--model-out", "-m", help="Path to save trained model"),
+    model_out: str = typer.Option(
+        "artifacts/model.pkl", "--model-out", "-m", help="Path to save trained model"
+    ),
 ) -> None:
     """Train an ML baseline model on detected patterns from an OHLC CSV."""
     from pathlib import Path
@@ -56,7 +59,9 @@ def train(
 
     df = load_csv(file)
     patterns = detect_patterns(df)
-    typer.echo(f"Loaded {len(df)} candles, detected {len(patterns)} pattern occurrences")
+    typer.echo(
+        f"Loaded {len(df)} candles, detected {len(patterns)} pattern occurrences"
+    )
 
     model = PatternMLModel()
     X, y = model.engineer_features(df, patterns)
@@ -66,12 +71,16 @@ def train(
         raise typer.Exit(code=1)
 
     metrics = model.train(X, y)
-    typer.echo(f"Training complete — accuracy: {metrics.get('accuracy', 0):.4f}, "
-               f"f1: {metrics.get('f1_score', 0):.4f}")
+    typer.echo(
+        f"Training complete — accuracy: {metrics.get('accuracy', 0):.4f}, "
+        f"f1: {metrics.get('f1_score', 0):.4f}"
+    )
 
     cv = model.cross_validate(X, y, n_splits=min(5, max(2, len(X) // 10)))
-    typer.echo(f"Cross-validation — mean accuracy: {cv.get('mean_accuracy', 0):.4f} "
-               f"(+/- {cv.get('std_accuracy', 0):.4f})")
+    typer.echo(
+        f"Cross-validation — mean accuracy: {cv.get('mean_accuracy', 0):.4f} "
+        f"(+/- {cv.get('std_accuracy', 0):.4f})"
+    )
 
     out_path = Path(model_out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -82,7 +91,9 @@ def train(
 @app.command()
 def predict(
     file: str = typer.Argument(..., help="Path to OHLC CSV file"),
-    model_path: str = typer.Option("artifacts/model.pkl", "--model", "-m", help="Path to trained model"),
+    model_path: str = typer.Option(
+        "artifacts/model.pkl", "--model", "-m", help="Path to trained model"
+    ),
     out: str = typer.Option("predictions.csv", "--out", "-o", help="Output CSV path"),
 ) -> None:
     """Generate predictions using a trained model on new OHLC data."""
@@ -100,7 +111,9 @@ def predict(
 
     df = load_csv(file)
     patterns = detect_patterns(df)
-    typer.echo(f"Loaded {len(df)} candles, detected {len(patterns)} pattern occurrences")
+    typer.echo(
+        f"Loaded {len(df)} candles, detected {len(patterns)} pattern occurrences"
+    )
 
     X, _ = model.engineer_features(df, patterns)
     if len(X) == 0:
@@ -118,15 +131,21 @@ def predict(
 @app.command()
 def backtest(
     file: str = typer.Argument(..., help="Path to OHLC CSV file"),
-    hold: int = typer.Option(5, "--hold", "-h", help="Number of periods to hold after signal"),
-    out: str = typer.Option("backtest_report.csv", "--out", "-o", help="Output CSV path"),
+    hold: int = typer.Option(
+        5, "--hold", "-h", help="Number of periods to hold after signal"
+    ),
+    out: str = typer.Option(
+        "backtest_report.csv", "--out", "-o", help="Output CSV path"
+    ),
 ) -> None:
     """Backtest detected patterns and report profitability metrics."""
     from candle_patterns.backtesting import evaluate_pattern_profitability
 
     df = load_csv(file)
     patterns = detect_patterns(df)
-    typer.echo(f"Loaded {len(df)} candles, detected {len(patterns)} pattern occurrences")
+    typer.echo(
+        f"Loaded {len(df)} candles, detected {len(patterns)} pattern occurrences"
+    )
 
     evaluation = evaluate_pattern_profitability(df, patterns, hold_periods=hold)
 

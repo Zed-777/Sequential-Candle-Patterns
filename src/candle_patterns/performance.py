@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 # Vectorised symbol classification
 # ---------------------------------------------------------------------------
 
+
 def vectorized_symbol_sequence(df: pd.DataFrame, doji_tol: float = 0.05) -> np.ndarray:
     """Classify each candle as 'R', 'G', or 'Doji' using vectorised numpy ops.
 
@@ -114,6 +115,7 @@ def vectorized_find_sequence(
 # Chunked data processing
 # ---------------------------------------------------------------------------
 
+
 def process_in_chunks(
     df: pd.DataFrame,
     seq_strs: List[str],
@@ -180,6 +182,7 @@ def process_in_chunks(
 # Chart downsampling for large datasets
 # ---------------------------------------------------------------------------
 
+
 def downsample_ohlcv(
     df: pd.DataFrame,
     max_points: int = 2000,
@@ -215,14 +218,18 @@ def downsample_ohlcv(
     for g_start in range(0, n, group_size):
         g_end = min(g_start + group_size, n)
         window = df.iloc[g_start:g_end]
-        rows.append({
-            "timestamp": window.iloc[0]["timestamp"],
-            "open": float(window.iloc[0]["open"]),
-            "high": float(window["high"].max()),
-            "low": float(window["low"].min()),
-            "close": float(window.iloc[-1]["close"]),
-            "volume": float(window["volume"].sum()) if "volume" in window.columns else 0,
-        })
+        rows.append(
+            {
+                "timestamp": window.iloc[0]["timestamp"],
+                "open": float(window.iloc[0]["open"]),
+                "high": float(window["high"].max()),
+                "low": float(window["low"].min()),
+                "close": float(window.iloc[-1]["close"]),
+                "volume": (
+                    float(window["volume"].sum()) if "volume" in window.columns else 0
+                ),
+            }
+        )
 
     return pd.DataFrame(rows)
 
@@ -230,6 +237,7 @@ def downsample_ohlcv(
 # ---------------------------------------------------------------------------
 # Cached colour array for reuse across multiple scans
 # ---------------------------------------------------------------------------
+
 
 class CandleCache:
     """Memoises expensive computations for a given DataFrame.
@@ -278,6 +286,7 @@ candle_cache = CandleCache()
 # Batch statistics for multiple sequences
 # ---------------------------------------------------------------------------
 
+
 def batch_sequence_stats(
     df: pd.DataFrame,
     seq_strs: List[str],
@@ -317,6 +326,7 @@ def batch_sequence_stats(
 # ---------------------------------------------------------------------------
 # Dataset size analysis
 # ---------------------------------------------------------------------------
+
 
 def dataset_info(df: pd.DataFrame) -> dict:
     """Return metadata about the dataset for performance decisions.

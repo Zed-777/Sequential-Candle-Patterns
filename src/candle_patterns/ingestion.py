@@ -14,6 +14,7 @@ Example:
     >>> df = load_csv('data.csv')
     >>> validate_schema(df)
 """
+
 from __future__ import annotations
 
 import pandas as pd

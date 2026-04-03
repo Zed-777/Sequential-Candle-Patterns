@@ -18,6 +18,7 @@ Example:
     >>> detections = detect_patterns(df)
     >>> results = simple_pattern_backtest(df, detections, hold=5)
 """
+
 from __future__ import annotations
 
 import pandas as pd

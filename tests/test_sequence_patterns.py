@@ -4,6 +4,7 @@ Covers: parse_sequence, symbol_sequence, match_named_token,
         find_sequence_occurrences, sequence_length,
         _run_length_encode, discover_color_sequences.
 """
+
 from __future__ import annotations
 
 import pandas as pd
@@ -23,10 +24,10 @@ from candle_patterns.patterns import (
     find_followup_outcomes,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_candles(colours: str, base_open: float = 100.0) -> pd.DataFrame:
     """Build a tiny DataFrame from a colour string like 'RRGGRD'.
@@ -37,11 +38,38 @@ def _make_candles(colours: str, base_open: float = 100.0) -> pd.DataFrame:
     for i, c in enumerate(colours):
         o = base_open + i
         if c == "R":
-            rows.append({"timestamp": f"2025-01-{i+1:02d}", "open": o + 2, "high": o + 3, "low": o - 1, "close": o, "volume": 100})
+            rows.append(
+                {
+                    "timestamp": f"2025-01-{i+1:02d}",
+                    "open": o + 2,
+                    "high": o + 3,
+                    "low": o - 1,
+                    "close": o,
+                    "volume": 100,
+                }
+            )
         elif c == "G":
-            rows.append({"timestamp": f"2025-01-{i+1:02d}", "open": o, "high": o + 3, "low": o - 1, "close": o + 2, "volume": 100})
+            rows.append(
+                {
+                    "timestamp": f"2025-01-{i+1:02d}",
+                    "open": o,
+                    "high": o + 3,
+                    "low": o - 1,
+                    "close": o + 2,
+                    "volume": 100,
+                }
+            )
         else:  # Doji  (open == close, but body_size relative to range matters)
-            rows.append({"timestamp": f"2025-01-{i+1:02d}", "open": o, "high": o + 5, "low": o - 5, "close": o, "volume": 100})
+            rows.append(
+                {
+                    "timestamp": f"2025-01-{i+1:02d}",
+                    "open": o,
+                    "high": o + 5,
+                    "low": o - 5,
+                    "close": o,
+                    "volume": 100,
+                }
+            )
     df = pd.DataFrame(rows)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     return df
@@ -50,6 +78,7 @@ def _make_candles(colours: str, base_open: float = 100.0) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # parse_sequence
 # ---------------------------------------------------------------------------
+
 
 class TestParseSequence:
     def test_simple_two_tokens(self):
@@ -84,6 +113,7 @@ class TestParseSequence:
 # sequence_length
 # ---------------------------------------------------------------------------
 
+
 class TestSequenceLength:
     def test_simple(self):
         assert sequence_length("3R -> 2G") == 5
@@ -101,6 +131,7 @@ class TestSequenceLength:
 # ---------------------------------------------------------------------------
 # _run_length_encode
 # ---------------------------------------------------------------------------
+
 
 class TestRunLengthEncode:
     def test_basic(self):
@@ -122,6 +153,7 @@ class TestRunLengthEncode:
 # ---------------------------------------------------------------------------
 # symbol_sequence
 # ---------------------------------------------------------------------------
+
 
 class TestSymbolSequence:
     def test_red_green(self):
@@ -145,6 +177,7 @@ class TestSymbolSequence:
 # ---------------------------------------------------------------------------
 # find_sequence_occurrences
 # ---------------------------------------------------------------------------
+
 
 class TestFindSequenceOccurrences:
     def test_simple_match(self):
@@ -178,20 +211,26 @@ class TestFindSequenceOccurrences:
 
 class TestFollowupPatternCount:
     def test_followup_5r_after_3r_3g(self):
-        df = _make_candles("RRRGGGRRRGGGG")  # 3R->3G occurs twice, first followed by 2R (not full5), second followed by 5G
+        df = _make_candles(
+            "RRRGGGRRRGGGG"
+        )  # 3R->3G occurs twice, first followed by 2R (not full5), second followed by 5G
         stats = count_followup_pattern(df, "3R -> 3G", "5R", 5)
         assert stats["total_matches"] == 2
         assert stats["followup_success"] == 0
         assert stats["followup_rate"] == 0.0
 
     def test_followup_5g_success(self):
-        df = _make_candles("RRRGGGGGGG")  # 3R->3G at idx 0-5, then 5G at 6-10 is not enough (index range ends)
+        df = _make_candles(
+            "RRRGGGGGGG"
+        )  # 3R->3G at idx 0-5, then 5G at 6-10 is not enough (index range ends)
         stats = count_followup_pattern(df, "3R -> 3G", "5G", 5)
         assert stats["total_matches"] == 1
         assert stats["followup_success"] == 0
 
     def test_followup_within_window(self):
-        df = _make_candles("RRRGGGGGRR")  # base 3R->3G at 0-5; 2G followup at 6-7 appears inside follow_len=5
+        df = _make_candles(
+            "RRRGGGGGRR"
+        )  # base 3R->3G at 0-5; 2G followup at 6-7 appears inside follow_len=5
         stats = count_followup_pattern(df, "3R -> 3G", "2G", 5)
         assert stats["total_matches"] == 1
         assert stats["followup_success"] == 1
@@ -213,6 +252,7 @@ class TestFollowupOutcomes:
 
 def test_scan_sequences_followup_toggle():
     from candle_patterns import dashboard
+
     df = _make_candles("RRRGGGRRRGGGG")
     data = {"df": df.to_dict("records")}
     results, summary, active = dashboard.scan_sequences(
@@ -234,6 +274,7 @@ def test_scan_sequences_followup_toggle():
 # ---------------------------------------------------------------------------
 # discover_color_sequences
 # ---------------------------------------------------------------------------
+
 
 class TestDiscoverColorSequences:
     def test_returns_list_of_dicts(self):
@@ -260,7 +301,9 @@ class TestDiscoverColorSequences:
         assert len(results) <= 3
 
     def test_empty_data(self):
-        df = pd.DataFrame(columns=["timestamp", "open", "high", "low", "close", "volume"])
+        df = pd.DataFrame(
+            columns=["timestamp", "open", "high", "low", "close", "volume"]
+        )
         results = discover_color_sequences(df, min_len=3, max_len=5, top_k=5)
         assert results == []
 
@@ -274,6 +317,7 @@ class TestDiscoverColorSequences:
 # ---------------------------------------------------------------------------
 # match_named_token
 # ---------------------------------------------------------------------------
+
 
 class TestMatchNamedToken:
     def test_doji_match(self):
@@ -293,11 +337,14 @@ class TestMatchNamedToken:
 # find_wildcard_sequence
 # ---------------------------------------------------------------------------
 
+
 class TestFindWildcardSequence:
     def test_simple_wildcard(self):
         df = _make_candles("RRGGRR")
         # 2R -> * -> 2R  should find the match with * = GG (span 2)
-        results = find_wildcard_sequence(df, "2R -> * -> 2R", wildcard_min=1, wildcard_max=3)
+        results = find_wildcard_sequence(
+            df, "2R -> * -> 2R", wildcard_min=1, wildcard_max=3
+        )
         assert len(results) >= 1
         assert results[0]["start_idx"] == 0
         assert results[0]["end_idx"] == 5
@@ -309,18 +356,23 @@ class TestFindWildcardSequence:
 
     def test_wildcard_no_match(self):
         df = _make_candles("GGGGG")
-        results = find_wildcard_sequence(df, "2R -> * -> 2R", wildcard_min=1, wildcard_max=3)
+        results = find_wildcard_sequence(
+            df, "2R -> * -> 2R", wildcard_min=1, wildcard_max=3
+        )
         assert results == []
 
     def test_wildcard_multiple_matches(self):
         df = _make_candles("RRGRRRGRR")
-        results = find_wildcard_sequence(df, "2R -> * -> 2R", wildcard_min=1, wildcard_max=2)
+        results = find_wildcard_sequence(
+            df, "2R -> * -> 2R", wildcard_min=1, wildcard_max=2
+        )
         assert len(results) >= 1
 
 
 # ---------------------------------------------------------------------------
 # what_comes_next
 # ---------------------------------------------------------------------------
+
 
 class TestWhatComesNext:
     def test_basic_prediction(self):
@@ -351,6 +403,7 @@ class TestWhatComesNext:
 # sequence_outcome_stats
 # ---------------------------------------------------------------------------
 
+
 class TestSequenceOutcomeStats:
     def test_basic_stats(self):
         df = _make_candles("RRRGGGGGRR")
@@ -377,8 +430,15 @@ class TestSequenceOutcomeStats:
         df = _make_candles("RRGGRRGGRR")
         result = sequence_outcome_stats(df, "2R", hold_candles=2)
         expected_keys = [
-            "sequence", "occurrences", "avg_return_pct", "median_return_pct",
-            "win_rate", "max_gain_pct", "max_loss_pct", "avg_high_pct", "avg_low_pct",
+            "sequence",
+            "occurrences",
+            "avg_return_pct",
+            "median_return_pct",
+            "win_rate",
+            "max_gain_pct",
+            "max_loss_pct",
+            "avg_high_pct",
+            "avg_low_pct",
         ]
         for k in expected_keys:
             assert k in result, f"Missing key: {k}"

@@ -19,6 +19,7 @@ import pytest
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_candles(n: int = 50) -> pd.DataFrame:
     """Create a synthetic OHLCV DataFrame with predictable colour patterns."""
     rows = []
@@ -31,16 +32,46 @@ def _make_candles(n: int = 50) -> pd.DataFrame:
             c = o + 1.0  # green
         h = max(o, c) + 0.5
         low = min(o, c) - 0.5
-        rows.append({"timestamp": f"2025-01-{(i % 28) + 1:02d}", "open": o, "high": h, "low": low, "close": c, "volume": 1000 + i})
+        rows.append(
+            {
+                "timestamp": f"2025-01-{(i % 28) + 1:02d}",
+                "open": o,
+                "high": h,
+                "low": low,
+                "close": c,
+                "volume": 1000 + i,
+            }
+        )
     return pd.DataFrame(rows)
 
 
 def _make_engulfing_candles() -> pd.DataFrame:
     """Build candles where index 1 is a bullish engulfing of index 0."""
     rows = [
-        {"timestamp": "2025-01-01", "open": 105, "high": 106, "low": 99, "close": 100, "volume": 100},  # red
-        {"timestamp": "2025-01-02", "open": 99, "high": 112, "low": 98, "close": 110, "volume": 100},   # green, body >= prev body
-        {"timestamp": "2025-01-03", "open": 110, "high": 115, "low": 109, "close": 114, "volume": 100}, # green
+        {
+            "timestamp": "2025-01-01",
+            "open": 105,
+            "high": 106,
+            "low": 99,
+            "close": 100,
+            "volume": 100,
+        },  # red
+        {
+            "timestamp": "2025-01-02",
+            "open": 99,
+            "high": 112,
+            "low": 98,
+            "close": 110,
+            "volume": 100,
+        },  # green, body >= prev body
+        {
+            "timestamp": "2025-01-03",
+            "open": 110,
+            "high": 115,
+            "low": 109,
+            "close": 114,
+            "volume": 100,
+        },  # green
     ]
     return pd.DataFrame(rows)
 
@@ -49,13 +80,55 @@ def _make_star_candles() -> pd.DataFrame:
     """Build candles for Morning Star (idx 2) and Evening Star (idx 5)."""
     rows = [
         # Morning Star: bearish -> small body -> bullish
-        {"timestamp": "2025-01-01", "open": 110, "high": 112, "low": 100, "close": 101, "volume": 100},  # red
-        {"timestamp": "2025-01-02", "open": 101, "high": 102, "low": 100, "close": 101.2, "volume": 100}, # small body
-        {"timestamp": "2025-01-03", "open": 102, "high": 112, "low": 101, "close": 111, "volume": 100},  # green (morning star end)
+        {
+            "timestamp": "2025-01-01",
+            "open": 110,
+            "high": 112,
+            "low": 100,
+            "close": 101,
+            "volume": 100,
+        },  # red
+        {
+            "timestamp": "2025-01-02",
+            "open": 101,
+            "high": 102,
+            "low": 100,
+            "close": 101.2,
+            "volume": 100,
+        },  # small body
+        {
+            "timestamp": "2025-01-03",
+            "open": 102,
+            "high": 112,
+            "low": 101,
+            "close": 111,
+            "volume": 100,
+        },  # green (morning star end)
         # Evening Star: bullish -> small body -> bearish
-        {"timestamp": "2025-01-04", "open": 111, "high": 120, "low": 110, "close": 119, "volume": 100},  # green
-        {"timestamp": "2025-01-05", "open": 119, "high": 120, "low": 118, "close": 119.3, "volume": 100}, # small body
-        {"timestamp": "2025-01-06", "open": 119, "high": 120, "low": 110, "close": 111, "volume": 100},  # red (evening star end)
+        {
+            "timestamp": "2025-01-04",
+            "open": 111,
+            "high": 120,
+            "low": 110,
+            "close": 119,
+            "volume": 100,
+        },  # green
+        {
+            "timestamp": "2025-01-05",
+            "open": 119,
+            "high": 120,
+            "low": 118,
+            "close": 119.3,
+            "volume": 100,
+        },  # small body
+        {
+            "timestamp": "2025-01-06",
+            "open": 119,
+            "high": 120,
+            "low": 110,
+            "close": 111,
+            "volume": 100,
+        },  # red (evening star end)
     ]
     return pd.DataFrame(rows)
 
@@ -63,6 +136,7 @@ def _make_star_candles() -> pd.DataFrame:
 # =====================================================================
 # Multi-Timeframe Module Tests
 # =====================================================================
+
 
 class TestMultiTimeframeModule:
     """Tests for multi_timeframe.py pure-logic functions (no network)."""
@@ -76,6 +150,7 @@ class TestMultiTimeframeModule:
             TIMEFRAME_ORDER,
             DEFAULT_PERIOD_FOR_INTERVAL,
         )
+
         assert callable(fetch_multi_timeframe)
         assert callable(scan_multi_timeframe)
         assert callable(detect_alignment)
@@ -109,11 +184,15 @@ class TestMultiTimeframeModule:
 
     def test_detect_alignment_empty(self):
         from candle_patterns.multi_timeframe import detect_alignment
+
         assert detect_alignment({}, {}) == []
 
     def test_detect_alignment_finds_recent(self):
         """Alignment detection identifies sequences ending near end of data."""
-        from candle_patterns.multi_timeframe import scan_multi_timeframe, detect_alignment
+        from candle_patterns.multi_timeframe import (
+            scan_multi_timeframe,
+            detect_alignment,
+        )
 
         df = _make_candles(50)
         frames = {"1d": df, "1h": df}
@@ -127,7 +206,10 @@ class TestMultiTimeframeModule:
 
     def test_detect_alignment_no_recent(self):
         """With lookback=1 and no match at the very end, alignment = 0."""
-        from candle_patterns.multi_timeframe import scan_multi_timeframe, detect_alignment
+        from candle_patterns.multi_timeframe import (
+            scan_multi_timeframe,
+            detect_alignment,
+        )
 
         # Build a DataFrame where the last candle doesn't end a sequence
         df = _make_candles(10)
@@ -141,12 +223,14 @@ class TestMultiTimeframeModule:
 
     def test_timeframe_order_length(self):
         from candle_patterns.multi_timeframe import TIMEFRAME_ORDER
+
         assert len(TIMEFRAME_ORDER) >= 10
 
 
 # =====================================================================
 # Watchlist Tests
 # =====================================================================
+
 
 class TestWatchlist:
     """Tests for watchlist.py — file-based sequence library."""
@@ -158,6 +242,7 @@ class TestWatchlist:
 
     def test_list_empty(self):
         from candle_patterns.watchlist import list_watchlist
+
         path = self._tmp_path()
         try:
             # Remove the file so it's truly empty
@@ -170,10 +255,13 @@ class TestWatchlist:
 
     def test_add_and_list(self):
         from candle_patterns.watchlist import add_to_watchlist, list_watchlist
+
         path = self._tmp_path()
         try:
             os.unlink(path)
-            entry = add_to_watchlist("Bull Setup", ["3R -> 2G", "5R -> 3G"], symbol="AAPL", path=path)
+            entry = add_to_watchlist(
+                "Bull Setup", ["3R -> 2G", "5R -> 3G"], symbol="AAPL", path=path
+            )
             assert entry["label"] == "Bull Setup"
             assert len(entry["sequences"]) == 2
             assert entry["symbol"] == "AAPL"
@@ -188,6 +276,7 @@ class TestWatchlist:
 
     def test_add_empty_label_raises(self):
         from candle_patterns.watchlist import add_to_watchlist
+
         path = self._tmp_path()
         try:
             os.unlink(path)
@@ -199,6 +288,7 @@ class TestWatchlist:
 
     def test_add_no_sequences_raises(self):
         from candle_patterns.watchlist import add_to_watchlist
+
         path = self._tmp_path()
         try:
             os.unlink(path)
@@ -209,7 +299,12 @@ class TestWatchlist:
                 os.unlink(path)
 
     def test_remove(self):
-        from candle_patterns.watchlist import add_to_watchlist, remove_from_watchlist, list_watchlist
+        from candle_patterns.watchlist import (
+            add_to_watchlist,
+            remove_from_watchlist,
+            list_watchlist,
+        )
+
         path = self._tmp_path()
         try:
             os.unlink(path)
@@ -222,6 +317,7 @@ class TestWatchlist:
 
     def test_remove_nonexistent(self):
         from candle_patterns.watchlist import remove_from_watchlist
+
         path = self._tmp_path()
         try:
             os.unlink(path)
@@ -231,7 +327,12 @@ class TestWatchlist:
                 os.unlink(path)
 
     def test_update_last_used(self):
-        from candle_patterns.watchlist import add_to_watchlist, update_last_used, get_watchlist_entry
+        from candle_patterns.watchlist import (
+            add_to_watchlist,
+            update_last_used,
+            get_watchlist_entry,
+        )
+
         path = self._tmp_path()
         try:
             os.unlink(path)
@@ -246,7 +347,12 @@ class TestWatchlist:
                 os.unlink(path)
 
     def test_clear(self):
-        from candle_patterns.watchlist import add_to_watchlist, clear_watchlist, list_watchlist
+        from candle_patterns.watchlist import (
+            add_to_watchlist,
+            clear_watchlist,
+            list_watchlist,
+        )
+
         path = self._tmp_path()
         try:
             os.unlink(path)
@@ -260,7 +366,13 @@ class TestWatchlist:
                 os.unlink(path)
 
     def test_export_import(self):
-        from candle_patterns.watchlist import add_to_watchlist, export_watchlist, import_watchlist, list_watchlist
+        from candle_patterns.watchlist import (
+            add_to_watchlist,
+            export_watchlist,
+            import_watchlist,
+            list_watchlist,
+        )
+
         path = self._tmp_path()
         path2 = self._tmp_path()
         try:
@@ -280,11 +392,17 @@ class TestWatchlist:
 
     def test_import_invalid_json_raises(self):
         from candle_patterns.watchlist import import_watchlist
+
         with pytest.raises(ValueError, match="Invalid JSON"):
             import_watchlist("not json")
 
     def test_update_entry(self):
-        from candle_patterns.watchlist import add_to_watchlist, update_watchlist_entry, get_watchlist_entry
+        from candle_patterns.watchlist import (
+            add_to_watchlist,
+            update_watchlist_entry,
+            get_watchlist_entry,
+        )
+
         path = self._tmp_path()
         try:
             os.unlink(path)
@@ -302,11 +420,18 @@ class TestWatchlist:
 # Data Feed Caching Tests
 # =====================================================================
 
+
 class TestDataFeedCache:
     """Tests for the in-memory LRU cache in data_feeds.py."""
 
     def test_cache_imports(self):
-        from candle_patterns.data_feeds import cache_clear, cache_stats, cache_get, cache_put
+        from candle_patterns.data_feeds import (
+            cache_clear,
+            cache_stats,
+            cache_get,
+            cache_put,
+        )
+
         assert callable(cache_clear)
         assert callable(cache_stats)
         assert callable(cache_get)
@@ -314,6 +439,7 @@ class TestDataFeedCache:
 
     def test_cache_put_get(self):
         from candle_patterns.data_feeds import cache_put, cache_get, cache_clear
+
         cache_clear()
         df = pd.DataFrame({"a": [1, 2, 3]})
         cache_put("test-key", df)
@@ -324,11 +450,13 @@ class TestDataFeedCache:
 
     def test_cache_miss(self):
         from candle_patterns.data_feeds import cache_get, cache_clear
+
         cache_clear()
         assert cache_get("nonexistent") is None
 
     def test_cache_clear_returns_count(self):
         from candle_patterns.data_feeds import cache_put, cache_clear
+
         cache_clear()
         cache_put("k1", pd.DataFrame({"x": [1]}))
         cache_put("k2", pd.DataFrame({"x": [2]}))
@@ -337,6 +465,7 @@ class TestDataFeedCache:
 
     def test_cache_stats(self):
         from candle_patterns.data_feeds import cache_stats, cache_clear
+
         cache_clear()
         stats = cache_stats()
         assert stats["size"] == 0
@@ -346,6 +475,7 @@ class TestDataFeedCache:
     def test_cache_returns_copy(self):
         """Modifying returned DataFrame shouldn't corrupt cache."""
         from candle_patterns.data_feeds import cache_put, cache_get, cache_clear
+
         cache_clear()
         df = pd.DataFrame({"x": [10, 20, 30]})
         cache_put("copy-test", df)
@@ -362,67 +492,110 @@ class TestDataFeedCache:
 # Named Token Tests (Engulfing, MorningStar, EveningStar, etc.)
 # =====================================================================
 
+
 class TestNamedTokens:
     """Tests for extended match_named_token support in patterns.py."""
 
     def test_doji_still_works(self):
         from candle_patterns.patterns import match_named_token
-        df = pd.DataFrame([
-            {"open": 100.0, "high": 110.0, "low": 90.0, "close": 100.1, "volume": 100},
-        ])
+
+        df = pd.DataFrame(
+            [
+                {
+                    "open": 100.0,
+                    "high": 110.0,
+                    "low": 90.0,
+                    "close": 100.1,
+                    "volume": 100,
+                },
+            ]
+        )
         assert match_named_token(df, 0, "Doji") is True
 
     def test_hammer_still_works(self):
         from candle_patterns.patterns import match_named_token
-        df = pd.DataFrame([
-            {"open": 105.0, "high": 106.0, "low": 90.0, "close": 106.0, "volume": 100},
-        ])
+
+        df = pd.DataFrame(
+            [
+                {
+                    "open": 105.0,
+                    "high": 106.0,
+                    "low": 90.0,
+                    "close": 106.0,
+                    "volume": 100,
+                },
+            ]
+        )
         assert match_named_token(df, 0, "Hammer") is True
 
     def test_bullish_engulfing(self):
         from candle_patterns.patterns import match_named_token
+
         df = _make_engulfing_candles()
         assert match_named_token(df, 1, "BullEngulfing") is True
 
     def test_engulfing_generic(self):
         from candle_patterns.patterns import match_named_token
+
         df = _make_engulfing_candles()
         assert match_named_token(df, 1, "Engulfing") is True
 
     def test_morning_star(self):
         from candle_patterns.patterns import match_named_token
+
         df = _make_star_candles()
         assert match_named_token(df, 2, "MorningStar") is True
 
     def test_evening_star(self):
         from candle_patterns.patterns import match_named_token
+
         df = _make_star_candles()
         assert match_named_token(df, 5, "EveningStar") is True
 
     def test_shooting_star(self):
         from candle_patterns.patterns import match_named_token
-        df = pd.DataFrame([
-            {"open": 100.0, "high": 120.0, "low": 99.0, "close": 101.0, "volume": 100},
-        ])
+
+        df = pd.DataFrame(
+            [
+                {
+                    "open": 100.0,
+                    "high": 120.0,
+                    "low": 99.0,
+                    "close": 101.0,
+                    "volume": 100,
+                },
+            ]
+        )
         # upper wick = 120 - 101 = 19, body = 1 => 19 >= 2*1 => true
         assert match_named_token(df, 0, "ShootingStar") is True
 
     def test_spinning_top(self):
         from candle_patterns.patterns import match_named_token
-        df = pd.DataFrame([
-            {"open": 100.0, "high": 110.0, "low": 90.0, "close": 100.5, "volume": 100},
-        ])
+
+        df = pd.DataFrame(
+            [
+                {
+                    "open": 100.0,
+                    "high": 110.0,
+                    "low": 90.0,
+                    "close": 100.5,
+                    "volume": 100,
+                },
+            ]
+        )
         # body = 0.5, range = 20, 0.5 <= 0.2*20 = 4 => true
         assert match_named_token(df, 0, "SpinningTop") is True
 
     def test_unknown_token_returns_false(self):
         from candle_patterns.patterns import match_named_token
+
         df = _make_candles(5)
         assert match_named_token(df, 2, "FakeToken") is False
 
     def test_engulfing_at_index_0_returns_false(self):
         """Engulfing at index 0 can't look back, should return False."""
         from candle_patterns.patterns import match_named_token
+
         df = _make_engulfing_candles()
         assert match_named_token(df, 0, "Engulfing") is False
 
@@ -431,16 +604,19 @@ class TestNamedTokens:
 # Backtesting Integration Tests
 # =====================================================================
 
+
 class TestBacktestIntegration:
     """Tests for backtesting engine used by the dashboard callback."""
 
     def test_engine_import(self):
         from candle_patterns.backtesting import BacktestEngine
+
         engine = BacktestEngine()
         assert engine.risk_free_rate == 0.02
 
     def test_calculate_returns_basic(self):
         from candle_patterns.backtesting import BacktestEngine
+
         df = _make_candles(50)
         engine = BacktestEngine()
         trades = engine.calculate_returns(df, [0, 5, 10], hold_periods=3)
@@ -450,15 +626,19 @@ class TestBacktestIntegration:
 
     def test_equity_curve(self):
         from candle_patterns.backtesting import BacktestEngine
+
         df = _make_candles(50)
         engine = BacktestEngine()
         trades = engine.calculate_returns(df, [0, 5, 10, 15, 20], hold_periods=3)
         eq = engine.calculate_equity_curve(trades, initial_capital=10000)
         assert len(eq) == len(trades)
-        assert eq.iloc[0] != 0  # equity should start from initial_capital + first profit
+        assert (
+            eq.iloc[0] != 0
+        )  # equity should start from initial_capital + first profit
 
     def test_sharpe_ratio(self):
         from candle_patterns.backtesting import BacktestEngine
+
         engine = BacktestEngine()
         df = _make_candles(50)
         trades = engine.calculate_returns(df, [0, 5, 10, 15], hold_periods=3)
@@ -467,6 +647,7 @@ class TestBacktestIntegration:
 
     def test_win_rate(self):
         from candle_patterns.backtesting import BacktestEngine
+
         engine = BacktestEngine()
         df = _make_candles(50)
         trades = engine.calculate_returns(df, [0, 5, 10], hold_periods=3)
@@ -476,6 +657,7 @@ class TestBacktestIntegration:
 
     def test_empty_indices(self):
         from candle_patterns.backtesting import BacktestEngine
+
         engine = BacktestEngine()
         df = _make_candles(50)
         trades = engine.calculate_returns(df, [], hold_periods=3)
@@ -486,12 +668,14 @@ class TestBacktestIntegration:
 # Integration: named tokens in sequence scanning
 # =====================================================================
 
+
 class TestNamedTokenSequenceScanning:
     """Use extended named tokens inside full sequence scanning."""
 
     def test_sequence_with_engulfing(self):
         """Scan '1R -> Engulfing' against data with a bullish engulfing."""
         from candle_patterns.patterns import find_sequence_occurrences
+
         df = _make_engulfing_candles()
         # idx 0 = red, idx 1 = engulfing
         results = find_sequence_occurrences(df, "1R -> Engulfing")
@@ -500,6 +684,7 @@ class TestNamedTokenSequenceScanning:
     def test_sequence_with_morning_star(self):
         """Scan for MorningStar token in a sequence."""
         from candle_patterns.patterns import find_sequence_occurrences
+
         df = _make_star_candles()
         # The morning star completes at index 2: indices [0,1,2]
         # We need: 1R -> ... -> MorningStar. Since morning star checks idx-2,idx-1,idx
