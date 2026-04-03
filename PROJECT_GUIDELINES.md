@@ -11,7 +11,8 @@ Each file below must exist at the repository root and include the listed element
 ### • README.md
 
 - Title and one-line pitch.
-- Badges: build, coverage, license.
+- Badges: build, coverage, license, **Python version**. All four are required.
+- GitHub repository **Topics/tags** set (e.g., language, domain, framework keywords) for discoverability.
 - Short description (2–4 sentences) describing scope and audience.
 - Quickstart: Docker quickstart and local quickstart with exact commands and minimal prerequisites.
 - Usage examples: one minimal command and one realistic workflow.
@@ -114,7 +115,8 @@ Each file below must exist at the repository root and include the listed element
 - **MAINTAINERS.md** — active maintainers and their responsibilities.
 - **DATA_LICENSE.md / PRIVACY.md** — data-specific licensing and privacy policies (if applicable).
 - **MODEL_CARD.md / DATA_CARD.md** — model or dataset documentation (if applicable).
-- **Dependabot/Renovate config** — automated dependency updates.
+- **`.github/dependabot.yml`** — automated dependency updates (required; weekly pip + monthly Actions).
+- **`docs/api/`** — auto-generated API docs via Sphinx or MkDocs (required for library projects; optional for apps).
 
 ---
 
@@ -123,7 +125,7 @@ Each file below must exist at the repository root and include the listed element
 Follow this exact order to keep repositories predictable:
 
 1. Title and one-line pitch
-2. Badges for build, coverage, and license
+2. Badges for build, coverage, license, and Python version
 3. Short description (2–4 sentences)
 4. Quickstart: Docker and local quickstart with exact commands
 5. Usage examples: minimal command and realistic workflow
@@ -159,8 +161,10 @@ Follow this exact order to keep repositories predictable:
 ### Code quality
 
 - **Pre-commit hooks:** require formatting, import sorting, linter, and dependency safety scanner.
-- **Coverage target:** aim for at least 80% on core modules; document exceptions in MPDP.md.
+- **Coverage target:** aim for at least 70% on core modules (80%+ ideal); document exceptions in MPDP.md.
 - **Test artifacts:** produce JUnit XML and coverage reports; store artifacts in CI for historical comparison.
+- **No print() in library code:** use the standard `logging` module with module-level loggers. `print()` is only acceptable in CLI entry points and scripts. Replace all other print statements before public release.
+- **Version sync:** version in `pyproject.toml` (or `setup.cfg`) must always match the latest git tag and CHANGELOG entry. Verify before tagging a release.
 
 ### Code documentation
 
@@ -184,6 +188,12 @@ Follow this exact order to keep repositories predictable:
 - SECURITY.md present and complete.
 - VULNERABILITY_ASSESSMENT.md completed and approved for public release.
 - All required files listed in this document are present.
+- README has all four badges: build, coverage, Python version, license.
+- GitHub repository Topics/tags set (minimum 5 relevant keywords).
+- Dependabot config (`.github/dependabot.yml`) present and active.
+- No `print()` statements in library/package code — all replaced with `logging`.
+- `pyproject.toml` version matches latest git tag and CHANGELOG entry.
+- GitHub Release created from the version tag with release notes.
 
 ---
 
@@ -225,6 +235,7 @@ As of April 2, 2026, the Candlestick Patterns project implements **100% of tier-
 - ✅ THIRD_PARTY_NOTICES.md — Attribution for all open-source dependencies
 - ✅ MAINTAINERS.md — Active maintainer info and decision-making process
 - ✅ CODEOWNERS — GitHub auto-assignment for code reviews
+- ✅ .github/dependabot.yml — Automated dependency + Actions update scanning
 
 #### Standard Directories (5/5 Complete)
 
@@ -234,14 +245,15 @@ As of April 2, 2026, the Candlestick Patterns project implements **100% of tier-
 - ✅ data/ — Data/README.md with sample data and format guidance
 - ✅ src/ — Python package structure with 16+ core modules
 
-**Total Compliance:** **23/23 required files present (100%)**
+**Total Compliance:** **24/24 required files present (100%)**
 
 ### Optional Files (Not Applicable)
 
 - deploy/ — Not needed for v1.4.0 (local-first, future cloud deployment)
 - MODEL_CARD.md / DATA_CARD.md — Not applicable (no external model/data distribution)
 - PRIVACY.md / DATA_LICENSE.md — Not applicable (local-only, no external data collection)
-- Dependabot/Renovate config — Useful when >10 dependencies, can add later
+- Dependabot/Renovate config — ✅ Now required (moved to Tier 2); `.github/dependabot.yml` created
+- API docs (Sphinx/MkDocs) — Recommended for library projects; not applicable for app-only repos
 
 ---
 

@@ -11,7 +11,8 @@ Each file below must exist at the repository root and include the listed element
 ### • README.md
 
 - Title and one-line pitch.
-- Badges: build, coverage, license.
+- Badges: build, coverage, license, **Python version**. All four are required.
+- GitHub repository **Topics/tags** set (minimum 5 relevant keywords for discoverability).
 - Short description (2–4 sentences) describing scope and audience.
 - Quickstart: Docker quickstart and local quickstart with exact commands and minimal prerequisites.
 - Usage examples: one minimal command and one realistic workflow.
@@ -114,7 +115,8 @@ Each file below must exist at the repository root and include the listed element
 - **MAINTAINERS.md** — active maintainers and their responsibilities.
 - **DATA_LICENSE.md / PRIVACY.md** — data-specific licensing and privacy policies (if applicable).
 - **MODEL_CARD.md / DATA_CARD.md** — model or dataset documentation (if applicable).
-- **Dependabot/Renovate config** — automated dependency updates.
+- **`.github/dependabot.yml`** — automated dependency updates (required; weekly pip + monthly Actions).
+- **`docs/api/`** — auto-generated API docs via Sphinx or MkDocs (required for library projects; optional for apps).
 
 ---
 
@@ -123,7 +125,7 @@ Each file below must exist at the repository root and include the listed element
 Follow this exact order to keep repositories predictable:
 
 1. Title and one-line pitch
-2. Badges for build, coverage, and license
+2. Badges for build, coverage, license, and Python version
 3. Short description (2–4 sentences)
 4. Quickstart: Docker and local quickstart with exact commands
 5. Usage examples: minimal command and realistic workflow
@@ -159,8 +161,10 @@ Follow this exact order to keep repositories predictable:
 ### Code quality
 
 - **Pre-commit hooks:** require formatting, import sorting, linter, and dependency safety scanner.
-- **Coverage target:** aim for at least 80% on core modules; document exceptions in MPDP.md.
+- **Coverage target:** aim for at least 70% on core modules (80%+ ideal); document exceptions in MPDP.md.
 - **Test artifacts:** produce JUnit XML and coverage reports; store artifacts in CI for historical comparison.
+- **No print() in library code:** use the standard `logging` module with module-level loggers. `print()` is only acceptable in CLI entry points and top-level scripts. Audit all source files before public release.
+- **Version sync:** version in `pyproject.toml` (or `setup.cfg`) must always match the latest git tag and CHANGELOG entry. Verify before tagging a release.
 
 ### Code documentation
 
@@ -184,6 +188,12 @@ Follow this exact order to keep repositories predictable:
 - SECURITY.md present and complete.
 - VULNERABILITY_ASSESSMENT.md completed and approved for public release.
 - All required files listed in this document are present.
+- README has all four badges: build, coverage, Python version, license.
+- GitHub repository Topics/tags set (minimum 5 relevant keywords).
+- `.github/dependabot.yml` present and configured.
+- No `print()` statements in library/package source code — replaced with `logging`.
+- `pyproject.toml` version matches latest git tag and CHANGELOG entry.
+- GitHub Release created from the version tag with release notes.
 
 ---
 
@@ -204,13 +214,14 @@ This section provides explicit instructions for AI agents implementing this temp
 
 **Goal:** Establish a professional, reproducible, governance-aligned repository with all required files present and compliant before public release.
 
-**Success Criteria:** All 23 Tier 1 + Tier 2 items checked ✅ and validated in CI.
+**Success Criteria:** All 24 Tier 1 + Tier 2 items checked ✅, pre-publish checklist fully passed, and CI green.
 
 **Estimated effort:** 3–5 days for a new repo; 2–3 days for restructuring existing code.
 
 ### Phase-Based Implementation (Do in Order)
 
 #### Phase 1: Foundation & Runnable (Day 1–2)
+
 **Blocking:** Nothing ships without these.
 
 1. **Copy PROJECT_GUIDELINES.md** to repo root (customize inapplicable items)
@@ -218,44 +229,53 @@ This section provides explicit instructions for AI agents implementing this temp
 3. **Create/update .gitignore** — Exclude venvs, caches, secrets, large data
 4. **Create/update LICENSE** — Full license text + badge in README
 5. **Create/update Dependency manifest** (requirements.txt + lock OR pyproject.toml)
+   - **Version sync rule:** ensure version in `pyproject.toml` matches the intended release tag before committing
 6. **Create/update Dockerfile + .dockerignore** — Builds lean image from repo root
 7. **Create/update tests/** — Add sample unit tests (even if minimal) to validate structure
 8. **Create .github/workflows/ci.yml** — Basic pipeline: install, lint, test, Docker build
 9. **Validate:** README quickstart works; tests run locally; Docker builds
 
 #### Phase 2: Governance & Safety (Day 2–3)
+
 **Blocking for public release:**
 
-10. **Create SECURITY.md** — Threat model, dependency policy, secret handling, contact info
-11. **Create CONTRIBUTING.md** — Branch strategy, commit style, PR checklist, code standards
-12. **Create CODE_OF_CONDUCT.md** — Community guidelines (copy Contributor Covenant 2.1 if needed)
-13. **Create CODEOWNERS** — Assign code review ownership (GitHub auto-assignment)
-14. **Create CHANGELOG.md** — Semantic versioning policy + current release notes
-15. **Create THIRD_PARTY_NOTICES.md** — Attribution for all open-source dependencies
-16. **Create MAINTAINERS.md** — Contact, decision process, approval authority
+1. **Create SECURITY.md** — Threat model, dependency policy, secret handling, contact info
+2. **Create CONTRIBUTING.md** — Branch strategy, commit style, PR checklist, code standards
+3. **Create CODE_OF_CONDUCT.md** — Community guidelines (copy Contributor Covenant 2.1 if needed)
+4. **Create CODEOWNERS** — Assign code review ownership (GitHub auto-assignment)
+5. **Create CHANGELOG.md** — Semantic versioning policy + current release notes
+6. **Create THIRD_PARTY_NOTICES.md** — Attribution for all open-source dependencies
+7. **Create MAINTAINERS.md** — Contact, decision process, approval authority
+16. **Create `.github/dependabot.yml`** — Weekly pip updates + monthly GitHub Actions updates
 17. **Create .github/pull_request_template.md** — Checklist linking to pre-publish requirements
 18. **Create .github/FUNDING.yml** (optional) — Custom donation links or GitHub Sponsors
 19. **Validate:** All files exist, CI runs green, no broken links in docs
 
 #### Phase 3: Architecture & Onboarding (Day 4–5)
+
 **Required before claiming "production-ready":**
 
-20. **Create UML/ with diagrams** — At least 1 component diagram + 1 sequence diagram (SVG preferred)
-21. **Create UML/README.md** — Map diagrams to code folders and runtime flow
-22. **Create architecture.md** — System components, data flows, startup, failure modes, scaling
-23. **Create AGENT_HANDOFF.md** — Dev setup commands, .env.example, datasets, troubleshooting (< 30 min setup goal)
-24. **Create MPDP.md** — Project summary, current milestone, next 3 tasks with criteria
-25. **Create docs/** — Comprehensive guides (if not already present)
-26. **Validate:** All architecture docs linked in README; "under 30 min" setup verified by test run
+1. **Create UML/ with diagrams** — At least 1 component diagram + 1 sequence diagram (SVG preferred)
+2. **Create UML/README.md** — Map diagrams to code folders and runtime flow
+3. **Create architecture.md** — System components, data flows, startup, failure modes, scaling
+4. **Create AGENT_HANDOFF.md** — Dev setup commands, .env.example, datasets, troubleshooting (< 30 min setup goal)
+5. **Create MPDP.md** — Project summary, current milestone, next 3 tasks with criteria
+6. **Create docs/** — Comprehensive guides (if not already present)
+7. **Validate:** All architecture docs linked in README; "under 30 min" setup verified by test run
 
-#### Phase 4: Pre-Publish Compliance (Day 5)
+
 **Release blocker — must pass all checks:**
 
-27. **Create VULNERABILITY_ASSESSMENT.md** — Security audit (see template in Tier 1 section)
-28. **Run pre-publish checklist** — README quickstart ✅, tests pass ✅, no secrets ✅, Docker builds ✅, UML present ✅, changelog present ✅
-29. **Verify CI green** — All tests, linters (black, ruff, mypy), security scans (bandit, safety) pass
-30. **Decision:** Mark APPROVED (public release ready) or BLOCKED (fix issues first)
-31. **Validate:** All 23 items checked; compliance counter at 23/23
+1. **Audit for print() statements** — Search all source files; replace with `logging` calls; `print()` only allowed in CLI entry points
+2. **Verify version sync** — `pyproject.toml` version == latest git tag == CHANGELOG section heading
+3. **Set GitHub repository Topics** — Minimum 5 relevant keywords (language, domain, framework)
+4. **Verify README badges** — Build, coverage, Python version, license badges all present and rendering
+5. **Create VULNERABILITY_ASSESSMENT.md** — Security audit (see template in Tier 1 section)
+6. **Run pre-publish checklist** — All 17 items checked
+7. **Verify CI green** — All tests, linters (black, ruff, mypy), security scans (bandit, safety) pass
+8. **Create GitHub Release** from version tag with full release notes
+9. **Decision:** Mark APPROVED (public release ready) or BLOCKED (fix issues first)
+10. **Validate:** All 24 items checked; compliance counter at 24/24
 
 ### Priority & Blocking Rules
 
@@ -309,16 +329,19 @@ As each file is created:
 1. **Update the "Implementation Status" checklist** in PROJECT_GUIDELINES.md
 2. **Commit with semantic message:** `chore: Add README.md` or `docs: Add architecture.md`
 3. **Run CI and verify no new failures**
-4. **Mark in compliance counter:** (__/23 at bottom)
+4. **Mark in compliance counter:** (__/24 at bottom)
 
 ### Validation Checklist for Agents
 
 Before declaring a repository "production-ready," verify:
 
-- [ ] All 23 Tier 1 + Tier 2 items exist and are non-empty
+- [ ] All 24 Tier 1 + Tier 2 items exist and are non-empty
 - [ ] CI pipeline runs green on all commits
 - [ ] README quickstart works in < 10 minutes (test it yourself)
+- [ ] README has all four badges: build, coverage, Python version, license
+- [ ] GitHub repository Topics/tags set (minimum 5 keywords)
 - [ ] No hardcoded secrets (search for passwords, API keys, tokens)
+- [ ] No `print()` in library source code — all replaced with `logging`
 - [ ] Docker image builds and runs successfully
 - [ ] Tests achieve >= 70% coverage on core modules
 - [ ] UML diagrams are present and linked in README
@@ -327,6 +350,9 @@ Before declaring a repository "production-ready," verify:
 - [ ] MPDP.md has current milestone + next 3 tasks
 - [ ] CODEOWNERS file assigns reviewers correctly
 - [ ] CHANGELOG.md documents current release with semantic version
+- [ ] `pyproject.toml` version matches git tag and CHANGELOG heading
+- [ ] `.github/dependabot.yml` present and configured
+- [ ] GitHub Release created from version tag with release notes
 
 ### When Items Don't Apply
 
@@ -334,6 +360,7 @@ For some repositories, certain items may not apply (e.g., no ML model → skip M
 
 1. **Document the exemption** in the "Optional Files" section at bottom of PROJECT_GUIDELINES.md
 2. **Example:**
+
    ```
    ### Optional Files
    
@@ -341,6 +368,7 @@ For some repositories, certain items may not apply (e.g., no ML model → skip M
    - **PRIVACY.md** — Not applicable (no personal data collected)
    - **deploy/** — Not applicable (library-only, no deployment artifacts)
    ```
+
 3. **Do not check them** in the compliance counter; adjust total downward
 4. **Justify briefly** so future maintainers understand the decision
 
@@ -386,6 +414,7 @@ For some repositories, certain items may not apply (e.g., no ML model → skip M
 - [ ] THIRD_PARTY_NOTICES.md
 - [ ] MAINTAINERS.md
 - [ ] CODEOWNERS
+- [ ] .github/dependabot.yml
 
 #### Standard Directories
 
@@ -395,14 +424,14 @@ For some repositories, certain items may not apply (e.g., no ML model → skip M
 - [ ] data/
 - [ ] src/
 
-**Total Compliance:** __/23 required files present
+**Total Compliance:** __/24 required files present
 
 ### Optional Files
 
 - deploy/ — (explain applicability or defer)
 - MODEL_CARD.md / DATA_CARD.md — (explain applicability or defer)
 - PRIVACY.md / DATA_LICENSE.md — (explain applicability or defer)
-- Dependabot/Renovate config — (explain applicability or defer)
+- docs/api/ (Sphinx/MkDocs) — Required for library projects; optional for apps
 
 ---
 
@@ -415,4 +444,4 @@ For some repositories, certain items may not apply (e.g., no ML model → skip M
 
 ---
 
-**Last updated:** [YYYY-MM-DD]
+**Last updated:** 2026-04-03
