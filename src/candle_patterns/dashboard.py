@@ -314,9 +314,9 @@ def section_banner(title: str, description: str):
 # ============================================================================
 # AUTO-LOAD SAMPLE DATA ON STARTUP
 # ============================================================================
-print("\n" + "="*80)
-print("AUTO-LOADING SAMPLE DATA ON STARTUP...")
-print("="*80 + "\n")
+logger.info("="*60)
+logger.info("AUTO-LOADING SAMPLE DATA ON STARTUP...")
+logger.info("="*60)
 
 app.default_sample_data = None
 
@@ -324,17 +324,13 @@ try:
     data, _ = load_sample_data()
     if data:
         app.default_sample_data = data  # type: ignore[attr-defined] — Phase-11-dash-dynamic-attrs
-        logger.info("[OK] Sample auto-loaded for layout")
-        try:
-            print(f"\n[OK] LOADED: {len(data['df'])} candles\n")
-        except (UnicodeEncodeError, UnicodeDecodeError):
-            print(f"\n[OK] LOADED: {len(data['df'])} candles\n")
+        logger.info("[OK] Sample auto-loaded for layout: %d candles", len(data['df']))
 except Exception as e:
     logger.exception(f"Failed to auto-load: {e}")
 
-print("="*80)
-print("DASHBOARD READY")
-print("="*80 + "\n")
+logger.info("="*60)
+logger.info("DASHBOARD READY")
+logger.info("="*60)
 
 # NOTE: Clientside callback removed - load-sample-btn handled by on_load_sample_click server callback
 
@@ -2654,13 +2650,11 @@ def update_chart(data, scan_results, start_date, end_date):
     """
     logger.info("[CALLBACK] update_chart called: data=%s scan=%s",
                 'set' if data else 'None', 'set' if scan_results else 'None')
-    print(f"[DEBUG] update_chart: data={'set' if data else 'None'}, scan={'set' if scan_results else 'None'}")
 
     # Fallback to app.default_sample_data if the store is empty
     if not data and hasattr(app, 'default_sample_data') and app.default_sample_data:
         data = app.default_sample_data
-        logger.info("[CALLBACK] update_chart: using app.default_sample_data fallback")
-        print("[DEBUG] update_chart: using app.default_sample_data fallback")
+        logger.debug("[CALLBACK] update_chart: using app.default_sample_data fallback")
 
     # ---- empty state ----
     if not data:
