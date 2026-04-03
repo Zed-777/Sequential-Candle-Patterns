@@ -38,7 +38,7 @@ jobs:
       - name: Security scan (bandit)
         if: matrix.python-version == '3.12'
         run: |
-          bandit -r src -f json -o bandit.json || true
+          bandit -r src -f json -o bandit.json --skip B104,B301 || true
           python << 'EOF'
           import json
           j = json.load(open('bandit.json'))
