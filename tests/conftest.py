@@ -8,10 +8,8 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-# Register async plugin for pytest
-pytest_plugins = ["pytest_asyncio.plugin"]
-
 # Only register playwright plugin if installed (optional for E2E tests)
+pytest_plugins: list[str] = []
 try:
     import pytest_playwright
     pytest_plugins.append("pytest_playwright.pytest_playwright")
