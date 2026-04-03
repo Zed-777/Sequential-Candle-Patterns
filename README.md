@@ -287,6 +287,31 @@ Contributions welcome! For branch strategy, PR workflow, code style, and testing
 
 ---
 
+## Support the Project
+
+If Candle Patterns adds value to your workflow, consider supporting continued development:
+
+### Cryptocurrency Donations
+
+Your contribution helps sustain:
+
+- Active development and feature improvements
+- Bug fixes and security patching
+- Documentation and tutorials
+- Community support
+
+**Wallet Addresses:**
+
+| Cryptocurrency | Address |
+|---|---|
+| **Bitcoin** | `bc1qezg26hp8n7339x8fa0084wrf4ct8xuytqkydt9` |
+| **Ethereum** | `0x641F7431aC0aC4Ba411016161816b1AA3D886b60` |
+| **USDT (Ethereum/Polygon)** | `0x641F7431aC0aC4Ba411016161816b1AA3D886b60` |
+
+*This project is open-source (MIT licensed) and will always remain free to use. Donations are entirely voluntary and appreciated but not required.*
+
+---
+
 ## Changelog & Releases
 
 The project follows **semantic versioning** (major.minor.patch):
