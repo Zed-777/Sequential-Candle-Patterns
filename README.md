@@ -1,6 +1,8 @@
 # Candlestick Patterns — Sequential Pattern Analysis System
 
 [![tests](https://github.com/Zed-777/candle-patterns/actions/workflows/ci.yml/badge.svg)](https://github.com/Zed-777/candle-patterns/actions/workflows/ci.yml)
+[![coverage: 70%+](https://img.shields.io/badge/coverage-70%25%2B-brightgreen.svg)](https://github.com/Zed-777/Sequential-Candle-Patterns/actions/workflows/ci.yml)
+[![python: 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A **sequential colour-based candle pattern scanner** that lets you define candlestick colour sequences (e.g. `3R -> 2G`, `5R -> Doji -> 3G`), scan historical OHLCV data for matches, auto-discover recurring patterns, and predict likely continuations — all from an interactive 12-tab Dash web dashboard or CLI.
