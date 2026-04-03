@@ -10,6 +10,20 @@ authors = [ { name = "Your Team" } ]
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0",
+    "numpy>=2.0",
+    "scipy>=1.14",
+    "scikit-learn>=1.4",
+    "plotly>=5.16",
+    "dash>=2.9",
+    "dash-bootstrap-components>=1.4",
+    "joblib",
+    "typer",
+    "click",
+    "pyyaml",
+    "yfinance>=0.2",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
