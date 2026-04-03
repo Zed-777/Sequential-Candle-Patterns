@@ -65,6 +65,17 @@ Each file below must exist at the repository root and include the listed element
 - Short threat model and mitigations.
 - Secret handling and rotation instructions.
 
+### • VULNERABILITY_ASSESSMENT.md
+
+- Comprehensive security audit results before public release.
+- Risk assessment: critical, high, medium, and low-risk findings (with none of critical/high required for release).
+- Threat model coverage against common attacks (SQL injection, code execution, credential theft, etc.).
+- Dependency vulnerability assessment (libraries, version requirements, known CVEs).
+- Network security analysis (inbound/outbound connections, protocols, exposure).
+- Data handling and privacy compliance review (PII, retention, deletion).
+- Recommended security enhancements (prioritized by importance, blocking vs. optional).
+- Public release decision: **APPROVED** or **BLOCKED** with justification.
+
 ### • AGENT_HANDOFF.md
 
 - .env.example and instructions to populate environment variables.
@@ -171,6 +182,7 @@ Follow this exact order to keep repositories predictable:
 - LICENSE file correct and badge in README.
 - CHANGELOG.md or Releases documented.
 - SECURITY.md present and complete.
+- VULNERABILITY_ASSESSMENT.md completed and approved for public release.
 - All required files listed in this document are present.
 
 ---
@@ -199,6 +211,7 @@ Follow this exact order to keep repositories predictable:
 - [ ] Dependency manifest and lock file
 - [ ] Dockerfile and .dockerignore
 - [ ] SECURITY.md
+- [ ] VULNERABILITY_ASSESSMENT.md
 - [ ] AGENT_HANDOFF.md
 - [ ] UML/ and UML/README.md
 - [ ] architecture.md
@@ -221,7 +234,7 @@ Follow this exact order to keep repositories predictable:
 - [ ] data/
 - [ ] src/
 
-**Total Compliance:** __/22 required files present
+**Total Compliance:** __/23 required files present
 
 ### Optional Files
 

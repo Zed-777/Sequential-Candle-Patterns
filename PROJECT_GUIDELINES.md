@@ -65,6 +65,17 @@ Each file below must exist at the repository root and include the listed element
 - Short threat model and mitigations.
 - Secret handling and rotation instructions.
 
+### • VULNERABILITY_ASSESSMENT.md
+
+- Comprehensive security audit results before public release.
+- Risk assessment: critical, high, medium, and low-risk findings (with none of critical/high required for release).
+- Threat model coverage against common attacks (SQL injection, code execution, credential theft, etc.).
+- Dependency vulnerability assessment (libraries, version requirements, known CVEs).
+- Network security analysis (inbound/outbound connections, protocols, exposure).
+- Data handling and privacy compliance review (PII, retention, deletion).
+- Recommended security enhancements (prioritized by importance, blocking vs. optional).
+- Public release decision: **APPROVED** or **BLOCKED** with justification.
+
 ### • AGENT_HANDOFF.md
 
 - .env.example and instructions to populate environment variables.
@@ -171,6 +182,7 @@ Follow this exact order to keep repositories predictable:
 - LICENSE file correct and badge in README.
 - CHANGELOG.md or Releases documented.
 - SECURITY.md present and complete.
+- VULNERABILITY_ASSESSMENT.md completed and approved for public release.
 - All required files listed in this document are present.
 
 ---
@@ -190,7 +202,7 @@ Follow this exact order to keep repositories predictable:
 
 As of April 2, 2026, the Candlestick Patterns project implements **100% of tier-1 and tier-2 governance files**:
 
-#### Tier 1: Critical Documentation (12/12 Complete)
+#### Tier 1: Critical Documentation (13/13 Complete)
 
 - ✅ README.md — Comprehensive with all required sections
 - ✅ MPDP.md — Living roadmap and canonical status document
@@ -199,6 +211,7 @@ As of April 2, 2026, the Candlestick Patterns project implements **100% of tier-
 - ✅ pyproject.toml + requirements.txt — Pinned dependencies with lock file
 - ✅ Dockerfile + .dockerignore — Multi-stage build, lean image
 - ✅ SECURITY.md — Vulnerability contact, threat model, secret handling
+- ✅ VULNERABILITY_ASSESSMENT.md — Pre-release security audit (approved)
 - ✅ AGENT_HANDOFF.md — Developer onboarding, .env setup, troubleshooting
 - ✅ UML/ + UML/README.md — Component and sequence diagrams
 - ✅ architecture.md — Complete system design (docs/architecture.md)
@@ -221,7 +234,7 @@ As of April 2, 2026, the Candlestick Patterns project implements **100% of tier-
 - ✅ data/ — Data/README.md with sample data and format guidance
 - ✅ src/ — Python package structure with 16+ core modules
 
-**Total Compliance:** **22/22 required files present (100%)**
+**Total Compliance:** **23/23 required files present (100%)**
 
 ### Optional Files (Not Applicable)
 
@@ -241,4 +254,4 @@ As of April 2, 2026, the Candlestick Patterns project implements **100% of tier-
 
 ---
 
-**Last updated:** 2026-04-02
+**Last updated:** 2026-04-03
