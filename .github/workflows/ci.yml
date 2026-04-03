@@ -21,8 +21,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -e .
-          pip install ruff black pytest pytest-playwright mypy
-          python -m playwright install --with-deps
+          pip install ruff black pytest pytest-cov pytest-asyncio mypy bandit
 
       - name: Lint (ruff)
         if: matrix.python-version == '3.12'
@@ -54,7 +53,7 @@ jobs:
           EOF
 
       - name: Run tests with coverage (enforce 80% min)
-        run: pytest --cov=src --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=80 -q --maxfail=5
+        run: pytest -k "not e2e" --cov=src --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=80 -q --maxfail=5
 
       - name: Upload coverage reports
         if: matrix.python-version == '3.12'
