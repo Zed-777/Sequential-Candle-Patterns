@@ -1,6 +1,6 @@
 # Candlestick Patterns — Sequential Pattern Analysis System
 
-[![tests](https://github.com/Zed-777/candle-patterns/actions/workflows/ci.yml/badge.svg)](https://github.com/Zed-777/candle-patterns/actions/workflows/ci.yml)
+[![tests](https://github.com/Zed-777/Sequential-Candle-Patterns/actions/workflows/ci.yml/badge.svg)](https://github.com/Zed-777/Sequential-Candle-Patterns/actions/workflows/ci.yml)
 [![coverage: 70%+](https://img.shields.io/badge/coverage-70%25%2B-brightgreen.svg)](https://github.com/Zed-777/Sequential-Candle-Patterns/actions/workflows/ci.yml)
 [![python: 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -27,8 +27,8 @@ docker run --rm -p 8050:8050 candle-patterns:latest run
 
 ```bash
 # Clone and install
-git clone https://github.com/Zed-777/candle-patterns.git
-cd candle-patterns
+git clone https://github.com/Zed-777/Sequential-Candle-Patterns.git
+cd Sequential-Candle-Patterns
 
 # Windows PowerShell:
 scripts\setup_venv.ps1
@@ -324,7 +324,7 @@ The project follows **semantic versioning** (major.minor.patch):
 - **v1.1.0** — Phase 4–5: Yahoo Finance, multi-timeframe, backtesting, watchlist
 - **v1.0.0** — MVP: Core pattern scanner, discovery, statistics, dashboard
 
-**See [GitHub Releases](https://github.com/Zed-777/candle-patterns/releases) for detailed release notes.**
+**See [GitHub Releases](https://github.com/Zed-777/Sequential-Candle-Patterns/releases) for detailed release notes.**
 
 ---
 
@@ -334,7 +334,7 @@ The project follows **semantic versioning** (major.minor.patch):
 
 **Maintainer:** [Zed-777](https://github.com/Zed-777)
 
-For questions, feature requests, or bug reports, [open an issue on GitHub](https://github.com/Zed-777/candle-patterns/issues).
+For questions, feature requests, or bug reports, [open an issue on GitHub](https://github.com/Zed-777/Sequential-Candle-Patterns/issues).
 
 ---
 

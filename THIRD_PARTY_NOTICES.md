@@ -207,7 +207,7 @@ When adding new dependencies:
 
 If you find any missing or incorrect attribution:
 
-- Open a GitHub issue: <https://github.com/Zed-777/candle-patterns/issues>
+- Open a GitHub issue: <https://github.com/Zed-777/Sequential-Candle-Patterns/issues>
 - Contact: Zed-777
 
 ---

@@ -1,7 +1,7 @@
 # PROJECT_GUIDELINES Compliance Audit Report
 
 **Date:** April 2, 2026  
-**Repository:** candle-patterns  
+**Repository:** Sequential-Candle-Patterns  
 **Current Status:** Production Ready (v1.4.0)
 
 ---
