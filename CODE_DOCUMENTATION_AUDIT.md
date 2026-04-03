@@ -26,6 +26,7 @@ The codebase now has comprehensive documentation for critical core modules. Modu
 ### ✅ Module-Level Docstrings (6/6 Complete)
 
 All core modules now have comprehensive module-level docstrings describing purpose, key functions, and usage examples:
+
 - ✅ patterns.py — Candlestick pattern recognition via sequence parsing and matching
 - ✅ detection.py — Low-level candle feature detection and classification
 - ✅ dashboard.py — Interactive web dashboard for pattern analysis
@@ -36,6 +37,7 @@ All core modules now have comprehensive module-level docstrings describing purpo
 ### ✅ Type: Ignore Comments (6/6 Complete)
 
 All `# type: ignore` comments now include MPDP phase references:
+
 - ✅ ml_sequence.py [L238, L241, L244] — `Phase-11-sklearn-type-compatibility`
 - ✅ ml_sequence.py [L338] — `Phase-11-sklearn-type-compatibility`
 - ✅ dashboard.py [L326] — `Phase-11-dash-dynamic-attrs`
@@ -44,18 +46,21 @@ All `# type: ignore` comments now include MPDP phase references:
 ### ✅ Critical Public Functions (13/13 Documented)
 
 **detection.py (4 functions):**
+
 - ✅ candle_color(row: pd.Series) → str
 - ✅ is_doji(window: pd.DataFrame, tol: float = 0.05) → bool
 - ✅ is_hammer(window: pd.DataFrame, tol: float = 0.1) → bool
 - ✅ detect_patterns(df: pd.DataFrame, window_size: int = 5, ...) → List[Dict]
 
 **patterns.py (4 functions):**
+
 - ✅ matches_sequence_at(df: pd.DataFrame, start_idx: int, seq_str: str) → bool
 - ✅ count_followup_pattern(df, base_seq, follow_seq, follow_len) → dict
 - ✅ find_followup_outcomes(df, base_seq, max_follow_len=5, top_k=3) → List[dict]
 - ✅ find_sequence_occurrences(df: pd.DataFrame, seq_str: str) → List[int]
 
 **dashboard.py (5 callbacks):**
+
 - ✅ on_upload(contents, filename) — Handle CSV file upload
 - ✅ scan_sequences(n_clicks, presets, ...) — Execute pattern scanning
 - ✅ update_chart(data, scan_results, ...) — Render chart + pattern list
@@ -63,6 +68,7 @@ All `# type: ignore` comments now include MPDP phase references:
 - ✅ on_yf_fetch(n_clicks, symbol, ...) — Fetch Yahoo Finance data
 
 All documented with:
+
 - Purpose and use case
 - Args section (parameter names, types, defaults)
 - Returns section (type and format)
@@ -77,16 +83,19 @@ All documented with:
 ### Public Functions Still Missing Docstrings (~25 functions)
 
 **dashboard.py (Major work item):**
+
 - ~20 more callbacks (besides the 5 already documented)
 - Examples: `load_sample_data()`, `build_candle_figure()`, `build_default_scan_results()`, etc.
 
 **Other modules (~5 functions):**
+
 - ingestion.py: `load_csv()` needs expanded docstring
 - Utility functions in various modules
 
 ### Public Functions Still Missing Type Hints (~20 functions)
 
 **dashboard.py callbacks (primary focus):**
+
 - Most callbacks still need complete type hints on Inputs/State/Outputs
 - Complex return types (html.Div, dcc.Graph, etc.) need type aliases
 

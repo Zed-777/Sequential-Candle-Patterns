@@ -246,10 +246,10 @@ This section provides explicit instructions for AI agents implementing this temp
 5. **Create CHANGELOG.md** — Semantic versioning policy + current release notes
 6. **Create THIRD_PARTY_NOTICES.md** — Attribution for all open-source dependencies
 7. **Create MAINTAINERS.md** — Contact, decision process, approval authority
-16. **Create `.github/dependabot.yml`** — Weekly pip updates + monthly GitHub Actions updates
-17. **Create .github/pull_request_template.md** — Checklist linking to pre-publish requirements
-18. **Create .github/FUNDING.yml** (optional) — Custom donation links or GitHub Sponsors
-19. **Validate:** All files exist, CI runs green, no broken links in docs
+8. **Create `.github/dependabot.yml`** — Weekly pip updates + monthly GitHub Actions updates
+9. **Create .github/pull_request_template.md** — Checklist linking to pre-publish requirements
+10. **Create .github/FUNDING.yml** (optional) — Custom donation links or GitHub Sponsors
+11. **Validate:** All files exist, CI runs green, no broken links in docs
 
 #### Phase 3: Architecture & Onboarding (Day 4–5)
 

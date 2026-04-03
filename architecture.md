@@ -55,6 +55,7 @@
 The system is fundamentally built around **scanning OHLCV data for user-defined sequences** of candlestick colours and named patterns.
 
 **Example User Flow:**
+
 ```
 User: "I want to find patterns where 3 Red candles are followed by 2 Green candles"
       ↓
@@ -89,6 +90,7 @@ patterns.py (Core)
 ### 4. **Progressive Enhancement**
 
 Features are layered by complexity:
+
 - **MVP:** Sequential scanner + basic UI
 - **Phase 3:** Wildcard matching, what-comes-next predictions
 - **Phase 4–7:** Advanced analytics (confidence scoring, backtesting, ML, alerts, email)
@@ -401,6 +403,7 @@ data/
 **Current Deployment:** Single-instance Dash app (suitable for <100 concurrent users)
 
 **Path to Scale:**
+
 1. Move dashboard state to Redis
 2. Push alert checking to background workers (Celery)
 3. Separate data_feeds.py into microservice with caching layer
@@ -457,6 +460,7 @@ lock_timeout = 2.0
 **Current Status:** Single-user (no auth required)
 
 **Path to Multi-User:**
+
 1. Add `users` table (username, password_hash, role)
 2. Implement session management (Flask-Session)
 3. Add role-based access control (RBAC):
@@ -570,6 +574,7 @@ The **Candlestick Patterns** system is architected as a **modular, data-driven a
 - **Data Layer** (data_feeds.py, storage.py) manages external integration
 
 This design enables:
+
 - ✅ **Easy extension** — Add new pattern types or analytics without touching core scanning
 - ✅ **High performance** — Vectorized operations scale to millions of candles
 - ✅ **Multiple interfaces** — Web dashboard, REST API, CLI, Python library
