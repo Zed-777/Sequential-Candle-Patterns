@@ -19,8 +19,8 @@
 **macOS/Linux:**
 
 ```bash
-git clone https://github.com/Zed-777/candle-patterns.git
-cd candle-patterns
+git clone https://github.com/Zed-777/Sequential-Candle-Patterns.git
+cd Sequential-Candle-Patterns
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
@@ -31,8 +31,8 @@ pytest tests/ -q
 **Windows PowerShell:**
 
 ```powershell
-git clone https://github.com/Zed-777/candle-patterns.git
-cd candle-patterns
+git clone https://github.com/Zed-777/Sequential-Candle-Patterns.git
+cd Sequential-Candle-Patterns
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -e ".[dev]"

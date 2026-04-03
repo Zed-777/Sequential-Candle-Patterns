@@ -171,8 +171,8 @@ If Docker isn't available, here's how to run it locally:
 
 ```powershell
 # 1. Clone the code
-git clone https://github.com/Zed-777/candle-patterns.git
-cd candle-patterns
+git clone https://github.com/Zed-777/Sequential-Candle-Patterns.git
+cd Sequential-Candle-Patterns
 
 # 2. Set up environment
 .\scripts\setup_venv.ps1
@@ -189,8 +189,8 @@ python -m candle_patterns.dashboard
 
 ```bash
 # 1. Clone the code
-git clone https://github.com/Zed-777/candle-patterns.git
-cd candle-patterns
+git clone https://github.com/Zed-777/Sequential-Candle-Patterns.git
+cd Sequential-Candle-Patterns
 
 # 2. Set up environment
 bash scripts/setup_venv.sh
