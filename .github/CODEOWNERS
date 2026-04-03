@@ -1,24 +1,31 @@
 # CODEOWNERS file for GitHub automation
+
 # This file specifies who is responsible for different parts of the codebase
+
 # GitHub automatically requests reviews from these owners when PRs touch these files
 
 # Default: All files require Zed-777 review
+
 * @Zed-777
 
 # Core modules
+
 src/candle_patterns/ @Zed-777
 src/candle_patterns/*.py @Zed-777
 
 # Tests
+
 tests/ @Zed-777
 tests/**/*.py @Zed-777
 
 # Documentation
+
 *.md @Zed-777
 docs/ @Zed-777
 .github/workflows/ @Zed-777
 
 # Configuration
+
 pyproject.toml @Zed-777
 requirements*.txt @Zed-777
 Dockerfile @Zed-777
@@ -27,6 +34,7 @@ Dockerfile @Zed-777
 .pre-commit-config.yaml @Zed-777
 
 # Governance
+
 MPDP.md @Zed-777
 PROJECT_GUIDELINES.md @Zed-777
 CONTRIBUTING.md @Zed-777

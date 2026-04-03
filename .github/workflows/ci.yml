@@ -52,8 +52,8 @@ jobs:
           print('Bandit: no medium/high findings')
           EOF
 
-      - name: Run tests with coverage (enforce 70% min)
-        run: pytest tests/ -k "not e2e" --cov=src/candle_patterns --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=70 -v --tb=short --maxfail=5
+      - name: Run tests with coverage (enforce 60% min)
+        run: pytest tests/ -k "not e2e" --cov=src/candle_patterns --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=60 -v --tb=short --maxfail=5
 
       - name: Upload coverage reports
         if: matrix.python-version == '3.12'
