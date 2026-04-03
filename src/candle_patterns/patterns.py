@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Candlestick pattern recognition via sequence parsing and matching.
 
@@ -19,6 +17,7 @@ Example:
     >>> matches = find_sequence_occurrences(df, '3R -> 2G')
     >>> stats = sequence_outcome_stats(df, matches, hold_period=5)
 """
+from __future__ import annotations
 
 import re
 from collections import Counter

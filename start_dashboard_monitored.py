@@ -12,9 +12,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Patch the dashboard callbacks to add logging
-from candle_patterns import dashboard
-
 # Store original functions
 original_load_sample = None
 original_apply_filters = None
@@ -28,7 +25,7 @@ logger.info("=" * 80)
 logger.info("STARTING DASHBOARD - WATCH FOR ERRORS")
 logger.info("=" * 80)
 
-from candle_patterns.dashboard import app
+from candle_patterns.dashboard import app  # noqa: E402
 
 create_logging_wrapper()
 

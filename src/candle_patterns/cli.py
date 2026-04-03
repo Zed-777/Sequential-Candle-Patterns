@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Command-line interface for candlestick pattern analysis.
 
@@ -16,6 +14,7 @@ Example:
     $ python -m candle_patterns.cli run data.csv --out report.csv
     $ python -m candle_patterns.cli train --file data.csv --model-out model.pkl
 """
+from __future__ import annotations
 
 import typer
 from candle_patterns.ingestion import load_csv

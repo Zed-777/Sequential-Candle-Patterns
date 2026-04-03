@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Low-level candle feature detection and classification.
 
@@ -17,6 +15,7 @@ Example:
     >>> patterns = detect_patterns(df, window_size=3)
     >>> doji_indices = [i for i in range(len(df)) if is_doji(df.iloc[max(0,i-1):i+1])]
 """
+from __future__ import annotations
 
 import logging
 import pandas as pd

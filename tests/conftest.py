@@ -11,7 +11,7 @@ if str(SRC) not in sys.path:
 # Only register playwright plugin if installed (optional for E2E tests)
 pytest_plugins: list[str] = []
 try:
-    import pytest_playwright
+    import pytest_playwright  # noqa: F401
     pytest_plugins.append("pytest_playwright.pytest_playwright")
 except ImportError:
     pass

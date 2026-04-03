@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Interactive web dashboard for candlestick pattern analysis and backtesting.
 
@@ -21,6 +19,7 @@ Configuration and setup:
 Key callbacks handle Inputs/Outputs/State, which map UI interactions
 to backend analysis and charts.
 """
+from __future__ import annotations
 
 import dash
 import dash_bootstrap_components as dbc

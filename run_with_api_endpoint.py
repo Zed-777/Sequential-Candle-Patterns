@@ -5,7 +5,7 @@ Standalone server with test endpoint to load sample data.
 import sys
 sys.path.insert(0, 'src')
 
-from flask import Flask, jsonify
+from flask import jsonify
 from candle_patterns.dashboard import app as dash_app
 
 # Get the Flask server from Dash
