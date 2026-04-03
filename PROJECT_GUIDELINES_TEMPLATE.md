@@ -196,6 +196,167 @@ Follow this exact order to keep repositories predictable:
 
 ---
 
+## Agent Implementation Guide
+
+This section provides explicit instructions for AI agents implementing this template in a new or existing repository.
+
+### Overview
+
+**Goal:** Establish a professional, reproducible, governance-aligned repository with all required files present and compliant before public release.
+
+**Success Criteria:** All 23 Tier 1 + Tier 2 items checked ✅ and validated in CI.
+
+**Estimated effort:** 3–5 days for a new repo; 2–3 days for restructuring existing code.
+
+### Phase-Based Implementation (Do in Order)
+
+#### Phase 1: Foundation & Runnable (Day 1–2)
+**Blocking:** Nothing ships without these.
+
+1. **Copy PROJECT_GUIDELINES.md** to repo root (customize inapplicable items)
+2. **Create/update README.md** — Ensure quickstart (Docker + local) works in < 10 minutes
+3. **Create/update .gitignore** — Exclude venvs, caches, secrets, large data
+4. **Create/update LICENSE** — Full license text + badge in README
+5. **Create/update Dependency manifest** (requirements.txt + lock OR pyproject.toml)
+6. **Create/update Dockerfile + .dockerignore** — Builds lean image from repo root
+7. **Create/update tests/** — Add sample unit tests (even if minimal) to validate structure
+8. **Create .github/workflows/ci.yml** — Basic pipeline: install, lint, test, Docker build
+9. **Validate:** README quickstart works; tests run locally; Docker builds
+
+#### Phase 2: Governance & Safety (Day 2–3)
+**Blocking for public release:**
+
+10. **Create SECURITY.md** — Threat model, dependency policy, secret handling, contact info
+11. **Create CONTRIBUTING.md** — Branch strategy, commit style, PR checklist, code standards
+12. **Create CODE_OF_CONDUCT.md** — Community guidelines (copy Contributor Covenant 2.1 if needed)
+13. **Create CODEOWNERS** — Assign code review ownership (GitHub auto-assignment)
+14. **Create CHANGELOG.md** — Semantic versioning policy + current release notes
+15. **Create THIRD_PARTY_NOTICES.md** — Attribution for all open-source dependencies
+16. **Create MAINTAINERS.md** — Contact, decision process, approval authority
+17. **Create .github/pull_request_template.md** — Checklist linking to pre-publish requirements
+18. **Create .github/FUNDING.yml** (optional) — Custom donation links or GitHub Sponsors
+19. **Validate:** All files exist, CI runs green, no broken links in docs
+
+#### Phase 3: Architecture & Onboarding (Day 4–5)
+**Required before claiming "production-ready":**
+
+20. **Create UML/ with diagrams** — At least 1 component diagram + 1 sequence diagram (SVG preferred)
+21. **Create UML/README.md** — Map diagrams to code folders and runtime flow
+22. **Create architecture.md** — System components, data flows, startup, failure modes, scaling
+23. **Create AGENT_HANDOFF.md** — Dev setup commands, .env.example, datasets, troubleshooting (< 30 min setup goal)
+24. **Create MPDP.md** — Project summary, current milestone, next 3 tasks with criteria
+25. **Create docs/** — Comprehensive guides (if not already present)
+26. **Validate:** All architecture docs linked in README; "under 30 min" setup verified by test run
+
+#### Phase 4: Pre-Publish Compliance (Day 5)
+**Release blocker — must pass all checks:**
+
+27. **Create VULNERABILITY_ASSESSMENT.md** — Security audit (see template in Tier 1 section)
+28. **Run pre-publish checklist** — README quickstart ✅, tests pass ✅, no secrets ✅, Docker builds ✅, UML present ✅, changelog present ✅
+29. **Verify CI green** — All tests, linters (black, ruff, mypy), security scans (bandit, safety) pass
+30. **Decision:** Mark APPROVED (public release ready) or BLOCKED (fix issues first)
+31. **Validate:** All 23 items checked; compliance counter at 23/23
+
+### Priority & Blocking Rules
+
+| Item | Phase | Blocking | Why |
+|------|-------|----------|-----|
+| README.md | 1 | Yes | Must be discoverable and runnable |
+| tests/ | 1 | Yes | Must validate code integrity |
+| CI pipeline | 1 | Yes | Must gate all commits |
+| SECURITY.md | 2 | Yes (public release) | Required before public visibility |
+| VULNERABILITY_ASSESSMENT.md | 4 | Yes (public release) | Release approval gate |
+| UML diagrams | 3 | No (but recommended) | Aids contributor onboarding |
+| PRIVACY.md | — | No (optional) | Only if handling PII |
+| MODEL_CARD.md | — | No (optional) | Only if publishing ML models |
+
+### Key Commands & Templates
+
+**When implementing, agents should reference or use these patterns:**
+
+```bash
+# Initialize repository structure
+mkdir -p tests/ docs/ scripts/ data/ src/ .github/workflows UML
+
+# Create Python dependencies (example)
+pip freeze > requirements.txt
+pip install pytest pytest-cov black ruff mypy bandit
+
+# Run initial CI locally
+pytest tests/ --cov=src --cov-fail-under=70
+black . --check
+ruff check .
+mypy src/
+bandit -r src/
+
+# Create Docker image
+docker build -t <project>:<version> .
+docker run --rm <project>:<version> python -m pytest tests/
+
+# Git setup
+git config user.email "your@email.com"
+git config user.name "Your Name"
+git add .
+git commit -m "chore: Initialize repository with PROJECT_GUIDELINES"
+git tag v0.1.0
+git push origin main --tags
+```
+
+### Tracking Progress
+
+As each file is created:
+
+1. **Update the "Implementation Status" checklist** in PROJECT_GUIDELINES.md
+2. **Commit with semantic message:** `chore: Add README.md` or `docs: Add architecture.md`
+3. **Run CI and verify no new failures**
+4. **Mark in compliance counter:** (__/23 at bottom)
+
+### Validation Checklist for Agents
+
+Before declaring a repository "production-ready," verify:
+
+- [ ] All 23 Tier 1 + Tier 2 items exist and are non-empty
+- [ ] CI pipeline runs green on all commits
+- [ ] README quickstart works in < 10 minutes (test it yourself)
+- [ ] No hardcoded secrets (search for passwords, API keys, tokens)
+- [ ] Docker image builds and runs successfully
+- [ ] Tests achieve >= 70% coverage on core modules
+- [ ] UML diagrams are present and linked in README
+- [ ] VULNERABILITY_ASSESSMENT.md decision: **APPROVED**
+- [ ] All links in documentation are valid (no 404s)
+- [ ] MPDP.md has current milestone + next 3 tasks
+- [ ] CODEOWNERS file assigns reviewers correctly
+- [ ] CHANGELOG.md documents current release with semantic version
+
+### When Items Don't Apply
+
+For some repositories, certain items may not apply (e.g., no ML model → skip MODEL_CARD.md). **In those cases:**
+
+1. **Document the exemption** in the "Optional Files" section at bottom of PROJECT_GUIDELINES.md
+2. **Example:**
+   ```
+   ### Optional Files
+   
+   - **MODEL_CARD.md** — Not applicable (no ML models in this project)
+   - **PRIVACY.md** — Not applicable (no personal data collected)
+   - **deploy/** — Not applicable (library-only, no deployment artifacts)
+   ```
+3. **Do not check them** in the compliance counter; adjust total downward
+4. **Justify briefly** so future maintainers understand the decision
+
+### Troubleshooting for Agents
+
+| Problem | Solution |
+|---------|----------|
+| Tests fail on import | Check .github/workflows/ci.yml installs dependencies first (`pip install -e .`) |
+| Docker build fails | Verify .dockerignore excludes venvs, caches; check Dockerfile inherits from supported base image |
+| CI coverage below threshold | Lower coverage target in MPDP.md (document why), or add missing test cases |
+| UML diagrams won't render | Save as SVG or PNG; keep PlantUML source in UML/ folder |
+| README links broken | Check relative paths; use absolute GitHub URLs for reference to branches/releases |
+| Secrets detected in commits | Use `git rm --cached` to remove; add to .gitignore; regenerate any exposed tokens |
+
+---
+
 ## Implementation Status (vX.Y.Z)
 
 ### Project Compliance
