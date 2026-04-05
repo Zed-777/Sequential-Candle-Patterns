@@ -24,14 +24,14 @@ The most direct way to support the project. Donations go directly to the develop
 
 ### 1. Star & Share
 
-- ⭐ **[Star the repository on GitHub](https://github.com/Zed-777/candle-patterns)** — Increases project visibility
+- ⭐ **[Star the repository on GitHub](https://github.com/Zed-777/Sequential-Candle-Patterns)** — Increases project visibility
 - 📢 **Share with your network** — Recommend to colleagues, trading communities, fintech forums
 - 💬 **Mention in discussions** — Discord, Reddit, Twitter, LinkedIn
 
 ### 2. Contribute Code
 
-- 🐛 **Report bugs** — [Open an issue](https://github.com/Zed-777/candle-patterns/issues)
-- ✨ **Suggest features** — [Discussions tab](https://github.com/Zed-777/candle-patterns/discussions)
+- 🐛 **Report bugs** — [Open an issue](https://github.com/Zed-777/Sequential-Candle-Patterns/issues)
+- ✨ **Suggest features** — [Discussions tab](https://github.com/Zed-777/Sequential-Candle-Patterns/discussions)
 - 🔧 **Submit pull requests** — See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines
 
 ### 3. Improve Documentation
@@ -79,7 +79,7 @@ A: No problem! Ways to contribute without money:
 - Help other users in discussions
 
 **Q: Can I donate other cryptocurrencies?**  
-A: Currently accepting Bitcoin, Ethereum, and USDT. For other options, [open an issue](https://github.com/Zed-777/candle-patterns/issues).
+A: Currently accepting Bitcoin, Ethereum, and USDT. For other options, [open an issue](https://github.com/Zed-777/Sequential-Candle-Patterns/issues).
 
 **Q: Will you prioritize feature requests from donors?**  
 A: Roadmap is managed through [MPDP.md](MPDP.md) and GitHub issues. Donations don't influence priority (merit-based). However, your feedback is always valued regardless of support.
@@ -113,8 +113,8 @@ If you'd like to be recognized as a supporter, you can:
 
 Questions about supporting the project?
 
-- **GitHub Issues:** [Report/discuss here](https://github.com/Zed-777/candle-patterns/issues)
-- **GitHub Discussions:** [Ask questions here](https://github.com/Zed-777/candle-patterns/discussions)
+- **GitHub Issues:** [Report/discuss here](https://github.com/Zed-777/Sequential-Candle-Patterns/issues)
+- **GitHub Discussions:** [Ask questions here](https://github.com/Zed-777/Sequential-Candle-Patterns/discussions)
 
 ---
 

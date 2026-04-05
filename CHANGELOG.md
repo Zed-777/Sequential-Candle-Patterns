@@ -164,9 +164,9 @@ Example: v1.4.0 = Major version 1, Minor version 4, Patch version 0
 
 ## How to Report Issues
 
-- **Bug reports** → [GitHub Issues](https://github.com/Zed-777/candle-patterns/issues)
+- **Bug reports** → [GitHub Issues](https://github.com/Zed-777/Sequential-Candle-Patterns/issues)
 - **Security issues** → See [SECURITY.md](SECURITY.md)
-- **Feature requests** → [GitHub Discussions](https://github.com/Zed-777/candle-patterns/discussions)
+- **Feature requests** → [GitHub Discussions](https://github.com/Zed-777/Sequential-Candle-Patterns/discussions)
 
 ---
 

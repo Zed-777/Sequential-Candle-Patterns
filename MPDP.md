@@ -487,7 +487,7 @@ Based on real user feedback, consider:
 
 ## Related Links
 
-- **GitHub:** [Zed-777/candle-patterns](https://github.com/Zed-777/candle-patterns)
+- **GitHub:** [Zed-777/candle-patterns](https://github.com/Zed-777/Sequential-Candle-Patterns)
 - **Public Release Status:** Ready (see Release Readiness Summary above)
 - **Documentation:** README.md, MPDP.md, AGENT_HANDOFF.md, architecture.md, USER_MANUAL.md
 - **Standards:** PROJECT_GUIDELINES.md, CODE_OF_CONDUCT.md

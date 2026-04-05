@@ -147,7 +147,7 @@ python -m candle_patterns.cli cleanup
 ## Vulnerability Reporting
 
 If you discover a security vulnerability, please report it by opening a GitHub issue at:  
-<https://github.com/Zed-777/candle-patterns/issues>
+<https://github.com/Zed-777/Sequential-Candle-Patterns/issues>
 
 ---
 
