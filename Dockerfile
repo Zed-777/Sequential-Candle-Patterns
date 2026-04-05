@@ -7,7 +7,7 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-COPY pyproject.toml requirements.txt dev-requirements.txt ./
+COPY pyproject.toml ./
 RUN pip install --no-cache-dir -U pip setuptools wheel && \
     pip install --no-cache-dir .
 
