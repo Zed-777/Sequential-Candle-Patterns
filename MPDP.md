@@ -445,14 +445,15 @@ The project is feature-complete and production-ready. Phase 12 adds professional
 
 Based on real user feedback, consider:
 
-1. **RBAC & Multi-User** — User authentication, role-based access control
-2. **Advanced ML** — Neural networks, ensemble models, hyperparameter tuning
-3. **Performance at Scale** — Optimize for 100K+ candles, Redis caching
-4. **Mobile UI** — Responsive dashboard, mobile-friendly layout
-5. **Data Export** — Excel/PDF reports, email delivery of pattern scans
-6. **Integrations** — TradingView Plugin, Telegram alerts, Discord bot
-7. **Real-Time** — WebSocket support for live market data, instant alerts
-8. **Marketplace** — Community sequence sharing, strategy templates
+1. **Pattern Predecessor Finder** ⭐ **(Priority)** — ML reverse-lookup: user specifies target pattern (e.g., "5 consecutive green candles"), system finds the most frequently occurring sequence that precedes it. One-button UI, configurable lookback distance, displays top 3-5 predecessors with frequency counts. Integrates into Statistics & Predictions tab or new dedicated tab.
+2. **RBAC & Multi-User** — User authentication, role-based access control
+3. **Advanced ML** — Neural networks, ensemble models, hyperparameter tuning
+4. **Performance at Scale** — Optimize for 100K+ candles, Redis caching
+5. **Mobile UI** — Responsive dashboard, mobile-friendly layout
+6. **Data Export** — Excel/PDF reports, email delivery of pattern scans
+7. **Integrations** — TradingView Plugin, Telegram alerts, Discord bot
+8. **Real-Time** — WebSocket support for live market data, instant alerts
+9. **Marketplace** — Community sequence sharing, strategy templates
 
 **Not Planned (Out of Scope):**
 
