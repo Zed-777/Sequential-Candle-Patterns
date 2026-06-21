@@ -2,8 +2,8 @@
 
 **The Single Source of Truth (SSoT) for project status, architecture, roadmap, and all development history.**
 
-**Last Updated:** April 3, 2026 (3:15 PM) — Phase 12 & 13 Complete — Ready for Public Release  
-**Project Status:** Phase 11 ✅ Complete — Phase 12 ✅ Complete — Phase 13 ✅ Complete — v1.4.0 — Production & Release Ready  
+**Last Updated:** June 21, 2026 (4:30 PM) — Phase 13 Complete, v1.4.0 Stable, Phase 14 Planned  
+**Project Status:** Phase 11 ✅ Complete — Phase 12 ✅ Complete — Phase 13 ✅ Complete — v1.4.0 — Production Ready — GitHub prep underway  
 **Version:** 1.4.0 (semantic versioning: major.minor.patch)
 
 ---
@@ -495,11 +495,40 @@ Based on real user feedback, consider:
 
 ---
 
+## Recent Activities Log
+
+### April 5, 2026 — Docker Build Fix & CI Stabilization
+- **Commit 5f6a3261:** Fixed Docker build using Option B (proper Python packaging)
+  - Removed references to non-existent `dev-requirements.txt`
+  - Updated Dockerfile to use `pip install .` (install from pyproject.toml only)
+  - Updated `.github/workflows/cleanup.yml` to use `pip install .`
+  - Single source of truth: `pyproject.toml` with [project.dependencies] and [project.optional-dependencies]
+  - Rationale: Prevents file duplication, aligns with Python packaging best practices
+  - Verification: Local `pip install .` works, CLI functional, all tests pass (293 unit + 36 e2e)
+  - Status: ✅ CI pipeline fixed, all jobs passing
+
+- **Commit f2b70b12:** Configuration improvements & Phase 14 documentation
+  - Removed `asyncio_mode = "auto"` from pytest config (not recognized in current pytest-asyncio version)
+  - Updated MPDP.md with Phase 14 Priority #1: Pattern Predecessor Finder
+  - Status: ✅ All warnings eliminated
+
+### June 21, 2026 — GitHub Repository Preparation
+- **Environment Status Verified:** All tests passing (293 unit + 36 e2e), 100% pass rate
+- **Security Audit Completed:** No secrets, API keys, or credentials detected
+- **Documentation Updated:** MPDP.md timestamp, AGENT_PRACTICE_STANDARDS.md added to track
+- **Untracked Files Assessment:** 
+  - Ready for commit (5 files): AGENT_PRACTICE_STANDARDS.md, SYSTEM_AUDIT_2026-04-04.md, pyrightconfig.json, tests/test_reporting.py, data/samples/sample.csv
+  - .gitignore updated to exclude: build/ (build artifacts)
+- **Repository Metrics:** 132 commits, feature/mvp-setup branch, synced with origin
+- **Status:** Ready for GitHub private repository publishing
+
+---
+
 ## Update Cadence
 
 - **MPDP.md frequency:** Updated at sprint/phase completion (weekly average)
-- **Last update:** April 3, 2026 (Phase 13 completion)
-- **Next update:** Phase 14 planning (post public release)
+- **Last update:** June 21, 2026 (GitHub prep, repo maintenance)
+- **Next update:** Phase 14 development kickoff (Pattern Predecessor Finder)
 
 ---
 

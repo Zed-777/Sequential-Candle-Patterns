@@ -1,0 +1,42 @@
+{
+  "pythonVersion": "3.14",
+  "pythonPlatform": "Windows",
+  "typeCheckingMode": "standard",
+  "venvPath": ".",
+  "venv": ".venv-1",
+  "include": ["src", "tests"],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "**/*.egg-info",
+    ".git",
+    ".github",
+    ".venv-1",
+    ".venv",
+    "**/.venv",
+    "**/.venv-*",
+    "**/.*",
+    ".vscode",
+    ".ruff_cache",
+    ".coverage",
+    ".mypy_cache",
+    "build",
+    "dist",
+    "**/*.pyc",
+    "**/__pycache__"
+  ],
+  "defineConstant": {
+    "DEBUG": true
+  },
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "reportUnusedImport": "warning",
+  "reportUnusedVariable": "warning",
+  "reportUnusedFunction": "warning",
+  "reportDuplicateImport": "warning",
+  "reportUntypedFunctionDecorator": "warning",
+  "reportUntypedBaseClass": false,
+  "reportUntypedNamedTupleMember": false,
+  "reportPrivateUsage": "none"
+}

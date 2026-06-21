@@ -29,6 +29,7 @@ models/
 coverage.xml
 htmlcov/
 artifacts/
+build/
 *.egg-info/
 requirements-frozen.txt
 .coverage
