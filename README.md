@@ -1,7 +1,6 @@
 # Candlestick Patterns — Sequential Pattern Analysis System
 
 [![tests](https://github.com/Zed-777/Sequential-Candle-Patterns/actions/workflows/ci.yml/badge.svg)](https://github.com/Zed-777/Sequential-Candle-Patterns/actions/workflows/ci.yml)
-[![coverage: 70%+](https://img.shields.io/badge/coverage-70%25%2B-brightgreen.svg)](https://github.com/Zed-777/Sequential-Candle-Patterns/actions/workflows/ci.yml)
 [![python: 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
